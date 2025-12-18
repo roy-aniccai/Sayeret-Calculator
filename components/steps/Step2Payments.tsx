@@ -41,20 +41,24 @@ const InputWithTooltip: React.FC<{
 export const Step2Payments: React.FC = () => {
   const { formData, updateFormData, nextStep, prevStep } = useForm();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   // Calculate current total and slider range with regulatory limits
   const currentTotal = formData.mortgagePayment + formData.otherLoansPayment;
   const totalDebt = formData.mortgageBalance + formData.otherLoansBalance + Math.abs(formData.bankAccountBalance);
-  
+
   // חישוב מגבלות רגולטוריות
   const refinanceResult = calculateRefinancedPayment(formData);
   const minPaymentByRegulation = Math.max(
     currentMortgageParams.regulations.minMonthlyPayment,
     refinanceResult.breakdown.totalAmount * (refinanceResult.breakdown.weightedRate / 12) + 100
   );
-  
-  const minTarget = Math.max(minPaymentByRegulation, currentTotal - 4000);
-  const maxTarget = currentTotal + 4000;
+
+  // Use percentage-based range from parameters (default 30%)
+  const rangePercent = currentMortgageParams.simulator.paymentRangePercent;
+  const rangeAmount = Math.round(currentTotal * rangePercent);
+
+  const minTarget = Math.max(minPaymentByRegulation, currentTotal - rangeAmount);
+  const maxTarget = currentTotal + rangeAmount;
 
   useEffect(() => {
     // Update target when individual payments change
@@ -79,7 +83,7 @@ export const Step2Payments: React.FC = () => {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.mortgagePayment) newErrors.mortgagePayment = 'נא להזין החזר משכנתא';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -98,7 +102,7 @@ export const Step2Payments: React.FC = () => {
     <div className="animate-fade-in-up">
       <h2 className="text-3xl font-extrabold text-gray-900 mb-2 text-center">החזרים חודשיים</h2>
       <p className="text-gray-600 text-center mb-8">מה אתה משלם היום ומה היעד שלך?</p>
-      
+
       <div className="space-y-6">
         <InputWithTooltip
           label="החזר משכנתא חודשי נוכחי"
@@ -151,7 +155,7 @@ export const Step2Payments: React.FC = () => {
                 </div>
               </div>
             </div>
-              
+
             <div className="relative">
               <input
                 type="range"
@@ -163,8 +167,8 @@ export const Step2Payments: React.FC = () => {
                 style={{
                   background: `linear-gradient(to right, 
                     #10b981 0%, 
-                    #10b981 ${((currentTotal - formData.targetTotalPayment + 4000) / 8000) * 100}%, 
-                    #ef4444 ${((currentTotal - formData.targetTotalPayment + 4000) / 8000) * 100}%, 
+                    #10b981 ${((currentTotal - formData.targetTotalPayment + rangeAmount) / (rangeAmount * 2)) * 100}%, 
+                    #ef4444 ${((currentTotal - formData.targetTotalPayment + rangeAmount) / (rangeAmount * 2)) * 100}%, 
                     #ef4444 100%)`
                 }}
               />
@@ -209,13 +213,13 @@ export const Step2Payments: React.FC = () => {
         <Button fullWidth onClick={handleNext} className="mt-8">
           המשך לשלב הבא
         </Button>
-        
+
         <button onClick={prevStep} className="w-full text-gray-400 text-xl mt-6 font-medium">
           חזור אחורה
         </button>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
           height: 24px;

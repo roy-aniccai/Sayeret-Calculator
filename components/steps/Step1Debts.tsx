@@ -96,7 +96,7 @@ export const Step1Debts: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-2 text-center">נתוני החובות שלך</h2>
+      <h2 className="text-3xl font-extrabold text-gray-900 mb-2 text-center">נתוני משכנתא והלוואות</h2>
       <p className="text-gray-600 text-center mb-8">כל המידע נשאר חסוי ומשמש לחישוב מדויק</p>
       
       <div className="space-y-6">

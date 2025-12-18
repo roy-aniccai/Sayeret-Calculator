@@ -96,7 +96,7 @@ export const Step4Contact: React.FC = () => {
   return (
     <div className="animate-fade-in-up">
       <h2 className="text-3xl font-extrabold text-gray-900 mb-2 text-center">פרטי קשר</h2>
-      <p className="text-gray-600 text-center mb-8">כדי שנוכל להציג לך את התוצאות ולהמשיך בתהליך</p>
+      <p className="text-gray-600 text-center mb-8">כדי שנוכל להמשיך בתהליך חשוב לנו לוודא שאינך רובוט</p>
 
       <div className="space-y-6">
         <Input

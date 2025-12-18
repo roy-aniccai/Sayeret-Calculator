@@ -127,8 +127,8 @@ export const Step5Simulator: React.FC = () => {
               <i className="fa-solid fa-calculator text-blue-600 text-xl"></i>
               <h3 className="text-xl font-bold text-gray-900">מחשבון מיחזור משכנתא</h3>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">גיל:</span>
+            <div className="flex items-center gap-4">
+              <span className="text-xl font-bold text-gray-900">גיל:</span>
               <div className="relative">
                 <input
                   type="number"
@@ -137,30 +137,18 @@ export const Step5Simulator: React.FC = () => {
                   value={formData.age || ''}
                   onChange={handleAgeChange}
                   placeholder="35"
-                  className={`w-12 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 text-center ${
+                  className={`w-24 px-4 py-3 text-2xl font-bold border-2 rounded-xl focus:outline-none focus:ring-2 text-center shadow-sm ${
                     !formData.age 
-                      ? 'border-blue-400 ring-blue-200 bg-blue-50' 
-                      : 'border-gray-300 focus:ring-blue-500'
+                      ? 'border-blue-400 ring-blue-200 bg-blue-50 text-blue-900 placeholder-blue-400' 
+                      : 'border-gray-300 focus:ring-blue-500 text-gray-900 bg-white'
                   }`}
                 />
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
+                  שנים
+                </div>
               </div>
             </div>
           </div>
-          
-          {/* Age Required Notice */}
-          {!formData.age && (
-            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 flex items-center gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <i className="fa-solid fa-arrow-up text-white text-sm"></i>
-                </div>
-              </div>
-              <div>
-                <p className="text-blue-900 font-semibold text-sm">הזן את הגיל שלך כדי לפתוח את הסימולטור האינטראקטיבי</p>
-                <p className="text-blue-700 text-xs mt-1">הסימולטור יתאים את האפשרויות לפי המגבלות הרגולטוריות</p>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Always show calculator - bars visible, slider locked without age */}
@@ -169,37 +157,90 @@ export const Step5Simulator: React.FC = () => {
             <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
               {/* Summary Header */}
               <div className="text-center mb-6">
-                {Math.abs(currentYears - simulatedYears) > 0.1 ? (
-                  simulatedYears < currentYears ? (
-                    <div className="bg-green-100 border border-green-300 rounded-lg p-4">
-                      <h4 className="text-xl font-bold text-green-700 mb-2">
-                        <i className="fa-solid fa-arrow-down mr-2"></i>
-                        קיצור המשכנתא ב-{(currentYears - simulatedYears).toFixed(1)} שנים
+                {(() => {
+                  const paymentDiff = simulatorPayment - (formData.mortgagePayment + formData.otherLoansPayment);
+                  const yearsDiff = currentYears - simulatedYears;
+                  
+                  // Case 1: Shorter term AND lower payment (ideal scenario)
+                  if (yearsDiff > 0.1 && paymentDiff < 0) {
+                    return (
+                      <div className="bg-green-100 border border-green-300 rounded-lg p-4">
+                        <h4 className="text-xl font-bold text-green-700 mb-2">
+                          <i className="fa-solid fa-star mr-2"></i>
+                          מצב אידיאלי! חיסכון כפול
+                        </h4>
+                        <div className="space-y-1">
+                          <p className="text-green-600">
+                            ✓ קיצור המשכנתא ב-{yearsDiff.toFixed(1)} שנים
+                          </p>
+                          <p className="text-green-600">
+                            ✓ הפחתת תשלום ב-{formatNumberWithCommas(Math.abs(paymentDiff))} ש"ח בחודש
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Case 2: Shorter term with higher payment
+                  if (yearsDiff > 0.1 && paymentDiff > 0) {
+                    return (
+                      <div className="bg-green-100 border border-green-300 rounded-lg p-4">
+                        <h4 className="text-xl font-bold text-green-700 mb-2">
+                          <i className="fa-solid fa-arrow-down mr-2"></i>
+                          קיצור המשכנתא ב-{yearsDiff.toFixed(1)} שנים
+                        </h4>
+                        <p className="text-green-600">
+                          תוספת של {formatNumberWithCommas(paymentDiff)} ש"ח בחודש
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  // Case 3: Longer term with lower payment
+                  if (yearsDiff < -0.1 && paymentDiff < 0) {
+                    return (
+                      <div className="bg-amber-100 border border-amber-300 rounded-lg p-4">
+                        <h4 className="text-xl font-bold text-amber-700 mb-2">
+                          <i className="fa-solid fa-arrow-up mr-2"></i>
+                          הארכת המשכנתא ב-{Math.abs(yearsDiff).toFixed(1)} שנים
+                        </h4>
+                        <p className="text-amber-600">
+                          הפחתה של {formatNumberWithCommas(Math.abs(paymentDiff))} ש"ח בחודש
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  // Case 4: Longer term with higher payment (unusual)
+                  if (yearsDiff < -0.1 && paymentDiff > 0) {
+                    return (
+                      <div className="bg-red-100 border border-red-300 rounded-lg p-4">
+                        <h4 className="text-xl font-bold text-red-700 mb-2">
+                          <i className="fa-solid fa-exclamation-triangle mr-2"></i>
+                          הארכת המשכנתא ב-{Math.abs(yearsDiff).toFixed(1)} שנים
+                        </h4>
+                        <p className="text-red-600">
+                          תוספת של {formatNumberWithCommas(paymentDiff)} ש"ח בחודש
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  // Case 5: Same term
+                  return (
+                    <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
+                      <h4 className="text-xl font-bold text-blue-700 mb-2">
+                        <i className="fa-solid fa-equals mr-2"></i>
+                        אותה תקופת משכנתא
                       </h4>
-                      <p className="text-green-600">
-                        תוספת של {formatNumberWithCommas(simulatorPayment - (formData.mortgagePayment + formData.otherLoansPayment))} ש"ח בחודש
+                      <p className="text-blue-600">
+                        {Math.abs(paymentDiff) < 50 ? 'אותו החזר חודשי' : 
+                         paymentDiff > 0 ? `תוספת של ${formatNumberWithCommas(paymentDiff)} ש"ח בחודש` :
+                         `הפחתה של ${formatNumberWithCommas(Math.abs(paymentDiff))} ש"ח בחודש`}
                       </p>
                     </div>
-                  ) : (
-                    <div className="bg-amber-100 border border-amber-300 rounded-lg p-4">
-                      <h4 className="text-xl font-bold text-amber-700 mb-2">
-                        <i className="fa-solid fa-arrow-up mr-2"></i>
-                        הארכת המשכנתא ב-{(simulatedYears - currentYears).toFixed(1)} שנים
-                      </h4>
-                      <p className="text-amber-600">
-                        הפחתה של {formatNumberWithCommas((formData.mortgagePayment + formData.otherLoansPayment) - simulatorPayment)} ש"ח בחודש
-                      </p>
-                    </div>
-                  )
-                ) : (
-                  <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
-                    <h4 className="text-xl font-bold text-blue-700 mb-2">
-                      <i className="fa-solid fa-equals mr-2"></i>
-                      אותה תקופת משכנתא
-                    </h4>
-                    <p className="text-blue-600">אותו החזר חודשי</p>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Bar Chart with Years and Payments */}
@@ -297,34 +338,37 @@ export const Step5Simulator: React.FC = () => {
               </label>
               
               {!formData.age ? (
-                /* Slider Locked State with Current Values */
-                <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-6">
-                  <div className="text-center mb-4">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3">
-                      <i className="fa-solid fa-lock text-blue-500 text-lg"></i>
+                /* Simple Locked Slider */
+                <div className="relative">
+                  <div className="relative mb-4">
+                    <input
+                      type="range"
+                      min={minPayment}
+                      max={maxPayment}
+                      value={formData.targetTotalPayment}
+                      disabled={true}
+                      className="w-full h-4 bg-gradient-to-r from-green-300 via-blue-300 to-purple-300 rounded-lg appearance-none slider-enhanced cursor-not-allowed opacity-50"
+                    />
+                    <div 
+                      className="absolute top-6 transform translate-x-1/2 bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold pointer-events-none"
+                      style={{
+                        right: `${((formData.targetTotalPayment - minPayment) / (maxPayment - minPayment)) * 100}%`
+                      }}
+                    >
+                      {formatNumberWithCommas(formData.targetTotalPayment)} ₪
                     </div>
-                    <h4 className="text-md font-bold text-gray-800 mb-1">סימולטור נעול</h4>
-                    <p className="text-gray-600 text-sm">הזן את הגיל שלך למעלה כדי לפתוח את הסימולטור</p>
                   </div>
                   
-                  {/* Show Current Range Preview */}
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="text-center mb-3">
-                      <p className="text-sm text-gray-600 mb-2">טווח תשלומים זמין (±{(currentMortgageParams.simulator.paymentRangePercent * 100).toFixed(0)}%):</p>
-                      <div className="flex justify-between items-center">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-green-600">{formatNumberWithCommas(minPayment)} ₪</div>
-                          <div className="text-xs text-gray-500">מינימום</div>
-                        </div>
-                        <div className="flex-1 mx-4 h-2 bg-gradient-to-r from-green-300 via-blue-300 to-purple-300 rounded-full"></div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-purple-600">{formatNumberWithCommas(maxPayment)} ₪</div>
-                          <div className="text-xs text-gray-500">מקסימום</div>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex justify-between text-sm text-gray-400 mb-4">
+                    <span>{formatNumberWithCommas(minPayment)} ₪</span>
+                    <span>{formatNumberWithCommas(maxPayment)} ₪</span>
+                  </div>
+
+                  {/* Lock overlay */}
+                  <div className="absolute inset-0 bg-white bg-opacity-80 rounded-lg flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-sm text-gray-600">תשלום נוכחי: <span className="font-semibold">{formatNumberWithCommas(formData.targetTotalPayment)} ₪</span></div>
+                      <i className="fa-solid fa-lock text-blue-500 text-2xl mb-2"></i>
+                      <p className="text-blue-900 font-semibold">הזן גיל למעלה לפתיחת הסימולטור</p>
                     </div>
                   </div>
                 </div>

@@ -2,6 +2,7 @@ const API_BASE_URL = 'http://localhost:3005/api';
 
 export const submitData = async (data: any) => {
     try {
+        console.log(`Submitting data to ${API_BASE_URL}/submit`, data);
         const response = await fetch(`${API_BASE_URL}/submit`, {
             method: 'POST',
             headers: {
@@ -10,11 +11,12 @@ export const submitData = async (data: any) => {
             body: JSON.stringify(data),
         });
         if (!response.ok) {
-            throw new Error('Failed to submit data');
+            const errorText = await response.text();
+            throw new Error(`Failed to submit data: ${response.status} ${response.statusText} - ${errorText}`);
         }
         return await response.json();
     } catch (error) {
-        console.error('Error submitting data:', error);
+        console.error('CRITICAL: Error submitting data. Ensure backend is running on port 3005.', error);
         throw error;
     }
 };
