@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:3005/api';
+/// <reference types="vite/client" />
+const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3005/api';
 
 export const submitData = async (data: any) => {
     try {
