@@ -1,12 +1,12 @@
 import React from 'react';
 import { FormProvider, useForm } from './context/FormContext';
 import { Step1Goal } from './components/steps/Step1Goal';
-import { Step2Baseline } from './components/steps/Step2Baseline';
-import { Step3Details } from './components/steps/Step3Details';
-import { Step4Lead } from './components/steps/Step4Lead';
-import { Step5Results } from './components/steps/Step5Results';
-import { Step6InsuranceInput } from './components/steps/Step6InsuranceInput';
-import { Step7InsuranceResults } from './components/steps/Step7InsuranceResults';
+import { Step1Debts } from './components/steps/Step1Debts';
+import { Step2Payments } from './components/steps/Step2Payments';
+import { Step3Assets } from './components/steps/Step3Assets';
+import { Step4Contact } from './components/steps/Step4Contact';
+import { Step5Simulator } from './components/steps/Step5Simulator';
+
 
 const AppContent: React.FC = () => {
   const { step, resetForm } = useForm();
@@ -14,17 +14,16 @@ const AppContent: React.FC = () => {
   const renderStep = () => {
     switch (step) {
       case 1: return <Step1Goal />;
-      case 2: return <Step2Baseline />;
-      case 3: return <Step3Details />;
-      case 4: return <Step4Lead />;
-      case 5: return <Step5Results />;
-      case 6: return <Step6InsuranceInput />;
-      case 7: return <Step7InsuranceResults />;
+      case 2: return <Step1Debts />;
+      case 3: return <Step2Payments />;
+      case 4: return <Step3Assets />;
+      case 5: return <Step4Contact />;
+      case 6: return <Step5Simulator />;
       default: return <Step1Goal />;
     }
   };
 
-  const progressPercentage = (step / 7) * 100;
+  const progressPercentage = (step / 6) * 100;
   const [showAdmin, setShowAdmin] = React.useState(false);
 
   return (

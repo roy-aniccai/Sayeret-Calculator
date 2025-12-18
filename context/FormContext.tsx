@@ -12,9 +12,30 @@ interface FormContextType {
 }
 
 const initialFormData: FormData = {
+  // Step 1
   track: null,
-  propertyValue: 2500000,
+  
+  // Step 1 - Debts
   mortgageBalance: 1200000,
+  otherLoansBalance: 0,
+  bankAccountBalance: 0,
+  
+  // Step 2 - Monthly Payments
+  mortgagePayment: 6500,
+  otherLoansPayment: 0,
+  targetTotalPayment: 6500,
+  
+  // Step 3 - Assets
+  propertyValue: 2500000,
+  
+  // Step 4 - Contact
+  leadName: '',
+  leadPhone: '',
+  
+  // Step 5 - Simulator
+  age: null,
+  
+  // Legacy fields (keeping for compatibility)
   currentPayment: 6500,
   yearsRemaining: 20,
   netIncome: 0,
@@ -24,16 +45,8 @@ const initialFormData: FormData = {
   highInterestLoans: 0,
   loansPayment: 0,
   urgency: null,
-  leadName: 'ישראל ישראלי',
-  leadPhone: '050-1234567',
-  leadEmail: 'israel@example.com',
+  leadEmail: '',
   termsAccepted: true,
-  // Insurance defaults
-  isTwoBorrowers: false,
-  borrower1Age: 35,
-  borrower1Smoker: false,
-  borrower2Age: 35,
-  borrower2Smoker: false,
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -88,7 +101,7 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 7));
+  const nextStep = () => setStep((prev) => Math.min(prev + 1, 6));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
   return (

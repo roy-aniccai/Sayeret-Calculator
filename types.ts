@@ -1,8 +1,6 @@
 export enum TrackType {
   MONTHLY_REDUCTION = 'monthly_reduction',
   SHORTEN_TERM = 'shorten_term',
-  CONSOLIDATION = 'consolidation',
-  INSURANCE_ONLY = 'insurance_only',
 }
 
 export enum UrgencyLevel {
@@ -14,13 +12,29 @@ export interface FormData {
   // Step 1
   track: TrackType | null;
   
-  // Step 2 (Baseline)
-  propertyValue: number;
+  // Step 1 - Debts
   mortgageBalance: number;
+  otherLoansBalance: number;
+  bankAccountBalance: number; // Can be negative (overdraft)
+  
+  // Step 2 - Monthly Payments
+  mortgagePayment: number;
+  otherLoansPayment: number;
+  targetTotalPayment: number;
+  
+  // Step 3 - Assets
+  propertyValue: number;
+  
+  // Step 4 - Contact
+  leadName: string;
+  leadPhone: string;
+  
+  // Step 5 - Simulator (optional for enhanced value)
+  age: number | null;
+  
+  // Legacy fields (keeping for compatibility)
   currentPayment: number;
   yearsRemaining: number;
-  
-  // Step 3 (Dynamic)
   netIncome: number;
   addedMonthlyPayment: number;
   lumpSum: number;
@@ -28,19 +42,8 @@ export interface FormData {
   highInterestLoans: number;
   loansPayment: number;
   urgency: UrgencyLevel | null;
-
-  // Step 4
-  leadName: string;
-  leadPhone: string;
   leadEmail: string;
   termsAccepted: boolean;
-
-  // Step 6 (Insurance Specific)
-  isTwoBorrowers: boolean;
-  borrower1Age: number;
-  borrower1Smoker: boolean;
-  borrower2Age: number;
-  borrower2Smoker: boolean;
 }
 
 export interface CalculationResult {
@@ -57,8 +60,3 @@ export interface CalculationResult {
   icon: string;
 }
 
-export interface InsuranceResult {
-  totalLifetimeCost: number;
-  potentialSavings: number;
-  monthlyPremiumStart: number;
-}

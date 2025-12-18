@@ -1,130 +1,152 @@
-import { FormData, TrackType, CalculationResult, InsuranceResult } from '../types';
+import { FormData, TrackType, CalculationResult } from '../types';
 import { formatCurrency } from './helpers';
+import { 
+  currentMortgageParams, 
+  calculateWeightedMortgageRate, 
+  calculateWeightedOtherLoansRate,
+  calculateMonthlyPayment,
+  calculateLoanTerm,
+  validateLoanParams
+} from './mortgageParams';
 
-const INTEREST_RATE = 0.042; // 4.2% Annual Base
-
-function calculatePMT(principal: number, annualRate: number, months: number): number {
-  const monthlyRate = annualRate / 12;
-  if (monthlyRate === 0) return principal / months;
-  return (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
-}
-
-function calculateNPER(principal: number, annualRate: number, monthlyPayment: number): number {
-  const monthlyRate = annualRate / 12;
-  // Safety check: if payment covers less than interest, loan never ends
-  if (monthlyPayment <= principal * monthlyRate) return 999 * 12; 
-  const nper = -Math.log(1 - (monthlyRate * principal) / monthlyPayment) / Math.log(1 + monthlyRate);
-  return nper / 12; 
-}
+/**
+ * חישוב מדויק של מיחזור משכנתא לפי פרמטרי השוק הישראלי
+ */
+export const calculateRefinancedPayment = (data: FormData): {
+  newMonthlyPayment: number;
+  termYears: number;
+  isValid: boolean;
+  violations: string[];
+  breakdown: {
+    mortgageAmount: number;
+    mortgageRate: number;
+    otherLoansAmount: number;
+    otherLoansRate: number;
+    totalAmount: number;
+    weightedRate: number;
+  };
+} => {
+  // חישוב סכומים
+  const mortgageAmount = data.mortgageBalance;
+  const otherLoansAmount = data.otherLoansBalance + Math.abs(data.bankAccountBalance);
+  const totalAmount = mortgageAmount + otherLoansAmount;
+  
+  // חישוב ריביות משוקללות
+  const mortgageRate = calculateWeightedMortgageRate();
+  const otherLoansRate = calculateWeightedOtherLoansRate();
+  
+  // חישוב ריבית משוקללת כוללת
+  const weightedRate = totalAmount > 0 ? 
+    (mortgageAmount * mortgageRate + otherLoansAmount * otherLoansRate) / totalAmount : 
+    mortgageRate;
+  
+  // חישוב תקופה לפי יעד החזר
+  const targetPayment = data.targetTotalPayment;
+  const calculatedTerm = calculateLoanTerm(totalAmount, weightedRate, targetPayment);
+  const termYears = Math.min(calculatedTerm, currentMortgageParams.regulations.maxLoanTermYears);
+  
+  // חישוב החזר בפועל לפי התקופה המותרת
+  const actualPayment = calculateMonthlyPayment(totalAmount, weightedRate, termYears);
+  
+  // בדיקת תקינות
+  const validation = validateLoanParams(
+    totalAmount,
+    actualPayment,
+    termYears,
+    data.age || undefined,
+    data.propertyValue
+  );
+  
+  return {
+    newMonthlyPayment: actualPayment,
+    termYears,
+    isValid: validation.isValid,
+    violations: validation.violations,
+    breakdown: {
+      mortgageAmount,
+      mortgageRate,
+      otherLoansAmount,
+      otherLoansRate,
+      totalAmount,
+      weightedRate
+    }
+  };
+};
 
 export const calculateResults = (data: FormData): CalculationResult => {
-  let newPrincipal = data.mortgageBalance; 
+  // חישוב מיחזור מדויק
+  const refinanceResult = calculateRefinancedPayment(data);
+  const currentTotal = data.mortgagePayment + data.otherLoansPayment;
   
   if (data.track === TrackType.MONTHLY_REDUCTION) {
-    const currentMonthly = data.currentPayment;
-    const potentialMonthly = calculatePMT(newPrincipal, INTEREST_RATE, 360); // 30 years assumption
+    const isPositive = refinanceResult.newMonthlyPayment < currentTotal && refinanceResult.isValid;
+    const savings = currentTotal - refinanceResult.newMonthlyPayment;
     
-    const isPositive = potentialMonthly < currentMonthly;
+    let title = "ההחזר צפוי לעלות במיחזור";
+    let subtitle = "הריביות בשוק או מגבלות רגולטוריות מונעות חיסכון";
+    let explanation = "בגלל תנאי השוק הנוכחיים, מיחזור לא יביא לחיסכון משמעותי.";
+    
+    if (isPositive) {
+      title = "ניתן להוריד את ההחזר החודשי!";
+      subtitle = `חיסכון של ${formatCurrency(savings)} בחודש`;
+      explanation = `המיחזור יאפשר לך לפנות ${formatCurrency(savings)} בתזרים החודשי. התקופה החדשה: ${refinanceResult.termYears.toFixed(1)} שנים.`;
+    } else if (refinanceResult.violations.length > 0) {
+      subtitle = refinanceResult.violations[0];
+      explanation = `מגבלות רגולטוריות: ${refinanceResult.violations.join(', ')}`;
+    }
 
     return {
-      title: isPositive ? "ניתן להוריד את ההחזר החודשי!" : "ההחזר צפוי לעלות במיחזור",
-      subtitle: isPositive ? "ע''י פריסה מחדש של המשכנתא" : "הריביות היום גבוהות משמעותית מהמקור",
+      title,
+      subtitle,
       labelBefore: "החזר נוכחי",
-      labelAfter: "החזר חדש",
-      valBefore: Math.round(currentMonthly),
-      valAfter: Math.round(potentialMonthly),
+      labelAfter: "החזר לאחר מיחזור",
+      valBefore: Math.round(currentTotal),
+      valAfter: Math.round(refinanceResult.newMonthlyPayment),
       unit: '₪',
       isPositive,
-      badgeText: isPositive ? "תוצאה ראשונית: חיסכון בתזרים" : "תוצאה: לא כדאי למחזר",
+      badgeText: isPositive ? "הזדמנות למיחזור" : "לא כדאי למחזר כרגע",
       icon: isPositive ? "fa-arrow-trend-down" : "fa-arrow-trend-up",
-      explanation: isPositive 
-        ? `המהלך יאפשר לך לפנות כ-${formatCurrency(currentMonthly - potentialMonthly)} בתזרים החודשי.`
-        : "בגלל עליות הריבית, פריסה מחדש תייקר את ההחזר."
+      explanation
     };
   }
 
   if (data.track === TrackType.SHORTEN_TERM) {
-    const yearsLeft = data.yearsRemaining;
-    const targetPayment = data.currentPayment + data.addedMonthlyPayment;
+    // לוגיקה לקיצור שנים - נוסיף בהמשך
+    const currentYears = 25; // נניח 25 שנים נוכחיות
+    const newYears = refinanceResult.termYears;
+    const isPositive = newYears < currentYears && refinanceResult.isValid;
     
-    let calculatedYears = calculateNPER(newPrincipal - data.lumpSum, INTEREST_RATE, targetPayment);
-    if (calculatedYears < 4) calculatedYears = 4;
-
-    const yearsSaved = Math.max(0, yearsLeft - calculatedYears);
-    const displayYears = Math.round(calculatedYears * 10) / 10;
-    
-    const futureMsg = data.lumpSum > 0 ? ` כולל שימוש ב-${formatCurrency(data.lumpSum)}.` : "";
-    const isPositive = calculatedYears < yearsLeft;
-
     return {
-      title: isPositive ? `ניתן לקצר ל-${Math.floor(displayYears)} שנים!` : 'המיחזור יאריך את התקופה',
-      subtitle: isPositive ? `על בסיס תוספת של ${data.addedMonthlyPayment} ₪` : 'הריביות בשוק גבוהות מהריבית הנוכחית שלך',
-      labelBefore: "שנים לתשלום",
-      labelAfter: isPositive ? "שנים לאחר קיצור" : "שנים במיחזור",
-      valBefore: yearsLeft,
-      valAfter: displayYears,
+      title: isPositive ? `ניתן לקצר ל-${Math.floor(newYears)} שנים!` : 'המיחזור יאריך את התקופה',
+      subtitle: isPositive ? `חיסכון של ${Math.floor(currentYears - newYears)} שנים` : 'הריביות בשוק גבוהות מהריבית הנוכחית',
+      labelBefore: "שנים נוכחיות",
+      labelAfter: "שנים לאחר מיחזור",
+      valBefore: currentYears,
+      valAfter: Math.round(newYears),
       unit: 'שנים',
       isPositive,
       badgeText: isPositive ? "הזדמנות לחיסכון בריבית" : "לא כדאי למחזר כרגע",
       icon: isPositive ? "fa-piggy-bank" : "fa-clock",
       explanation: isPositive 
-        ? `תוספת קטנה של ${data.addedMonthlyPayment} ₪ מחקה ${Math.floor(yearsSaved)} שנים של תשלומי ריבית מיותרים.${futureMsg}`
-        : "למרות התוספת להחזר, הריביות הגבוהות בשוק הופכות את המיחזור ללא כדאי כרגע."
+        ? `קיצור התקופה יחסוך אלפי שקלים בריבית לאורך השנים.`
+        : "הריביות הגבוהות בשוק הופכות את המיחזור ללא כדאי כרגע."
     };
   }
 
-  // Consolidation Logic
-  const currentTotal = data.currentPayment + data.loansPayment;
-  const totalDebtToAdd = data.standardLoans + data.highInterestLoans;
-  newPrincipal += totalDebtToAdd;
-  
-  const potentialTotal = calculatePMT(newPrincipal, INTEREST_RATE, 360);
-  const isPositive = potentialTotal < currentTotal;
-  
+  // ברירת מחדל
   return {
-    title: isPositive ? "איפוס המינוס והורדת החזר!" : "לא נמצא חיסכון משמעותי",
-    subtitle: isPositive ? "איחוד כל ההלוואות למשכנתא אחת" : "הפערים לא מצדיקים מיחזור",
-    labelBefore: "החזר חודשי (היום)",
-    labelAfter: "החזר מאוחד",
-    valBefore: Math.round(currentTotal),
-    valAfter: Math.round(potentialTotal),
+    title: "שגיאה בחישוב",
+    subtitle: "אנא בדוק את הנתונים שהוזנו",
+    labelBefore: "לפני",
+    labelAfter: "אחרי", 
+    valBefore: 0,
+    valAfter: 0,
     unit: '₪',
-    isPositive,
-    badgeText: isPositive ? "מהפך בתזרים המזומנים" : "ללא שינוי מהותי",
-    icon: isPositive ? "fa-wand-magic-sparkles" : "fa-minus",
-    explanation: isPositive 
-      ? `החיסכון בתזרים: ${formatCurrency(currentTotal - potentialTotal)} בחודש! ${data.highInterestLoans > 0 ? `ונפטרים מ-${formatCurrency(data.highInterestLoans)} חובות רעים.` : ''}`
-      : "עלויות המיחזור גבוהות מהחיסכון החודשי הצפוי."
+    isPositive: false,
+    badgeText: "שגיאה",
+    icon: "fa-exclamation-triangle",
+    explanation: "לא ניתן לבצע חישוב עם הנתונים הנוכחיים."
   };
 };
 
-export const calculateInsuranceSavings = (data: FormData): InsuranceResult => {
-  // Insurance Heuristic Model
-  const baseRatePer100k = 12;
-  const loanUnits = data.mortgageBalance / 100000;
-  
-  const calculateSingleBorrowerPremium = (age: number, isSmoker: boolean): number => {
-    const ageDiff = Math.max(0, age - 25);
-    const ageFactor = 1 + (ageDiff * 0.05); // +5% per year over 25
-    const smokerFactor = isSmoker ? 1.5 : 1.0; // +50% for smokers
-    
-    const basePremium = loanUnits * baseRatePer100k;
-    return basePremium * ageFactor * smokerFactor;
-  };
 
-  let totalMonthlyPremiumStart = calculateSingleBorrowerPremium(data.borrower1Age, data.borrower1Smoker);
-  
-  if (data.isTwoBorrowers) {
-    totalMonthlyPremiumStart += calculateSingleBorrowerPremium(data.borrower2Age, data.borrower2Smoker);
-  }
-
-  const averageLifetimePremium = totalMonthlyPremiumStart * 0.65; // Decay factor
-  const totalLifetimeCost = averageLifetimePremium * data.yearsRemaining * 12;
-  const potentialSavings = totalLifetimeCost * 0.22; // 22% Savings assumption
-
-  return {
-    totalLifetimeCost,
-    potentialSavings,
-    monthlyPremiumStart: totalMonthlyPremiumStart
-  };
-};

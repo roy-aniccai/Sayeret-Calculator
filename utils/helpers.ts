@@ -12,7 +12,8 @@ export const formatCurrency = (val: number): string => {
  * Example: 12000 -> "12,000"
  */
 export const formatNumberWithCommas = (val: number | undefined | null): string => {
-  if (val === undefined || val === null || val === 0) return '';
+  if (val === undefined || val === null) return '';
+  if (val === 0) return '0';
   return val.toLocaleString();
 };
 
@@ -24,4 +25,19 @@ export const parseFormattedNumber = (val: string): number => {
   const cleanVal = val.replace(/,/g, '');
   const num = parseFloat(cleanVal);
   return isNaN(num) ? 0 : num;
+};
+
+/**
+ * Formats years as "X שנים Y חודשים" format.
+ * Example: 5.25 -> "5 שנים 3 חודשים"
+ */
+export const formatYearsAndMonths = (years: number): string => {
+  const wholeYears = Math.floor(years);
+  const months = Math.round((years % 1) * 12);
+  
+  if (months === 0) {
+    return `${wholeYears} שנים`;
+  }
+  
+  return `${wholeYears} שנים ${months} חודשים`;
 };

@@ -16,7 +16,7 @@ export const Step1Goal: React.FC = () => {
       <h2 className="text-3xl font-extrabold text-gray-900 mb-8 text-center">מה המטרה העיקרית?</h2>
       <div className="space-y-6">
         <SelectionCard
-          title="להוריד את ההחזר"
+          title="להוריד את ההחזר החודשי"
           description="ההחזר כבד? נבדוק פריסה נוחה יותר."
           icon="fa-solid fa-arrow-trend-down"
           colorClass="blue"
@@ -29,20 +29,7 @@ export const Step1Goal: React.FC = () => {
           colorClass="green"
           onClick={() => handleSelect(TrackType.SHORTEN_TERM)}
         />
-        <SelectionCard
-          title="איחוד הלוואות"
-          description="לאחד הלוואות למשכנתא בריבית נמוכה."
-          icon="fa-solid fa-layer-group"
-          colorClass="purple"
-          onClick={() => handleSelect(TrackType.CONSOLIDATION)}
-        />
-        <SelectionCard
-          title="הוזלת ביטוח משכנתא"
-          description="בוא נבדוק כמה אפשר לחסוך בביטוח."
-          icon="fa-solid fa-shield-heart"
-          colorClass="indigo"
-          onClick={() => handleSelect(TrackType.INSURANCE_ONLY)}
-        />
+
       </div>
     </div>
   );

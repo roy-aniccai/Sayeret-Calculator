@@ -66,21 +66,17 @@ export const Step5Results: React.FC = () => {
          </div>
       </div>
 
-      <div className="bg-gradient-to-br from-white to-blue-50 border border-blue-200 rounded-2xl p-6 mt-4 mb-8 shadow-sm">
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 mt-4 mb-8 shadow-sm">
           <div className="flex items-center gap-4">
-              <div className="bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-blue-200 text-2xl">
+              <div className="bg-green-600 text-white w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-green-200 text-2xl">
                   <i className="fa-solid fa-shield-heart"></i>
               </div>
               <div>
-                  <h3 className="font-bold text-gray-900 text-xl">הוזלת ביטוח המשכנתא</h3>
-                  <p className="text-lg text-gray-600">חיסכון נוסף של כ-<span className="font-bold text-green-600">25%</span></p>
+                  <h3 className="font-bold text-gray-900 text-xl">חיסכון נוסף בביטוח המשכנתא</h3>
+                  <p className="text-lg text-gray-600">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
               </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-blue-100 flex justify-end">
-              <button onClick={() => setStep(6)} className="text-lg text-blue-600 font-bold hover:underline flex items-center gap-2">
-                  רוצה רק להוזיל ביטוח? לחץ כאן <i className="fa-solid fa-chevron-left text-sm"></i>
-              </button>
-          </div>
+
       </div>
 
       <Button onClick={() => alert("תודה! יועץ בכיר ייצור איתך קשר בשעות הקרובות עם הניתוח המלא.")} className="w-full animate-bounce py-6">

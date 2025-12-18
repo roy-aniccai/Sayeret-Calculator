@@ -31,12 +31,7 @@ export const Step2Baseline: React.FC = () => {
 
   const handleNext = () => {
     if (!validate()) return;
-
-    if (formData.track === TrackType.INSURANCE_ONLY) {
-      setStep(6);
-    } else {
-      nextStep();
-    }
+    nextStep();
   };
 
   return (

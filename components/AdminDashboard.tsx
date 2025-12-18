@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getSubmissions, getEvents } from '../utils/api';
-import { calculateResults, calculateInsuranceSavings } from '../utils/calculator';
+import { calculateResults } from '../utils/calculator';
+import { ParametersEditor } from './ParametersEditor';
+import { ParametersDisplay } from './ParametersDisplay';
 
 interface Submission {
     id: number;
@@ -22,8 +24,9 @@ interface EventLog {
 export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [events, setEvents] = useState<EventLog[]>([]);
-    const [activeTab, setActiveTab] = useState<'submissions' | 'events'>('submissions');
+    const [activeTab, setActiveTab] = useState<'submissions' | 'events' | 'parameters'>('submissions');
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+    const [showParametersEditor, setShowParametersEditor] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -43,7 +46,6 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
     const generateMockMessage = (sub: Submission) => {
         const data = sub.full_data_json;
         const results = calculateResults(data);
-        const insurance = calculateInsuranceSavings(data);
 
         return `
 *הודעת סיכום (Mock)*
@@ -65,9 +67,8 @@ ${results.labelBefore}: ${results.valBefore.toLocaleString()} ${results.unit}
 ${results.labelAfter}: ${results.valAfter.toLocaleString()} ${results.unit}
 חיסכון/שינוי משוער: ${results.badgeText}
 
-*ביטוח:*
-חיסכון פוטנציאלי: ${insurance.potentialSavings.toLocaleString()} ₪
-עלות לכל התקופה: ${insurance.totalLifetimeCost.toLocaleString()} ₪
+*ביטוח משכנתא:*
+ניתן לחסוך כ-50,000 ש"ח בביטוח המשכנתא
 
 -------------------
 נשלח בתאריך: ${new Date(sub.created_at).toLocaleString()}
@@ -97,6 +98,13 @@ ${results.labelAfter}: ${results.valAfter.toLocaleString()} ${results.unit}
                         className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'events' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
                     >
                         Event Logs ({events.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('parameters')}
+                        className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'parameters' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
+                    >
+                        <i className="fa-solid fa-cog ml-2"></i>
+                        פרמטרי משכנתא
                     </button>
                 </div>
 
@@ -161,6 +169,35 @@ ${results.labelAfter}: ${results.valAfter.toLocaleString()} ${results.unit}
                                 </table>
                             </div>
                         )}
+
+                        {activeTab === 'parameters' && (
+                            <div className="space-y-6">
+                                <div className="bg-white rounded-xl shadow p-6 text-center">
+                                    <div className="mb-6">
+                                        <i className="fa-solid fa-cogs text-6xl text-blue-600 mb-4"></i>
+                                        <h3 className="text-2xl font-bold text-gray-900 mb-2">ניהול פרמטרי משכנתא</h3>
+                                        <p className="text-gray-600">עדכן ריביות, רגולציות ועמלות לפי נתוני השוק העדכניים</p>
+                                    </div>
+                                    
+                                    <button
+                                        onClick={() => setShowParametersEditor(true)}
+                                        className="px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold text-lg"
+                                    >
+                                        <i className="fa-solid fa-edit ml-2"></i>
+                                        ערוך פרמטרים
+                                    </button>
+                                    
+                                    <div className="mt-6 text-sm text-gray-500">
+                                        <p>עדכון אחרון: דצמבר 2024</p>
+                                        <p>מומלץ לעדכן מידי חודש לפי הודעות בנק ישראל</p>
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-white rounded-xl shadow p-6">
+                                    <ParametersDisplay />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Details Column */}
@@ -187,6 +224,11 @@ ${results.labelAfter}: ${results.valAfter.toLocaleString()} ${results.unit}
                     </div>
                 </div>
             </div>
+            
+            {/* Parameters Editor Modal */}
+            {showParametersEditor && (
+                <ParametersEditor onClose={() => setShowParametersEditor(false)} />
+            )}
         </div>
     );
 };
