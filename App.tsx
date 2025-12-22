@@ -36,27 +36,28 @@ const AppContent: React.FC = () => {
 
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden relative min-h-[600px] flex flex-col">
 
-        {/* Header */}
-        <div className="bg-blue-600 p-6 text-white text-center relative">
-          <div className="absolute top-6 left-6">
+        {/* Compact Header */}
+        <div className="bg-blue-600 px-4 py-3 text-white relative">
+          <div className="flex items-center justify-between">
             <button onClick={() => setShowAdmin(true)} className="text-blue-400 hover:text-white text-xs opacity-50 hover:opacity-100" title="Admin">
               <i className="fa-solid fa-lock"></i>
             </button>
+
+            <div className="text-center flex-1">
+              <h1 className="text-lg font-bold">בדיקת דופק למשכנתא</h1>
+            </div>
+
+            <button
+              onClick={resetForm}
+              className="text-blue-200 hover:text-white transition-colors"
+              title="התחל מחדש"
+            >
+              <i className="fa-solid fa-rotate-right text-lg"></i>
+            </button>
           </div>
 
-          <button
-            onClick={resetForm}
-            className="absolute top-6 right-6 text-blue-200 hover:text-white transition-colors"
-            title="התחל מחדש"
-          >
-            <i className="fa-solid fa-rotate-right text-xl"></i>
-          </button>
-
-          <h1 className="text-2xl font-bold mb-2">בדיקת דופק למשכנתא</h1>
-          <p className="text-blue-100 text-sm opacity-90">האלגוריתם מזהה הזדמנויות חיסכון בזמן אמת</p>
-
-          {/* Progress Bar */}
-          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-blue-800">
+          {/* Compact Progress Bar */}
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-800">
             <div
               className="h-full bg-yellow-400 transition-all duration-500"
               style={{ width: `${progressPercentage}%` }}

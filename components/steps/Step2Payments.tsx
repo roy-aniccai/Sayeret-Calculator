@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from '../../context/FormContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { Tooltip } from '../ui/Tooltip';
 import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
 import { calculateRefinancedPayment } from '../../utils/calculator';
 import { currentMortgageParams } from '../../utils/mortgageParams';
 
-// Move InputWithTooltip outside the component to prevent recreation on every render
+// Enhanced InputWithTooltip using the new Tooltip component
 const InputWithTooltip: React.FC<{
   label: string;
   tooltip: string;
@@ -19,20 +20,23 @@ const InputWithTooltip: React.FC<{
   error?: string;
   icon?: React.ReactNode;
   helperText?: string;
+  autoAdvance?: boolean;
+  maxLength?: number;
 }> = ({ label, tooltip, ...inputProps }) => (
   <div>
     <div className="flex items-center gap-2 mb-2">
       <label className="block text-lg font-semibold text-gray-900">
         {label}
       </label>
-      <div className="relative group">
+      <Tooltip 
+        content={tooltip}
+        position="auto"
+        fontSize="base"
+        allowWrap={true}
+        maxWidth={280}
+      >
         <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-sm"></i>
-        <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-white border border-gray-200 shadow-lg text-gray-700 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-20 max-w-xs transform -translate-x-1/2">
-          {tooltip}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white"></div>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-px border-4 border-transparent border-t-gray-200"></div>
-        </div>
-      </div>
+      </Tooltip>
     </div>
     <Input {...inputProps} label="" />
   </div>
@@ -100,10 +104,10 @@ export const Step2Payments: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-2 text-center">החזרים חודשיים</h2>
-      <p className="text-gray-600 text-center mb-8">מה אתה משלם היום ומה היעד שלך?</p>
+      {/* Compact Step Header */}
+      <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">החזרים חודשיים</h2>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         <InputWithTooltip
           label="החזר משכנתא חודשי נוכחי"
           tooltip="בסיס לחישוב החיסכון החודשי"
@@ -115,6 +119,7 @@ export const Step2Payments: React.FC = () => {
           placeholder="6,500"
           error={errors.mortgagePayment}
           icon={<i className="fa-solid fa-home text-blue-500"></i>}
+          autoAdvance={true}
         />
 
         <InputWithTooltip
@@ -127,33 +132,35 @@ export const Step2Payments: React.FC = () => {
           onChange={handleChange}
           placeholder="0"
           icon={<i className="fa-solid fa-credit-card text-purple-500"></i>}
+          autoAdvance={true}
         />
 
         {/* Current Total Display */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
           <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-medium">סך החזר חודשי נוכחי:</span>
-            <span className="text-2xl font-bold text-gray-900">
+            <span className="text-gray-700 font-medium text-sm">סך החזר חודשי נוכחי:</span>
+            <span className="text-xl font-bold text-gray-900">
               {formatNumberWithCommas(currentTotal)} ₪
             </span>
           </div>
         </div>
 
         {/* Target Payment Slider */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2">
               <label className="block text-lg font-semibold text-gray-900">
                 יעד החזר חודשי חדש
               </label>
-              <div className="relative group">
+              <Tooltip 
+                content="כמה אתה רוצה לשלם בחודש? שחק עם הסליידר לראות אפשרויות"
+                position="auto"
+                fontSize="base"
+                allowWrap={true}
+                maxWidth={280}
+              >
                 <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-sm"></i>
-                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-white border border-gray-200 shadow-lg text-gray-700 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-20 max-w-xs">
-                  כמה אתה רוצה לשלם בחודש? שחק עם הסליידר לראות אפשרויות
-                  <div className="absolute top-full right-4 border-4 border-transparent border-t-white"></div>
-                  <div className="absolute top-full right-4 mt-px border-4 border-transparent border-t-gray-200"></div>
-                </div>
-              </div>
+              </Tooltip>
             </div>
 
             <div className="relative">
@@ -172,23 +179,23 @@ export const Step2Payments: React.FC = () => {
                     #ef4444 100%)`
                 }}
               />
-              <div className="flex justify-between text-sm text-gray-500 mt-2">
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
                 <span>{formatNumberWithCommas(minTarget)} ₪</span>
                 <span>{formatNumberWithCommas(maxTarget)} ₪</span>
               </div>
             </div>
 
-            <div className="mt-4 text-center">
-              <div className="text-3xl font-bold text-gray-900 mb-2">
+            <div className="mt-3 text-center">
+              <div className="text-2xl font-bold text-gray-900 mb-1">
                 {formatNumberWithCommas(formData.targetTotalPayment)} ₪
               </div>
               {isReduction ? (
-                <div className="text-green-600 font-semibold">
+                <div className="text-green-600 font-semibold text-sm">
                   <i className="fa-solid fa-arrow-down mr-2"></i>
                   הפחתה של {formatNumberWithCommas(savingsAmount)} ₪ בחודש
                 </div>
               ) : (
-                <div className="text-blue-600 font-semibold">
+                <div className="text-blue-600 font-semibold text-sm">
                   <i className="fa-solid fa-arrow-up mr-2"></i>
                   תוספת של {formatNumberWithCommas(Math.abs(savingsAmount))} ₪ בחודש
                 </div>
@@ -197,24 +204,24 @@ export const Step2Payments: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-          <div className="flex items-start gap-3">
-            <i className="fa-solid fa-calculator text-blue-600 text-xl mt-1"></i>
-            <div>
-              <h4 className="font-semibold text-blue-900 mb-1">איך זה עובד?</h4>
-              <p className="text-blue-700 text-sm">
-                נאחד את כל החובות למשכנתא אחת בריבית נמוכה ונפרוס מחדש לפי היעד שלך.
-                ככל שתבחר החזר נמוך יותר, התקופה תתארך אבל התזרים החודשי ישתפר.
-              </p>
-            </div>
+        {/* Integrated CTA with actionable content */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <i className="fa-solid fa-calculator text-blue-600 text-lg"></i>
+            <p className="text-blue-700 text-sm font-medium">
+              נאחד את כל החובות למשכנתא אחת בריבית נמוכה
+            </p>
           </div>
+          <Button 
+            onClick={handleNext} 
+            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700"
+          >
+            המשך לחישוב
+          </Button>
         </div>
 
-        <Button fullWidth onClick={handleNext} className="mt-8">
-          המשך לשלב הבא
-        </Button>
-
-        <button onClick={prevStep} className="w-full text-gray-400 text-xl mt-6 font-medium">
+        {/* Secondary CTA for going back */}
+        <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
           חזור אחורה
         </button>
       </div>

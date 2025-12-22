@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { formatNumberWithCommas, formatYearsAndMonths } from '../../utils/helpers';
 import { calculateRefinancedPayment } from '../../utils/calculator';
 import { validateLoanParams, currentMortgageParams, calculateMonthlyPayment } from '../../utils/mortgageParams';
+import { getSimulatedBarColorScheme, getCurrentBarColorScheme } from '../../utils/colorScheme';
 
 // Move InputWithTooltip outside the component to prevent recreation on every render
 const InputWithTooltip: React.FC<{
@@ -59,6 +60,10 @@ export const Step5Simulator: React.FC = () => {
   const simulatedYears = refinanceResult.termYears;
   const currentYears = currentRefinanceResult.termYears;
   const maxAllowedYears = validation.maxAllowedTerm || currentMortgageParams.regulations.maxLoanTermYears;
+
+  // Get color schemes for bars
+  const simulatedColorScheme = getSimulatedBarColorScheme(currentYears, simulatedYears);
+  const currentColorScheme = getCurrentBarColorScheme();
 
   const handlePaymentChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!formData.age) return; // Don't allow changes if no age is entered
@@ -115,17 +120,17 @@ export const Step5Simulator: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-2 text-center">סימולטור מיחזור</h2>
-      <p className="text-gray-600 text-center mb-8">הזן את הגיל שלך ושחק עם המספרים</p>
+      {/* Compact Step Header */}
+      <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">סימולטור מיחזור</h2>
       
       {/* All-in-One Calculator */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg">
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 shadow-lg">
         {/* Age Input Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <i className="fa-solid fa-calculator text-blue-600 text-xl"></i>
-              <h3 className="text-xl font-bold text-gray-900">מחשבון מיחזור משכנתא</h3>
+              <i className="fa-solid fa-calculator text-blue-600 text-lg"></i>
+              <h3 className="text-lg font-bold text-gray-900">מחשבון מיחזור משכנתא</h3>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-xl font-bold text-gray-900">גיל:</span>
@@ -152,11 +157,11 @@ export const Step5Simulator: React.FC = () => {
         </div>
 
         {/* Always show calculator - bars visible, slider locked without age */}
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* Visual Comparison with Payment Info */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
               {/* Summary Header */}
-              <div className="text-center mb-6">
+              <div className="text-center mb-4">
                 {(() => {
                   const paymentDiff = simulatorPayment - (formData.mortgagePayment + formData.otherLoansPayment);
                   const yearsDiff = currentYears - simulatedYears;
@@ -244,7 +249,7 @@ export const Step5Simulator: React.FC = () => {
               </div>
 
               {/* Bar Chart with Years and Payments */}
-              <div className="flex justify-between items-end h-80 gap-8 mb-6">
+              <div className="flex justify-between items-end h-64 gap-6 mb-4">
                 {(() => {
                   // Calculate dynamic range for better visual comparison
                   const minYears = Math.min(currentYears, simulatedYears);
@@ -266,16 +271,17 @@ export const Step5Simulator: React.FC = () => {
                       {/* Current State Bar */}
                       <div className="flex-1 flex flex-col justify-end items-center">
                         <div className="text-center mb-4">
-                          <div className="text-lg font-bold text-gray-700">
+                          <div className="text-lg font-bold" style={{ color: currentColorScheme.headerTextColor }}>
                             {formatYearsAndMonths(currentYears)}
                           </div>
                           <div className="text-sm text-gray-600">מצב נוכחי</div>
                         </div>
                         <div 
-                          className="bar-container w-full bg-gradient-to-t from-gray-400 to-gray-500 rounded-lg transition-all duration-700 ease-out flex flex-col items-center justify-end shadow-md relative pb-4"
+                          className="bar-container w-full rounded-lg transition-all duration-700 ease-out flex flex-col items-center justify-end shadow-md relative pb-4"
                           style={{ 
                             height: `${currentHeight}px`,
-                            minHeight: '60px'
+                            minHeight: '60px',
+                            background: currentColorScheme.barGradient
                           }}
                         >
                           <div className="text-white font-bold text-center">
@@ -286,27 +292,34 @@ export const Step5Simulator: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        <div className="text-center mt-4 bg-gray-100 rounded-lg p-2 w-full">
-                          <div className="text-xs text-gray-600">החזר נוכחי</div>
-                          <div className="font-bold text-gray-900 text-sm">
+                        <div 
+                          className="text-center mt-4 rounded-lg p-2 w-full"
+                          style={{ 
+                            backgroundColor: currentColorScheme.paymentBoxBg,
+                            color: currentColorScheme.paymentBoxText
+                          }}
+                        >
+                          <div className="text-xs">החזר נוכחי</div>
+                          <div className="font-bold text-sm">
                             {formatNumberWithCommas(formData.mortgagePayment + formData.otherLoansPayment)} ₪
                           </div>
                         </div>
                       </div>
 
-                      {/* Simulated State Bar - Always Green */}
+                      {/* Simulated State Bar - Dynamic Colors */}
                       <div className="flex-1 flex flex-col justify-end items-center">
                         <div className="text-center mb-4">
-                          <div className="text-lg font-bold text-green-700">
+                          <div className="text-lg font-bold" style={{ color: simulatedColorScheme.headerTextColor }}>
                             {formatYearsAndMonths(simulatedYears)}
                           </div>
                           <div className="text-sm text-gray-600">לאחר מיחזור</div>
                         </div>
                         <div 
-                          className="bar-container w-full bg-gradient-to-t from-green-400 to-green-500 rounded-lg transition-all duration-700 ease-out flex flex-col items-center justify-end shadow-lg relative pb-4"
+                          className="bar-container w-full rounded-lg transition-all duration-700 ease-out flex flex-col items-center justify-end shadow-lg relative pb-4"
                           style={{ 
                             height: `${simulatedHeight}px`,
-                            minHeight: '60px'
+                            minHeight: '60px',
+                            background: simulatedColorScheme.barGradient
                           }}
                         >
                           <div className="text-white font-bold text-center">
@@ -317,9 +330,15 @@ export const Step5Simulator: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        <div className="text-center mt-4 bg-green-100 rounded-lg p-2 w-full">
-                          <div className="text-xs text-gray-600">החזר חדש</div>
-                          <div className="font-bold text-green-900 text-sm">
+                        <div 
+                          className="text-center mt-4 rounded-lg p-2 w-full"
+                          style={{ 
+                            backgroundColor: simulatedColorScheme.paymentBoxBg,
+                            color: simulatedColorScheme.paymentBoxText
+                          }}
+                        >
+                          <div className="text-xs">החזר חדש</div>
+                          <div className="font-bold text-sm">
                             {formatNumberWithCommas(simulatorPayment)} ₪
                           </div>
                         </div>
@@ -331,8 +350,8 @@ export const Step5Simulator: React.FC = () => {
             </div>
 
             {/* Payment Slider */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <label className="block text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-white rounded-xl p-4 border border-gray-200">
+              <label className="block text-base font-semibold text-gray-900 mb-3">
                 <i className="fa-solid fa-sliders mr-2 text-blue-600"></i>
                 החזר חודשי (₪)
               </label>
@@ -359,7 +378,7 @@ export const Step5Simulator: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="flex justify-between text-sm text-gray-400 mb-4">
+                  <div className="flex justify-between text-sm text-gray-400 mb-3">
                     <span>{formatNumberWithCommas(minPayment)} ₪</span>
                     <span>{formatNumberWithCommas(maxPayment)} ₪</span>
                   </div>
@@ -397,14 +416,14 @@ export const Step5Simulator: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="flex justify-between text-sm text-gray-500 mb-4">
+                  <div className="flex justify-between text-sm text-gray-500 mb-3">
                     <span>{formatNumberWithCommas(minPayment)} ₪</span>
                     <span>{formatNumberWithCommas(maxPayment)} ₪</span>
                   </div>
 
                   {/* Validation Messages */}
                   {!validation.isValid && (
-                    <div className="bg-red-100 border border-red-300 rounded-lg p-3 mb-4">
+                    <div className="bg-red-100 border border-red-300 rounded-lg p-2 mb-3">
                       <div className="text-red-700 font-medium">
                         <i className="fa-solid fa-exclamation-triangle mr-2"></i>
                         {validation.violations[0]}
@@ -413,7 +432,7 @@ export const Step5Simulator: React.FC = () => {
                   )}
 
                   {/* Advanced Info */}
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-2">
                     <div className="flex items-center gap-2 text-sm text-green-700">
                       <i className="fa-solid fa-check-circle"></i>
                       <span>
@@ -427,30 +446,30 @@ export const Step5Simulator: React.FC = () => {
             </div>
           </div>
 
-        {/* Insurance Savings Message */}
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm mt-6">
-          <div className="flex items-center gap-4">
-            <div className="bg-green-600 text-white w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-green-200">
-              <i className="fa-solid fa-shield-heart"></i>
+        {/* Call to Action with integrated insurance savings message */}
+        <div className="mt-4 space-y-3">
+          {/* Primary CTA with insurance savings integrated */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-green-200">
+                <i className="fa-solid fa-shield-heart text-sm"></i>
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-900 text-base">חיסכון נוסף בביטוח המשכנתא</h4>
+                <p className="text-gray-600 text-sm">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-bold text-gray-900 text-lg">חיסכון נוסף בביטוח המשכנתא</h4>
-              <p className="text-gray-600">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
-            </div>
+            <Button 
+              onClick={() => alert("תודה! יועץ בכיר ייצור איתך קשר בשעות הקרובות עם הניתוח המלא והצעה מותאמת אישית.")} 
+              className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700"
+            >
+              <i className="fa-solid fa-phone mr-1"></i>
+              לשיחה עם המומחים
+            </Button>
           </div>
-        </div>
-
-        {/* Call to Action */}
-        <div className="mt-6 space-y-4">
-          <Button 
-            onClick={() => alert("תודה! יועץ בכיר ייצור איתך קשר בשעות הקרובות עם הניתוח המלא והצעה מותאמת אישית.")} 
-            className="w-full animate-bounce py-6 text-lg"
-          >
-            <i className="fa-solid fa-phone mr-2"></i>
-            לשיחה עם המומחים שלנו
-          </Button>
           
-          <button onClick={resetForm} className="w-full text-blue-600 font-medium text-xl hover:underline">
+          {/* Secondary CTA */}
+          <button onClick={resetForm} className="w-full text-blue-600 font-medium text-base hover:underline">
             בדוק תרחיש אחר
           </button>
         </div>

@@ -2,9 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { useForm } from '../../context/FormContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { Tooltip } from '../ui/Tooltip';
 import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
 
-// Move InputWithTooltip outside the component to prevent recreation on every render
+// Enhanced InputWithTooltip using the new Tooltip component
 const InputWithTooltip: React.FC<{
   label: string;
   tooltip: string;
@@ -17,20 +18,23 @@ const InputWithTooltip: React.FC<{
   error?: string;
   icon?: React.ReactNode;
   helperText?: string;
+  autoAdvance?: boolean;
+  maxLength?: number;
 }> = ({ label, tooltip, ...inputProps }) => (
   <div>
     <div className="flex items-center gap-2 mb-2">
       <label className="block text-lg font-semibold text-gray-900">
         {label}
       </label>
-      <div className="relative group">
+      <Tooltip 
+        content={tooltip}
+        position="auto"
+        fontSize="base"
+        allowWrap={true}
+        maxWidth={280}
+      >
         <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-sm"></i>
-        <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-white border border-gray-200 shadow-lg text-gray-700 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-20 max-w-xs transform -translate-x-1/2">
-          {tooltip}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white"></div>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-px border-4 border-transparent border-t-gray-200"></div>
-        </div>
-      </div>
+      </Tooltip>
     </div>
     <Input {...inputProps} label="" />
   </div>
@@ -96,10 +100,10 @@ export const Step1Debts: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-2 text-center">נתוני משכנתא והלוואות</h2>
-      <p className="text-gray-600 text-center mb-8">כל המידע נשאר חסוי ומשמש לחישוב מדויק</p>
+      {/* Compact Step Header */}
+      <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">נתוני משכנתא והלוואות</h2>
       
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Mortgage Balance */}
         <InputWithTooltip
           label="יתרת משכנתא נוכחית"
@@ -112,20 +116,21 @@ export const Step1Debts: React.FC = () => {
           placeholder="1,200,000"
           error={errors.mortgageBalance}
           icon={<i className="fa-solid fa-home text-blue-500"></i>}
+          autoAdvance={true}
         />
 
         {/* Other Loans Section */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <i className="fa-solid fa-credit-card text-purple-500 text-xl"></i>
-              <h3 className="text-lg font-semibold text-gray-900">האם יש לך הלוואות נוספות?</h3>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <i className="fa-solid fa-credit-card text-purple-500 text-lg"></i>
+              <h3 className="text-base font-semibold text-gray-900">האם יש לך הלוואות נוספות?</h3>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => handleOtherLoansToggle(true)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   hasOtherLoans 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -136,7 +141,7 @@ export const Step1Debts: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleOtherLoansToggle(false)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   !hasOtherLoans 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -148,8 +153,8 @@ export const Step1Debts: React.FC = () => {
           </div>
 
           {hasOtherLoans && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-3">
+            <div className="mt-3">
+              <p className="text-xs text-gray-600 mb-2">
                 נאחד את כל החובות למשכנתא אחת בריבית נמוכה
               </p>
               <InputWithTooltip
@@ -162,23 +167,24 @@ export const Step1Debts: React.FC = () => {
                 onChange={handleOtherLoansChange}
                 placeholder="150,000"
                 icon={<i className="fa-solid fa-credit-card text-purple-500"></i>}
+                autoAdvance={true}
               />
             </div>
           )}
         </div>
 
         {/* Bank Overdraft Section */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <i className="fa-solid fa-university text-blue-500 text-xl"></i>
-              <h3 className="text-lg font-semibold text-gray-900">האם יש מינוס ממוצע בבנק?</h3>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <i className="fa-solid fa-university text-blue-500 text-lg"></i>
+              <h3 className="text-base font-semibold text-gray-900">האם יש מינוס ממוצע בבנק?</h3>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => handleBankOverdraftToggle(true)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   hasBankOverdraft 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -189,7 +195,7 @@ export const Step1Debts: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleBankOverdraftToggle(false)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   !hasBankOverdraft 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -201,8 +207,8 @@ export const Step1Debts: React.FC = () => {
           </div>
 
           {hasBankOverdraft && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-3">
+            <div className="mt-3">
+              <p className="text-xs text-gray-600 mb-2">
                 חובות בריבית גבוהה שכדאי לאחד למשכנתא
               </p>
               <InputWithTooltip
@@ -220,22 +226,24 @@ export const Step1Debts: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-          <div className="flex items-start gap-3">
-            <i className="fa-solid fa-lightbulb text-blue-600 text-xl mt-1"></i>
-            <div>
-              <p className="text-blue-700 text-sm">
-                ככל שתספק יותר מידע מדויק, נוכל לחשב עבורך חיסכון מדויק יותר ולמצוא את הפתרון הטוב ביותר.
-              </p>
-            </div>
+        {/* Integrated CTA with actionable content */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <i className="fa-solid fa-lightbulb text-blue-600 text-lg"></i>
+            <p className="text-blue-700 text-sm font-medium">
+              מידע מדויק = חיסכון מדויק יותר
+            </p>
           </div>
+          <Button 
+            onClick={handleNext} 
+            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700"
+          >
+            המשך לחישוב
+          </Button>
         </div>
 
-        <Button fullWidth onClick={handleNext} className="mt-8">
-          המשך לשלב הבא
-        </Button>
-        
-        <button onClick={prevStep} className="w-full text-gray-400 text-xl mt-6 font-medium">
+        {/* Secondary CTA for going back */}
+        <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
           חזור אחורה
         </button>
       </div>

@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
@@ -13,15 +13,14 @@ app.use(express.json());
 // API: Submit Form Data
 app.post('/submit', async (req, res) => {
     try {
-        const { leadName, leadPhone, leadEmail, sessionId, ...otherData } = req.body;
+        const { leadName, leadPhone, leadEmail, sessionId } = req.body;
 
-        // Add timestamp
         const submission = {
-            leadName,
-            leadPhone,
-            leadEmail,
-            sessionId,
-            fullDataJson: req.body, // Store full object as Map/JSON
+            leadName: leadName || '',
+            leadPhone: leadPhone || '',
+            leadEmail: leadEmail || '',
+            sessionId: sessionId || '',
+            fullDataJson: req.body,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         };
 
@@ -44,8 +43,8 @@ app.post('/event', async (req, res) => {
         const { sessionId, eventType, eventData } = req.body;
 
         const event = {
-            sessionId,
-            eventType,
+            sessionId: sessionId || '',
+            eventType: eventType || '',
             eventData: eventData || {},
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         };
@@ -69,19 +68,6 @@ app.get('/admin/submissions', async (req, res) => {
         const submissions = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            // Map fullDataJson back to full_data_json if frontend expects that casing
-            // But better to return clean object. 
-            // The frontend in utils/api.ts expects "full_data_json" property if we wanna match SQLite format exactly
-            // OR we can update frontend to use clean fields.
-            // For now, let's match the response structure of the SQLite version a bit roughly, 
-            // BUT the current frontend code parses `full_data_json` string. 
-            // In Firestore, it's already an object.
-            // Wait, existing frontend: `full_data_json: JSON.parse(row.full_data_json)`
-            // SQLite stored it as TEXT string. Firestore stores it as MAP.
-            // So existing frontend `JSON.parse` might BREAK if we send an object.
-            // Let's check api.ts logic? No, `server/index.js` did the parsing before sending to frontend.
-            // `server/index.js`: `full_data_json: JSON.parse(row.full_data_json)`
-            // So frontend expects an OBJECT. Good.
             full_data_json: doc.data().fullDataJson
         }));
 
@@ -102,7 +88,6 @@ app.get('/admin/events', async (req, res) => {
         const events = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            // Match backend logic: `event_data_json: JSON.parse(row.event_data_json)`
             event_data_json: doc.data().eventData
         }));
 
@@ -116,4 +101,5 @@ app.get('/admin/events', async (req, res) => {
     }
 });
 
-exports.api = functions.https.onRequest(app);
+// Export naming it "api" using v2 syntax
+exports.api = onRequest({ region: 'us-central1', cors: true }, app);
