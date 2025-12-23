@@ -159,10 +159,10 @@ export const Step5Simulator: React.FC = () => {
                 if (paymentDiff < -100) {
                   return (
                     <div className="bg-green-100 border border-green-300 rounded-lg p-3">
-                      <h4 className="text-lg font-bold text-green-700 mb-1">
+                      <h4 className="text-xl font-bold text-green-700 mb-1">
                         הפחתה של כ-{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ש"ח בחודש!
                       </h4>
-                      <p className="text-green-600 text-sm">
+                      <p className="text-green-600 text-base">
                         המשכנתא החדשה תיפרס על פני {simulatorYears} שנים
                       </p>
                     </div>
@@ -170,10 +170,10 @@ export const Step5Simulator: React.FC = () => {
                 } else if (paymentDiff < 0) {
                   return (
                     <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                      <h4 className="text-lg font-bold text-blue-700 mb-1">
+                      <h4 className="text-xl font-bold text-blue-700 mb-1">
                         הפחתה של כ-{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ש"ח בחודש
                       </h4>
-                      <p className="text-blue-600 text-sm">
+                      <p className="text-blue-600 text-base">
                         המשכנתא החדשה תיפרס על פני {simulatorYears} שנים
                       </p>
                     </div>
@@ -181,10 +181,10 @@ export const Step5Simulator: React.FC = () => {
                 } else if (Math.abs(paymentDiff) <= 100) {
                   return (
                     <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                      <h4 className="text-lg font-bold text-blue-700 mb-1">
+                      <h4 className="text-xl font-bold text-blue-700 mb-1">
                         החזר דומה לנוכחי
                       </h4>
-                      <p className="text-blue-600 text-sm">
+                      <p className="text-blue-600 text-base">
                         המשכנתא החדשה תיפרס על פני {simulatorYears} שנים
                       </p>
                     </div>
@@ -192,10 +192,10 @@ export const Step5Simulator: React.FC = () => {
                 } else {
                   return (
                     <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                      <h4 className="text-lg font-bold text-blue-700 mb-1">
+                      <h4 className="text-xl font-bold text-blue-700 mb-1">
                         תוספת של כ-{formatNumberWithCommas(Math.round(paymentDiff))} ש"ח בחודש
                       </h4>
-                      <p className="text-blue-600 text-sm">
+                      <p className="text-blue-600 text-base">
                         המשכנתא החדשה תיפרס על פני {simulatorYears} שנים
                       </p>
                     </div>
@@ -207,11 +207,19 @@ export const Step5Simulator: React.FC = () => {
             {/* Bar Chart - Bar within Bar */}
             <div className="mb-6">
               <div className="text-center mb-3">
-                <div className="text-base font-bold text-gray-700">השוואת החזרים</div>
+                <div className="text-lg font-bold text-gray-700">השוואת החזרים</div>
               </div>
               
               <div className="flex justify-center">
-                <div className="w-48">
+                <div className="w-48 relative">
+                  {/* Current Payment Reference - positioned next to bar */}
+                  <div className="absolute -right-20 top-8 text-gray-600 text-sm font-medium">
+                    <div className="bg-gray-100 rounded-lg px-2 py-1 border">
+                      <div className="text-xs text-gray-500">נוכחי</div>
+                      <div className="font-bold">{formatNumberWithCommas(Math.round(currentPayment))}</div>
+                    </div>
+                  </div>
+                  
                   {/* Combined Bar Container - Constrained height */}
                   <div className="relative" style={{ height: '120px' }}> {/* Reduced container height */}
                     {/* Current Payment Bar (Background) - Always visible as baseline */}
@@ -221,8 +229,8 @@ export const Step5Simulator: React.FC = () => {
                     >
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-white font-bold text-center">
-                          <div className="text-base">{formatNumberWithCommas(Math.round(currentPayment))}</div>
-                          <div className="text-xs">החזר נוכחי</div>
+                          <div className="text-lg">{formatNumberWithCommas(Math.round(currentPayment))}</div>
+                          <div className="text-sm">החזר נוכחי</div>
                         </div>
                       </div>
                     </div>
@@ -237,17 +245,10 @@ export const Step5Simulator: React.FC = () => {
                       }}
                     >
                       <div className="text-white font-bold text-center">
-                        <div className="text-base">{formatNumberWithCommas(Math.round(newPayment))}</div>
-                        <div className="text-xs">החזר חדש</div>
+                        <div className="text-lg">{formatNumberWithCommas(Math.round(newPayment))}</div>
+                        <div className="text-sm">החזר חדש</div>
                       </div>
                     </div>
-                    
-                    {/* Difference Indicator - RTL positioned */}
-                    {Math.abs(paymentDiff) > 100 && (
-                      <div className="absolute top-2 left-2 bg-white bg-opacity-90 rounded-full px-2 py-1 text-xs font-bold">
-                        {isReduction ? '−' : '+'}{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ₪
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -256,13 +257,13 @@ export const Step5Simulator: React.FC = () => {
 
           {/* Years Slider */}
           <div className="bg-white rounded-xl p-4 border border-gray-200">
-            <label className="flex items-center justify-between text-base font-semibold text-gray-900 mb-4">
+            <label className="flex items-center justify-between text-lg font-semibold text-gray-900 mb-4">
               <div className="flex items-center">
                 <i className="fa-solid fa-sliders mr-2 text-blue-600"></i>
                 תקופת המשכנתא החדשה (שנים)
               </div>
               {formData.age && (
-                <div className="text-blue-600 font-bold">
+                <div className="text-blue-600 font-bold text-lg">
                   {simulatorYears} שנים
                 </div>
               )}
@@ -282,7 +283,7 @@ export const Step5Simulator: React.FC = () => {
                   />
                 </div>
                 
-                <div className="flex justify-between text-sm text-gray-400 mb-4">
+                <div className="flex justify-between text-base text-gray-400 mb-4">
                   <span>10 שנים</span>
                   <span>30 שנים</span>
                 </div>
@@ -309,7 +310,7 @@ export const Step5Simulator: React.FC = () => {
                   />
                 </div>
                 
-                <div className="flex justify-between text-sm text-gray-500 mb-4">
+                <div className="flex justify-between text-base text-gray-500 mb-4">
                   <span>{minYears} שנים</span>
                   <span>{maxYears} שנים</span>
                 </div>
@@ -317,7 +318,7 @@ export const Step5Simulator: React.FC = () => {
                 {/* Validation Messages */}
                 {!validation.isValid && (
                   <div className="bg-red-100 border border-red-300 rounded-lg p-3 mb-3">
-                    <div className="text-red-700 font-medium text-sm">
+                    <div className="text-red-700 font-medium text-base">
                       <i className="fa-solid fa-exclamation-triangle mr-2"></i>
                       {validation.violations[0]}
                     </div>
@@ -326,7 +327,7 @@ export const Step5Simulator: React.FC = () => {
 
                 {/* Advanced Info */}
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-sm text-green-700">
+                  <div className="flex items-center gap-2 text-base text-green-700">
                     <i className="fa-solid fa-check-circle"></i>
                     <span>
                       <span className="font-medium">סימולטור מתקדם פעיל</span> - 
