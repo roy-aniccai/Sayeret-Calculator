@@ -169,7 +169,7 @@ export const Step2Payments: React.FC = () => {
 
   // Track-specific slider styling and behavior
   const getSliderStyling = () => {
-    const colorClass = formData.track === TrackType.MONTHLY_REDUCTION ? 'green' : 'blue';
+    let colorClass = formData.track === TrackType.MONTHLY_REDUCTION ? 'green' : 'blue';
     if (formData.track === TrackType.SHORTEN_TERM) {
       colorClass = 'green'; // Green for term shortening (savings focus)
     }
