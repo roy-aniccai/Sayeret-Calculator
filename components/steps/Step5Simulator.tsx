@@ -162,9 +162,6 @@ export const Step5Simulator: React.FC = () => {
                       <h4 className="text-xl font-bold text-green-700 mb-1">
                         הפחתה של כ-{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ש"ח בחודש!
                       </h4>
-                      <p className="text-green-600 text-base">
-                        המשכנתא החדשה תיפרס על פני {simulatorYears} שנים
-                      </p>
                     </div>
                   );
                 } else if (paymentDiff < 0) {
@@ -173,9 +170,6 @@ export const Step5Simulator: React.FC = () => {
                       <h4 className="text-xl font-bold text-blue-700 mb-1">
                         הפחתה של כ-{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ש"ח בחודש
                       </h4>
-                      <p className="text-blue-600 text-base">
-                        המשכנתא החדשה תיפרס על פני {simulatorYears} שנים
-                      </p>
                     </div>
                   );
                 } else if (Math.abs(paymentDiff) <= 100) {
@@ -184,9 +178,6 @@ export const Step5Simulator: React.FC = () => {
                       <h4 className="text-xl font-bold text-blue-700 mb-1">
                         החזר דומה לנוכחי
                       </h4>
-                      <p className="text-blue-600 text-base">
-                        המשכנתא החדשה תיפרס על פני {simulatorYears} שנים
-                      </p>
                     </div>
                   );
                 } else {
@@ -195,9 +186,6 @@ export const Step5Simulator: React.FC = () => {
                       <h4 className="text-xl font-bold text-blue-700 mb-1">
                         תוספת של כ-{formatNumberWithCommas(Math.round(paymentDiff))} ש"ח בחודש
                       </h4>
-                      <p className="text-blue-600 text-base">
-                        המשכנתא החדשה תיפרס על פני {simulatorYears} שנים
-                      </p>
                     </div>
                   );
                 }
@@ -278,13 +266,8 @@ export const Step5Simulator: React.FC = () => {
             <label className="flex items-center justify-between text-lg font-semibold text-gray-900 mb-4">
               <div className="flex items-center">
                 <i className="fa-solid fa-sliders mr-2 text-blue-600"></i>
-                תקופת המשכנתא החדשה (שנים)
+                {formData.age ? `המשכנתא החדשה תיפרס על פני ${simulatorYears} שנים` : 'תקופת המשכנתא החדשה (שנים)'}
               </div>
-              {formData.age && (
-                <div className="text-blue-600 font-bold text-lg">
-                  {simulatorYears} שנים
-                </div>
-              )}
             </label>
             
             {!formData.age ? (
