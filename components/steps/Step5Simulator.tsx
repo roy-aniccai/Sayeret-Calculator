@@ -204,44 +204,41 @@ export const Step5Simulator: React.FC = () => {
               })()}
             </div>
 
-            {/* Bar Chart - Bar within Bar */}
+            {/* Bar Chart - Vertical Bars */}
             <div className="mb-6">
-              <div className="text-center mb-3">
-                <div className="text-lg font-bold text-gray-700">השוואת החזרים</div>
-              </div>
-              
               <div className="flex justify-center">
-                <div className="w-48 relative">
-                  {/* Current Payment Reference - positioned next to bar */}
-                  <div className="absolute -right-20 top-8 text-gray-600 text-sm font-medium">
-                    <div className="bg-gray-100 rounded-lg px-2 py-1 border">
-                      <div className="text-xs text-gray-500">נוכחי</div>
-                      <div className="font-bold">{formatNumberWithCommas(Math.round(currentPayment))}</div>
+                <div className="flex items-end gap-4">
+                  {/* Current Payment Bar */}
+                  <div className="flex flex-col items-center">
+                    <div 
+                      className="w-16 bg-gradient-to-t from-gray-400 to-gray-500 rounded-lg shadow-lg border-2 border-gray-600 flex items-end justify-center pb-2 transition-all duration-700 ease-out"
+                      style={{ height: '80px' }}
+                    >
+                      <div className="text-white font-bold text-center">
+                        <div className="text-xs">נוכחי</div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-center">
+                      <div className="text-sm font-bold text-gray-700">{formatNumberWithCommas(Math.round(currentPayment))}</div>
+                      <div className="text-xs text-gray-500">החזר נוכחי</div>
                     </div>
                   </div>
                   
-                  {/* Combined Bar Container - Constrained height */}
-                  <div className="relative" style={{ height: '120px' }}> {/* Reduced container height */}
-                    {/* Current Payment Bar (Background) - Always visible as baseline */}
+                  {/* New Payment Bar */}
+                  <div className="flex flex-col items-center">
                     <div 
-                      className="absolute bottom-0 w-full bg-gradient-to-t from-gray-400 to-gray-500 rounded-lg shadow-lg border-2 border-gray-600"
-                      style={{ height: '80px' }} // Fixed baseline height
-                    >
-                    </div>
-                    
-                    {/* New Payment Bar (Foreground) - Constrained height */}
-                    <div 
-                      className={`absolute bottom-0 w-full bg-gradient-to-t ${gradientColor} flex items-center justify-center transition-all duration-700 ease-out rounded-lg shadow-lg`}
+                      className={`w-16 bg-gradient-to-t ${gradientColor} rounded-lg shadow-lg flex items-end justify-center pb-2 transition-all duration-700 ease-out`}
                       style={{ 
-                        height: `${Math.min(Math.max((newPayment / currentPayment) * 80, 25), 110)}px`, // Constrained between 25px and 110px
-                        minHeight: '25px',
-                        opacity: newPayment < currentPayment ? 1 : 0.9 // Slightly transparent when higher to show baseline
+                        height: `${Math.min(Math.max((newPayment / currentPayment) * 80, 25), 120)}px`
                       }}
                     >
                       <div className="text-white font-bold text-center">
-                        <div className="text-lg">{formatNumberWithCommas(Math.round(newPayment))}</div>
-                        <div className="text-sm">החזר חדש</div>
+                        <div className="text-xs">חדש</div>
                       </div>
+                    </div>
+                    <div className="mt-2 text-center">
+                      <div className="text-sm font-bold text-gray-700">{formatNumberWithCommas(Math.round(newPayment))}</div>
+                      <div className="text-xs text-gray-500">החזר חדש</div>
                     </div>
                   </div>
                 </div>
