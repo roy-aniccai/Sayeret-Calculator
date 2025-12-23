@@ -6,6 +6,7 @@ import { Step2Payments } from './components/steps/Step2Payments';
 import { Step3Assets } from './components/steps/Step3Assets';
 import { Step4Contact } from './components/steps/Step4Contact';
 import { Step5Simulator } from './components/steps/Step5Simulator';
+import { validateAllTrackConfigs } from './utils/trackConfig';
 
 
 const AppContent: React.FC = () => {
@@ -76,6 +77,17 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  // Validate track configurations at startup
+  React.useEffect(() => {
+    try {
+      validateAllTrackConfigs();
+      console.log('Track configurations validated successfully');
+    } catch (error) {
+      console.error('Track configuration validation failed:', error);
+      // In production, you might want to show a user-friendly error or fallback
+    }
+  }, []);
+
   return (
     <FormProvider>
       <AppContent />

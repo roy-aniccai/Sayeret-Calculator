@@ -10,8 +10,17 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+// Create a router to define routes once
+const router = express.Router();
+
+// Health Check
+router.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // API: Submit Form Data
-app.post('/submit', async (req, res) => {
+router.post('/submit', async (req, res) => {
+    console.log('Received submission request', req.body);
     try {
         const { leadName, leadPhone, leadEmail, sessionId } = req.body;
 
@@ -25,6 +34,7 @@ app.post('/submit', async (req, res) => {
         };
 
         const docRef = await db.collection('submissions').add(submission);
+        console.log('Submission saved with ID:', docRef.id);
 
         res.json({
             message: 'success',
@@ -38,7 +48,7 @@ app.post('/submit', async (req, res) => {
 });
 
 // API: Track Event
-app.post('/event', async (req, res) => {
+router.post('/event', async (req, res) => {
     try {
         const { sessionId, eventType, eventData } = req.body;
 
@@ -62,7 +72,7 @@ app.post('/event', async (req, res) => {
 });
 
 // Admin API: Get Submissions
-app.get('/admin/submissions', async (req, res) => {
+router.get('/admin/submissions', async (req, res) => {
     try {
         const snapshot = await db.collection('submissions').orderBy('createdAt', 'desc').get();
         const submissions = snapshot.docs.map(doc => ({
@@ -82,7 +92,7 @@ app.get('/admin/submissions', async (req, res) => {
 });
 
 // Admin API: Get Events
-app.get('/admin/events', async (req, res) => {
+router.get('/admin/events', async (req, res) => {
     try {
         const snapshot = await db.collection('events').orderBy('createdAt', 'desc').limit(100).get();
         const events = snapshot.docs.map(doc => ({
@@ -100,6 +110,19 @@ app.get('/admin/events', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Mount the router on both '/' and '/api' paths
+// This handles:
+// 1. Direct calls: https://.../api/submit -> matches /submit in router (path relative to function)
+// 2. Hosting rewrite: domain.com/api/submit -> matches /api/submit (if prefix preserved)
+// 3. Hosting rewrite stripping?: mounts on / just in case.
+app.use('/', router);
+// Note: If request comes in as /api/submit, app.use('/', router) usually matches /api/submit against router routes if router is on /.
+// But express router matching depends on `req.path`.
+// If app is mounted on '/', `req.path` is the full path.
+// So if req.path is `/api/submit`, `router.post('/submit')` will NOT match.
+// So we explicitly mount on /api as well.
+app.use('/api', router);
 
 // Export naming it "api" using v2 syntax
 exports.api = onRequest({ region: 'us-central1', cors: true }, app);

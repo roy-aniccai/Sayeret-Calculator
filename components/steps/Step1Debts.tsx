@@ -4,6 +4,7 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
+import { TrackType } from '../../types';
 
 // Enhanced InputWithTooltip using the new Tooltip component
 const InputWithTooltip: React.FC<{
@@ -41,10 +42,54 @@ const InputWithTooltip: React.FC<{
 );
 
 export const Step1Debts: React.FC = () => {
-  const { formData, updateFormData, nextStep, prevStep } = useForm();
+  const { formData, updateFormData, nextStep, prevStep, getTrackConfig, getTrackSpecificStyling } = useForm();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasOtherLoans, setHasOtherLoans] = useState(formData.otherLoansBalance > 0);
   const [hasBankOverdraft, setHasBankOverdraft] = useState(formData.bankAccountBalance < 0);
+
+  // Get track-specific configuration
+  const config = getTrackConfig();
+  const primaryStyling = getTrackSpecificStyling('primary');
+  const buttonStyling = getTrackSpecificStyling('button');
+  const accentStyling = getTrackSpecificStyling('accent');
+  
+  // Track-specific content
+  const getTrackSpecificContent = () => {
+    if (formData.track === TrackType.MONTHLY_REDUCTION) {
+      return {
+        stepTitle: config.ui.stepTitles[2] || 'מצב חובות נוכחי',
+        stepDescription: config.ui.stepDescriptions[2] || 'נבדוק את המצב הכספי הנוכחי',
+        mortgageTooltip: config.messaging.tooltips.mortgagePayment || 'נדרש לחישוב הריבית החדשה ואפשרויות המיחזור',
+        otherLoansDescription: 'נאחד את כל החובות למשכנתא אחת בריבית נמוכה יותר',
+        overdraftDescription: 'חובות בריבית גבוהה שכדאי לאחד למשכנתא',
+        ctaText: config.messaging.ctaTexts.primary || 'המשך לחישוב',
+        ctaMessage: 'מידע מדויק = חיסכון מדויק יותר בתשלום החודשי'
+      };
+    } else if (formData.track === TrackType.SHORTEN_TERM) {
+      return {
+        stepTitle: config.ui.stepTitles[2] || 'מצב חובות לאיחוד',
+        stepDescription: config.ui.stepDescriptions[2] || 'נאחד את כל החובות למשכנתא אחת',
+        mortgageTooltip: config.messaging.tooltips.mortgagePayment || 'נדרש לחישוב הריבית החדשה ואפשרויות המיחזור',
+        otherLoansDescription: 'נאחד את כל החובות למשכנתא אחת לקיצור שנים',
+        overdraftDescription: 'חובות בריבית גבוהה שנאחד למשכנתא לחיסכון מקסימלי',
+        ctaText: config.messaging.ctaTexts.primary || 'המשך לחישוב',
+        ctaMessage: 'מידע מדויק = חיסכון מקסימלי בשנים ובריבית'
+      };
+    }
+    
+    // Default content
+    return {
+      stepTitle: 'נתוני משכנתא והלוואות',
+      stepDescription: 'נבדוק את המצב הכספי הנוכחי',
+      mortgageTooltip: 'נדרש לחישוב הריבית החדשה ואפשרויות המיחזור',
+      otherLoansDescription: 'נאחד את כל החובות למשכנתא אחת בריבית נמוכה',
+      overdraftDescription: 'חובות בריבית גבוהה שכדאי לאחד למשכנתא',
+      ctaText: 'המשך לחישוב',
+      ctaMessage: 'מידע מדויק = חיסכון מדויק יותר'
+    };
+  };
+
+  const trackContent = getTrackSpecificContent();
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -99,15 +144,22 @@ export const Step1Debts: React.FC = () => {
 
 
   return (
-    <div className="animate-fade-in-up">
-      {/* Compact Step Header */}
-      <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">נתוני משכנתא והלוואות</h2>
+    <div className={`animate-fade-in-up track-${formData.track || 'default'}`}>
+      {/* Track-specific Step Header */}
+      <div className="text-center mb-6">
+        <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
+          {trackContent.stepTitle}
+        </h2>
+        <p className="text-gray-600 text-sm">
+          {trackContent.stepDescription}
+        </p>
+      </div>
       
       <div className="space-y-4">
         {/* Mortgage Balance */}
         <InputWithTooltip
           label="יתרת משכנתא נוכחית"
-          tooltip="נדרש לחישוב הריבית החדשה ואפשרויות המיחזור"
+          tooltip={trackContent.mortgageTooltip}
           name="mortgageBalance"
           inputMode="numeric"
           suffix="₪"
@@ -115,15 +167,15 @@ export const Step1Debts: React.FC = () => {
           onChange={handleChange}
           placeholder="1,200,000"
           error={errors.mortgageBalance}
-          icon={<i className="fa-solid fa-home text-blue-500"></i>}
+          icon={<i className={`fa-solid fa-home ${accentStyling.split(' ')[0]}`}></i>}
           autoAdvance={true}
         />
 
         {/* Other Loans Section */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <div className={`${primaryStyling} rounded-lg p-3`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <i className="fa-solid fa-credit-card text-purple-500 text-lg"></i>
+              <i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]} text-lg`}></i>
               <h3 className="text-base font-semibold text-gray-900">האם יש לך הלוואות נוספות?</h3>
             </div>
             <div className="flex gap-2">
@@ -132,7 +184,7 @@ export const Step1Debts: React.FC = () => {
                 onClick={() => handleOtherLoansToggle(true)}
                 className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   hasOtherLoans 
-                    ? 'bg-blue-600 text-white' 
+                    ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
@@ -143,7 +195,7 @@ export const Step1Debts: React.FC = () => {
                 onClick={() => handleOtherLoansToggle(false)}
                 className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   !hasOtherLoans 
-                    ? 'bg-blue-600 text-white' 
+                    ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
@@ -155,7 +207,7 @@ export const Step1Debts: React.FC = () => {
           {hasOtherLoans && (
             <div className="mt-3">
               <p className="text-xs text-gray-600 mb-2">
-                נאחד את כל החובות למשכנתא אחת בריבית נמוכה
+                {trackContent.otherLoansDescription}
               </p>
               <InputWithTooltip
                 label="סך כל ההלוואות האחרות"
@@ -166,7 +218,7 @@ export const Step1Debts: React.FC = () => {
                 value={formatNumberWithCommas(formData.otherLoansBalance)}
                 onChange={handleOtherLoansChange}
                 placeholder="150,000"
-                icon={<i className="fa-solid fa-credit-card text-purple-500"></i>}
+                icon={<i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]}`}></i>}
                 autoAdvance={true}
               />
             </div>
@@ -174,10 +226,10 @@ export const Step1Debts: React.FC = () => {
         </div>
 
         {/* Bank Overdraft Section */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <div className={`${primaryStyling} rounded-lg p-3`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <i className="fa-solid fa-university text-blue-500 text-lg"></i>
+              <i className={`fa-solid fa-university ${accentStyling.split(' ')[0]} text-lg`}></i>
               <h3 className="text-base font-semibold text-gray-900">האם יש מינוס ממוצע בבנק?</h3>
             </div>
             <div className="flex gap-2">
@@ -186,7 +238,7 @@ export const Step1Debts: React.FC = () => {
                 onClick={() => handleBankOverdraftToggle(true)}
                 className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   hasBankOverdraft 
-                    ? 'bg-blue-600 text-white' 
+                    ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
@@ -197,7 +249,7 @@ export const Step1Debts: React.FC = () => {
                 onClick={() => handleBankOverdraftToggle(false)}
                 className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   !hasBankOverdraft 
-                    ? 'bg-blue-600 text-white' 
+                    ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
@@ -209,7 +261,7 @@ export const Step1Debts: React.FC = () => {
           {hasBankOverdraft && (
             <div className="mt-3">
               <p className="text-xs text-gray-600 mb-2">
-                חובות בריבית גבוהה שכדאי לאחד למשכנתא
+                {trackContent.overdraftDescription}
               </p>
               <InputWithTooltip
                 label="סכום המינוס הממוצע"
@@ -220,31 +272,31 @@ export const Step1Debts: React.FC = () => {
                 value={formatNumberWithCommas(Math.abs(formData.bankAccountBalance))}
                 onChange={handleBankOverdraftChange}
                 placeholder="5,000"
-                icon={<i className="fa-solid fa-university text-blue-500"></i>}
+                icon={<i className={`fa-solid fa-university ${accentStyling.split(' ')[0]}`}></i>}
               />
             </div>
           )}
         </div>
 
-        {/* Integrated CTA with actionable content */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+        {/* Track-specific Integrated CTA */}
+        <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-lightbulb text-blue-600 text-lg"></i>
-            <p className="text-blue-700 text-sm font-medium">
-              מידע מדויק = חיסכון מדויק יותר
+            <i className={`fa-solid fa-lightbulb ${accentStyling.split(' ')[0]} text-lg`}></i>
+            <p className={`${accentStyling.split(' ')[0]} text-sm font-medium`}>
+              {trackContent.ctaMessage}
             </p>
           </div>
           <Button 
             onClick={handleNext} 
-            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700"
+            className={`px-4 py-2 text-sm ${buttonStyling}`}
           >
-            המשך לחישוב
+            {trackContent.ctaText}
           </Button>
         </div>
 
         {/* Secondary CTA for going back */}
         <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-          חזור אחורה
+          {config.messaging.ctaTexts.secondary || 'חזור אחורה'}
         </button>
       </div>
     </div>

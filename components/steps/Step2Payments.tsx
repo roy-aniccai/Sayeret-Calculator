@@ -6,6 +6,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
 import { calculateRefinancedPayment } from '../../utils/calculator';
 import { currentMortgageParams } from '../../utils/mortgageParams';
+import { TrackType } from '../../types';
 
 // Enhanced InputWithTooltip using the new Tooltip component
 const InputWithTooltip: React.FC<{
@@ -43,12 +44,62 @@ const InputWithTooltip: React.FC<{
 );
 
 export const Step2Payments: React.FC = () => {
-  const { formData, updateFormData, nextStep, prevStep } = useForm();
+  const { formData, updateFormData, nextStep, prevStep, getTrackConfig, getTrackSpecificStyling, getTrackOptimizedRange } = useForm();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Calculate current total and slider range with regulatory limits
+  // Get track-specific configuration
+  const config = getTrackConfig();
+  const primaryStyling = getTrackSpecificStyling('primary');
+  const buttonStyling = getTrackSpecificStyling('button');
+  const accentStyling = getTrackSpecificStyling('accent');
+
+  // Calculate current total and track-specific slider range
   const currentTotal = formData.mortgagePayment + formData.otherLoansPayment;
   const totalDebt = formData.mortgageBalance + formData.otherLoansBalance + Math.abs(formData.bankAccountBalance);
+
+  // Track-specific content
+  const getTrackSpecificContent = () => {
+    if (formData.track === TrackType.MONTHLY_REDUCTION) {
+      return {
+        stepTitle: config.ui.stepTitles[3] || 'החזרים חודשיים נוכחיים',
+        stepDescription: config.ui.stepDescriptions[3] || 'כמה אתה משלם היום?',
+        mortgageTooltip: config.messaging.tooltips.mortgagePayment || 'בסיס לחישוב החיסכון החודשי',
+        targetTooltip: config.messaging.tooltips.targetPayment || 'כמה תרצה לשלם? נמצא את הדרך הטובה ביותר',
+        sliderTooltip: config.messaging.tooltips.simulator || 'שחק עם הסליידר לראות אפשרויות הפחתה',
+        ctaText: config.messaging.ctaTexts.primary || 'המשך לחישוב',
+        ctaMessage: 'נאחד את כל החובות למשכנתא אחת בריבית נמוכה יותר',
+        reductionText: 'הפחתה של',
+        increaseText: 'תוספת של'
+      };
+    } else if (formData.track === TrackType.SHORTEN_TERM) {
+      return {
+        stepTitle: config.ui.stepTitles[3] || 'יכולת תשלום מוגברת',
+        stepDescription: config.ui.stepDescriptions[3] || 'כמה אתה יכול לשלם בחודש?',
+        mortgageTooltip: config.messaging.tooltips.mortgagePayment || 'ההחזר הנוכחי - נוסיף עליו לקיצור שנים',
+        targetTooltip: config.messaging.tooltips.targetPayment || 'כמה אתה מוכן לשלם כדי לקצר שנים?',
+        sliderTooltip: config.messaging.tooltips.simulator || 'שחק עם הסליידר לראות כמה שנים תחסוך',
+        ctaText: config.messaging.ctaTexts.primary || 'המשך לחישוב',
+        ctaMessage: 'נאחד את כל החובות למשכנתא אחת לקיצור שנים מקסימלי',
+        reductionText: 'חיסכון של',
+        increaseText: 'השקעה נוספת של'
+      };
+    }
+    
+    // Default content
+    return {
+      stepTitle: 'החזרים חודשיים',
+      stepDescription: 'נבדוק את התשלומים הנוכחיים',
+      mortgageTooltip: 'בסיס לחישוב החיסכון החודשי',
+      targetTooltip: 'כמה תרצה לשלם בחודש?',
+      sliderTooltip: 'שחק עם הסליידר לראות אפשרויות',
+      ctaText: 'המשך לחישוב',
+      ctaMessage: 'נאחד את כל החובות למשכנתא אחת בריבית נמוכה',
+      reductionText: 'הפחתה של',
+      increaseText: 'תוספת של'
+    };
+  };
+
+  const trackContent = getTrackSpecificContent();
 
   // חישוב מגבלות רגולטוריות
   const refinanceResult = calculateRefinancedPayment(formData);
@@ -57,12 +108,26 @@ export const Step2Payments: React.FC = () => {
     refinanceResult.breakdown.totalAmount * (refinanceResult.breakdown.weightedRate / 12) + 100
   );
 
-  // Use percentage-based range from parameters (default 30%)
-  const rangePercent = currentMortgageParams.simulator.paymentRangePercent;
-  const rangeAmount = Math.round(currentTotal * rangePercent);
+  // Track-specific payment range calculation
+  const getPaymentRange = () => {
+    if (formData.track) {
+      const trackRange = getTrackOptimizedRange(currentTotal);
+      return {
+        min: Math.max(minPaymentByRegulation, trackRange.min),
+        max: trackRange.max
+      };
+    }
+    
+    // Default range
+    const rangePercent = currentMortgageParams.simulator.paymentRangePercent;
+    const rangeAmount = Math.round(currentTotal * rangePercent);
+    return {
+      min: Math.max(minPaymentByRegulation, currentTotal - rangeAmount),
+      max: currentTotal + rangeAmount
+    };
+  };
 
-  const minTarget = Math.max(minPaymentByRegulation, currentTotal - rangeAmount);
-  const maxTarget = currentTotal + rangeAmount;
+  const { min: minTarget, max: maxTarget } = getPaymentRange();
 
   useEffect(() => {
     // Update target when individual payments change
@@ -102,15 +167,41 @@ export const Step2Payments: React.FC = () => {
   const savingsAmount = currentTotal - formData.targetTotalPayment;
   const isReduction = savingsAmount > 0;
 
+  // Track-specific slider styling and behavior
+  const getSliderStyling = () => {
+    const colorClass = formData.track === TrackType.MONTHLY_REDUCTION ? 'green' : 'blue';
+    if (formData.track === TrackType.SHORTEN_TERM) {
+      colorClass = 'green'; // Green for term shortening (savings focus)
+    }
+    
+    return {
+      background: `linear-gradient(to right, 
+        #10b981 0%, 
+        #10b981 ${((currentTotal - formData.targetTotalPayment + (maxTarget - minTarget)/2) / (maxTarget - minTarget)) * 100}%, 
+        #ef4444 ${((currentTotal - formData.targetTotalPayment + (maxTarget - minTarget)/2) / (maxTarget - minTarget)) * 100}%, 
+        #ef4444 100%)`,
+      thumbColor: formData.track === TrackType.MONTHLY_REDUCTION ? '#3b82f6' : '#10b981'
+    };
+  };
+
+  const sliderStyling = getSliderStyling();
+
   return (
-    <div className="animate-fade-in-up">
-      {/* Compact Step Header */}
-      <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">החזרים חודשיים</h2>
+    <div className={`animate-fade-in-up track-${formData.track || 'default'}`}>
+      {/* Track-specific Step Header */}
+      <div className="text-center mb-6">
+        <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
+          {trackContent.stepTitle}
+        </h2>
+        <p className="text-gray-600 text-sm">
+          {trackContent.stepDescription}
+        </p>
+      </div>
 
       <div className="space-y-4">
         <InputWithTooltip
           label="החזר משכנתא חודשי נוכחי"
-          tooltip="בסיס לחישוב החיסכון החודשי"
+          tooltip={trackContent.mortgageTooltip}
           name="mortgagePayment"
           inputMode="numeric"
           suffix="₪"
@@ -118,7 +209,7 @@ export const Step2Payments: React.FC = () => {
           onChange={handleChange}
           placeholder="6,500"
           error={errors.mortgagePayment}
-          icon={<i className="fa-solid fa-home text-blue-500"></i>}
+          icon={<i className={`fa-solid fa-home ${accentStyling.split(' ')[0]}`}></i>}
           autoAdvance={true}
         />
 
@@ -131,35 +222,35 @@ export const Step2Payments: React.FC = () => {
           value={formatNumberWithCommas(formData.otherLoansPayment)}
           onChange={handleChange}
           placeholder="0"
-          icon={<i className="fa-solid fa-credit-card text-purple-500"></i>}
+          icon={<i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]}`}></i>}
           autoAdvance={true}
         />
 
         {/* Current Total Display */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <div className={`${primaryStyling} rounded-lg p-3`}>
           <div className="flex justify-between items-center">
             <span className="text-gray-700 font-medium text-sm">סך החזר חודשי נוכחי:</span>
-            <span className="text-xl font-bold text-gray-900">
+            <span className={`text-xl font-bold ${accentStyling.split(' ')[0]}`}>
               {formatNumberWithCommas(currentTotal)} ₪
             </span>
           </div>
         </div>
 
-        {/* Target Payment Slider */}
+        {/* Track-specific Target Payment Slider */}
         <div className="space-y-3">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <label className="block text-lg font-semibold text-gray-900">
-                יעד החזר חודשי חדש
+                {formData.track === TrackType.SHORTEN_TERM ? 'יעד תשלום מוגבר לקיצור שנים' : 'יעד החזר חודשי חדש'}
               </label>
               <Tooltip 
-                content="כמה אתה רוצה לשלם בחודש? שחק עם הסליידר לראות אפשרויות"
+                content={trackContent.sliderTooltip}
                 position="auto"
                 fontSize="base"
                 allowWrap={true}
                 maxWidth={280}
               >
-                <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-sm"></i>
+                <i className={`fa-solid fa-info-circle ${accentStyling.split(' ')[0]} hover:opacity-80 cursor-help text-sm`}></i>
               </Tooltip>
             </div>
 
@@ -170,14 +261,8 @@ export const Step2Payments: React.FC = () => {
                 max={maxTarget}
                 value={formData.targetTotalPayment}
                 onChange={handleSliderChange}
-                className="w-full h-3 bg-gradient-to-r from-green-200 via-yellow-200 to-red-200 rounded-lg appearance-none cursor-pointer slider"
-                style={{
-                  background: `linear-gradient(to right, 
-                    #10b981 0%, 
-                    #10b981 ${((currentTotal - formData.targetTotalPayment + rangeAmount) / (rangeAmount * 2)) * 100}%, 
-                    #ef4444 ${((currentTotal - formData.targetTotalPayment + rangeAmount) / (rangeAmount * 2)) * 100}%, 
-                    #ef4444 100%)`
-                }}
+                className="w-full h-3 rounded-lg appearance-none cursor-pointer slider"
+                style={sliderStyling}
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
                 <span>{formatNumberWithCommas(minTarget)} ₪</span>
@@ -186,43 +271,48 @@ export const Step2Payments: React.FC = () => {
             </div>
 
             <div className="mt-3 text-center">
-              <div className="text-2xl font-bold text-gray-900 mb-1">
+              <div className={`text-2xl font-bold mb-1 ${accentStyling.split(' ')[0]}`}>
                 {formatNumberWithCommas(formData.targetTotalPayment)} ₪
               </div>
-              {isReduction ? (
+              {formData.track === TrackType.SHORTEN_TERM ? (
+                <div className="text-green-600 font-semibold text-sm">
+                  <i className="fa-solid fa-piggy-bank mr-2"></i>
+                  {savingsAmount < 0 ? `${trackContent.increaseText} ${formatNumberWithCommas(Math.abs(savingsAmount))} ₪ לקיצור שנים` : `${trackContent.reductionText} ${formatNumberWithCommas(savingsAmount)} ₪`}
+                </div>
+              ) : isReduction ? (
                 <div className="text-green-600 font-semibold text-sm">
                   <i className="fa-solid fa-arrow-down mr-2"></i>
-                  הפחתה של {formatNumberWithCommas(savingsAmount)} ₪ בחודש
+                  {trackContent.reductionText} {formatNumberWithCommas(savingsAmount)} ₪ בחודש
                 </div>
               ) : (
                 <div className="text-blue-600 font-semibold text-sm">
                   <i className="fa-solid fa-arrow-up mr-2"></i>
-                  תוספת של {formatNumberWithCommas(Math.abs(savingsAmount))} ₪ בחודש
+                  {trackContent.increaseText} {formatNumberWithCommas(Math.abs(savingsAmount))} ₪ בחודש
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Integrated CTA with actionable content */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+        {/* Track-specific Integrated CTA */}
+        <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-calculator text-blue-600 text-lg"></i>
-            <p className="text-blue-700 text-sm font-medium">
-              נאחד את כל החובות למשכנתא אחת בריבית נמוכה
+            <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-lg`}></i>
+            <p className={`${accentStyling.split(' ')[0]} text-sm font-medium`}>
+              {trackContent.ctaMessage}
             </p>
           </div>
           <Button 
             onClick={handleNext} 
-            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700"
+            className={`px-4 py-2 text-sm ${buttonStyling}`}
           >
-            המשך לחישוב
+            {trackContent.ctaText}
           </Button>
         </div>
 
         {/* Secondary CTA for going back */}
         <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-          חזור אחורה
+          {config.messaging.ctaTexts.secondary || 'חזור אחורה'}
         </button>
       </div>
 
@@ -232,7 +322,7 @@ export const Step2Payments: React.FC = () => {
           height: 24px;
           width: 24px;
           border-radius: 50%;
-          background: #3b82f6;
+          background: ${sliderStyling.thumbColor};
           border: 2px solid white;
           box-shadow: 0 2px 6px rgba(0,0,0,0.2);
           cursor: pointer;
@@ -242,7 +332,7 @@ export const Step2Payments: React.FC = () => {
           height: 24px;
           width: 24px;
           border-radius: 50%;
-          background: #3b82f6;
+          background: ${sliderStyling.thumbColor};
           border: 2px solid white;
           box-shadow: 0 2px 6px rgba(0,0,0,0.2);
           cursor: pointer;

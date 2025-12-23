@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FormData } from '../types';
+import { FormData, TrackType } from '../types';
+import { TrackConfig, getTrackConfigSafe } from '../utils/trackConfig';
 
 interface FormContextType {
   step: number;
@@ -9,6 +10,16 @@ interface FormContextType {
   resetForm: () => void;
   nextStep: () => void;
   prevStep: () => void;
+  
+  // Track-specific methods
+  getTrackConfig: () => TrackConfig;
+  isTrack: (track: TrackType) => boolean;
+  getTrackSpecificValidation: (field: string) => any;
+  getTrackSpecificStyling: (component: string) => string;
+  
+  // Track-aware calculation methods
+  getTrackOptimizedRange: (baseValue: number) => { min: number; max: number };
+  calculateWithTrackPriority: (data: Partial<FormData>) => any;
 }
 
 const initialFormData: FormData = {
@@ -104,8 +115,110 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 6));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
+  // Track-specific methods
+  const getTrackConfig = (): TrackConfig => {
+    try {
+      return getTrackConfigSafe(formData.track);
+    } catch (error) {
+      console.error('Failed to get track config:', error);
+      // Return a minimal fallback config to prevent crashes
+      return getTrackConfigSafe(null);
+    }
+  };
+
+  const isTrack = (track: TrackType): boolean => {
+    return formData.track === track;
+  };
+
+  const getTrackSpecificValidation = (field: string): any => {
+    const config = getTrackConfig();
+    
+    switch (field) {
+      case 'paymentRange':
+        return {
+          multiplier: config.validation.paymentRangeMultiplier,
+          minIncrease: config.validation.minPaymentIncrease
+        };
+      case 'termYears':
+        return {
+          maxYears: config.validation.maxTermYears,
+          ageWeightFactor: config.validation.ageWeightFactor
+        };
+      default:
+        return {};
+    }
+  };
+
+  const getTrackSpecificStyling = (component: string): string => {
+    const config = getTrackConfig();
+    const primaryColor = config.ui.primaryColor;
+    
+    switch (component) {
+      case 'primary':
+        return `text-${primaryColor}-900 bg-${primaryColor}-50 border-${primaryColor}-200`;
+      case 'button':
+        return `bg-${primaryColor}-600 hover:bg-${primaryColor}-700 text-white`;
+      case 'accent':
+        return `text-${primaryColor}-600`;
+      case 'background':
+        return `bg-${primaryColor}-50`;
+      default:
+        return '';
+    }
+  };
+
+  const getTrackOptimizedRange = (baseValue: number): { min: number; max: number } => {
+    const config = getTrackConfig();
+    const multiplier = config.validation.paymentRangeMultiplier;
+    const minIncrease = config.validation.minPaymentIncrease;
+    
+    if (formData.track === TrackType.MONTHLY_REDUCTION) {
+      // For payment reduction, allow range below current payment
+      return {
+        min: Math.max(baseValue * (1 - multiplier), 1000), // Minimum 1000 NIS
+        max: baseValue
+      };
+    } else if (formData.track === TrackType.SHORTEN_TERM) {
+      // For term shortening, require payment increase
+      return {
+        min: baseValue + minIncrease,
+        max: baseValue * (1 + multiplier)
+      };
+    }
+    
+    // Default range
+    return {
+      min: baseValue * 0.7,
+      max: baseValue * 1.3
+    };
+  };
+
+  const calculateWithTrackPriority = (data: Partial<FormData>) => {
+    const fullData = { ...formData, ...data };
+    // Import the calculation function dynamically to avoid circular dependencies
+    return import('../utils/calculator').then(({ calculateWithTrackPriority }) => 
+      calculateWithTrackPriority(fullData)
+    );
+  };
+
   return (
-    <FormContext.Provider value={{ step, setStep, formData, updateFormData, resetForm, nextStep, prevStep, sessionId, logEvents } as any}>
+    <FormContext.Provider value={{ 
+      step, 
+      setStep, 
+      formData, 
+      updateFormData, 
+      resetForm, 
+      nextStep, 
+      prevStep, 
+      sessionId, 
+      logEvents,
+      getTrackConfig,
+      isTrack,
+      getTrackSpecificValidation,
+      getTrackSpecificStyling,
+      getTrackOptimizedRange,
+      calculateWithTrackPriority
+    } as any}>
       {children}
     </FormContext.Provider>
   );
