@@ -181,7 +181,7 @@ describe('Step1Debts Track-Specific UI Consistency', () => {
           // Verify common elements are present
           expect(container.textContent).toMatch(/יתרת משכנתא נוכחית/);
           expect(container.textContent).toMatch(/האם יש לך הלוואות נוספות/);
-          expect(container.textContent).toMatch(/האם יש מינוס ממוצע בבנק/);
+          expect(container.textContent).toMatch(/האם יש מינוס בבנק/);
         }
       ),
       { numRuns: 50 }
