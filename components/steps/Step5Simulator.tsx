@@ -227,12 +227,6 @@ export const Step5Simulator: React.FC = () => {
                       className="absolute bottom-0 w-full bg-gradient-to-t from-gray-400 to-gray-500 rounded-lg shadow-lg border-2 border-gray-600"
                       style={{ height: '80px' }} // Fixed baseline height
                     >
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-white font-bold text-center">
-                          <div className="text-lg">{formatNumberWithCommas(Math.round(currentPayment))}</div>
-                          <div className="text-sm">החזר נוכחי</div>
-                        </div>
-                      </div>
                     </div>
                     
                     {/* New Payment Bar (Foreground) - Constrained height */}
