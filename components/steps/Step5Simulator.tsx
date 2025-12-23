@@ -204,38 +204,81 @@ export const Step5Simulator: React.FC = () => {
               })()}
             </div>
 
-            {/* Bar Chart - Horizontal Bars */}
+            {/* Bar Chart - Single Bar with Current Payment Line */}
             <div className="mb-6">
               <div className="flex justify-center">
-                <div className="w-80 space-y-4">
-                  {/* Current Payment Bar */}
+                <div className="w-80">
+                  {/* Single Payment Bar */}
                   <div className="relative">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-600">החזר נוכחי</span>
-                      <span className="text-sm font-bold text-gray-700">{formatNumberWithCommas(Math.round(currentPayment))} ש"ח</span>
+                    {/* Single Bar Container */}
+                    <div className="relative h-12 bg-gray-200 rounded-lg overflow-hidden">
+                      {(() => {
+                        // Calculate the range for proper scaling
+                        const { min: minYears, max: maxYears } = calculateValidYearsRange();
+                        const maxPayment = calculatePaymentForYears(minYears); // Shorter term = higher payment
+                        const minPayment = calculatePaymentForYears(maxYears); // Longer term = lower payment
+                        
+                        // Use the full range for scaling, with some padding
+                        const paymentRange = maxPayment - minPayment;
+                        const scaledWidth = paymentRange > 0 
+                          ? Math.max(((newPayment - minPayment) / paymentRange) * 100, 10)
+                          : 50; // Fallback if range calculation fails
+                        
+                        const currentPaymentPosition = paymentRange > 0
+                          ? ((currentPayment - minPayment) / paymentRange) * 100
+                          : 50; // Fallback position
+                        
+                        return (
+                          <>
+                            {/* New Payment Bar */}
+                            <div 
+                              className={`absolute left-0 top-0 h-full bg-gradient-to-r ${gradientColor} rounded-lg shadow-sm transition-all duration-700 ease-out flex items-center justify-center`}
+                              style={{ 
+                                width: `${Math.min(Math.max(scaledWidth, 10), 100)}%`
+                              }}
+                            >
+                              {/* New Payment Amount Inside Bar */}
+                              <span className="text-white font-bold text-sm">
+                                {formatNumberWithCommas(Math.round(newPayment))} ש"ח
+                              </span>
+                            </div>
+                            
+                            {/* Current Payment Line Marker */}
+                            <div 
+                              className="absolute top-0 h-full w-0.5 bg-gray-600 shadow-sm z-10"
+                              style={{ 
+                                left: `${Math.min(Math.max(currentPaymentPosition, 0), 100)}%`,
+                                transform: 'translateX(-50%)'
+                              }}
+                            >
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
-                    <div className="relative h-8 bg-gray-200 rounded-lg overflow-hidden">
+                    
+                    {/* Current Payment Indicator - Below the bar */}
+                    <div className="relative mt-2">
                       <div 
-                        className="absolute left-0 top-0 h-full bg-gradient-to-r from-gray-400 to-gray-500 rounded-lg shadow-sm transition-all duration-700 ease-out"
-                        style={{ width: '100%' }}
-                      >
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* New Payment Bar */}
-                  <div className="relative">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-600">החזר חדש</span>
-                      <span className="text-sm font-bold text-gray-700">{formatNumberWithCommas(Math.round(newPayment))} ש"ח</span>
-                    </div>
-                    <div className="relative h-8 bg-gray-200 rounded-lg overflow-hidden">
-                      <div 
-                        className={`absolute left-0 top-0 h-full bg-gradient-to-r ${gradientColor} rounded-lg shadow-sm transition-all duration-700 ease-out`}
+                        className="absolute top-0 transform -translate-x-1/2"
                         style={{ 
-                          width: `${Math.min(Math.max((newPayment / currentPayment) * 100, 10), 150)}%`
+                          left: `${(() => {
+                            const { min: minYears, max: maxYears } = calculateValidYearsRange();
+                            const maxPayment = calculatePaymentForYears(minYears);
+                            const minPayment = calculatePaymentForYears(maxYears);
+                            const paymentRange = maxPayment - minPayment;
+                            return paymentRange > 0
+                              ? Math.min(Math.max(((currentPayment - minPayment) / paymentRange) * 100, 0), 100)
+                              : 50;
+                          })()}%`
                         }}
                       >
+                        <div className="flex flex-col items-center">
+                          <div className="w-0.5 h-3 bg-gray-600"></div>
+                          <div className="bg-gray-600 text-white text-xs px-2 py-1 rounded mt-1 whitespace-nowrap">
+                            נוכחי: {formatNumberWithCommas(Math.round(currentPayment))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
