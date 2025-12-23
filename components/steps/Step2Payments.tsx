@@ -193,7 +193,7 @@ export const Step2Payments: React.FC = () => {
         <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
           {trackContent.stepTitle}
         </h2>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 text-base">
           {trackContent.stepDescription}
         </p>
       </div>
@@ -229,7 +229,7 @@ export const Step2Payments: React.FC = () => {
         {/* Current Total Display */}
         <div className={`${primaryStyling} rounded-lg p-3`}>
           <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-medium text-sm">סך החזר חודשי נוכחי:</span>
+            <span className="text-gray-700 font-medium text-base">סך החזר חודשי נוכחי:</span>
             <span className={`text-xl font-bold ${accentStyling.split(' ')[0]}`}>
               {formatNumberWithCommas(currentTotal)} ₪
             </span>
@@ -264,7 +264,7 @@ export const Step2Payments: React.FC = () => {
                 className="w-full h-3 rounded-lg appearance-none cursor-pointer slider"
                 style={sliderStyling}
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-sm text-gray-500 mt-1">
                 <span>{formatNumberWithCommas(minTarget)} ₪</span>
                 <span>{formatNumberWithCommas(maxTarget)} ₪</span>
               </div>
@@ -275,17 +275,17 @@ export const Step2Payments: React.FC = () => {
                 {formatNumberWithCommas(formData.targetTotalPayment)} ₪
               </div>
               {formData.track === TrackType.SHORTEN_TERM ? (
-                <div className="text-green-600 font-semibold text-sm">
+                <div className="text-green-600 font-semibold text-base">
                   <i className="fa-solid fa-piggy-bank mr-2"></i>
                   {savingsAmount < 0 ? `${trackContent.increaseText} ${formatNumberWithCommas(Math.abs(savingsAmount))} ₪ לקיצור שנים` : `${trackContent.reductionText} ${formatNumberWithCommas(savingsAmount)} ₪`}
                 </div>
               ) : isReduction ? (
-                <div className="text-green-600 font-semibold text-sm">
+                <div className="text-green-600 font-semibold text-base">
                   <i className="fa-solid fa-arrow-down mr-2"></i>
                   {trackContent.reductionText} {formatNumberWithCommas(savingsAmount)} ₪ בחודש
                 </div>
               ) : (
-                <div className="text-blue-600 font-semibold text-sm">
+                <div className="text-blue-600 font-semibold text-base">
                   <i className="fa-solid fa-arrow-up mr-2"></i>
                   {trackContent.increaseText} {formatNumberWithCommas(Math.abs(savingsAmount))} ₪ בחודש
                 </div>
@@ -298,13 +298,13 @@ export const Step2Payments: React.FC = () => {
         <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
             <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-lg`}></i>
-            <p className={`${accentStyling.split(' ')[0]} text-sm font-medium`}>
+            <p className={`${accentStyling.split(' ')[0]} text-base font-medium`}>
               {trackContent.ctaMessage}
             </p>
           </div>
           <Button 
             onClick={handleNext} 
-            className={`px-4 py-2 text-sm ${buttonStyling}`}
+            className={`px-4 py-2 text-base ${buttonStyling}`}
           >
             {trackContent.ctaText}
           </Button>

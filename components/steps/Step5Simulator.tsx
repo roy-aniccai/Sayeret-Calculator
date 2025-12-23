@@ -141,7 +141,7 @@ export const Step5Simulator: React.FC = () => {
                       : 'border-gray-300 focus:ring-blue-500 text-gray-900 bg-white'
                   }`}
                 />
-                <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
+                <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-sm text-gray-500">
                   שנים
                 </div>
               </div>
@@ -216,16 +216,37 @@ export const Step5Simulator: React.FC = () => {
                           <>
                             {/* New Payment Bar */}
                             <div 
-                              className={`absolute left-0 top-0 h-full bg-gradient-to-r ${gradientColor} rounded-lg shadow-sm transition-all duration-700 ease-out flex items-center justify-center`}
+                              className={`absolute left-0 top-0 h-full bg-gradient-to-r ${gradientColor} rounded-lg shadow-sm transition-all duration-700 ease-out`}
                               style={{ 
                                 width: `${Math.min(Math.max(scaledWidth, 10), 100)}%`
                               }}
                             >
-                              {/* New Payment Amount Inside Bar */}
-                              <span className="text-white font-bold text-sm">
-                                {formatNumberWithCommas(Math.round(newPayment))} ש"ח
-                              </span>
+                              {/* New Payment Amount Inside Bar - only if bar is wide enough */}
+                              {scaledWidth >= 30 && (
+                                <div className="flex items-center justify-center h-full">
+                                  <span className="text-white font-bold text-base text-center">
+                                    <div>{formatNumberWithCommas(Math.round(newPayment))} ש"ח</div>
+                                    <div className="text-sm opacity-90">החזר חדש</div>
+                                  </span>
+                                </div>
+                              )}
                             </div>
+                            
+                            {/* New Payment Amount Outside Bar - when bar is too narrow */}
+                            {scaledWidth < 30 && (
+                              <div 
+                                className="absolute top-1/2 transform -translate-y-1/2"
+                                style={{ 
+                                  left: `${Math.min(Math.max(scaledWidth, 10), 100)}%`,
+                                  marginLeft: '8px'
+                                }}
+                              >
+                                <div className="text-gray-800 font-bold text-base bg-white px-2 py-1 rounded shadow-sm border text-center">
+                                  <div>{formatNumberWithCommas(Math.round(newPayment))} ש"ח</div>
+                                  <div className="text-sm text-gray-600">החזר חדש</div>
+                                </div>
+                              </div>
+                            )}
                           </>
                         );
                       })()}
@@ -249,7 +270,7 @@ export const Step5Simulator: React.FC = () => {
                       >
                         <div className="flex flex-col items-center">
                           <div className="w-0.5 h-3 bg-gray-600"></div>
-                          <div className="bg-gray-600 text-white text-xs px-2 py-1 rounded mt-1 whitespace-nowrap">
+                          <div className="bg-gray-600 text-white text-sm px-2 py-1 rounded mt-1 whitespace-nowrap">
                             נוכחי: {formatNumberWithCommas(Math.round(currentPayment))}
                           </div>
                         </div>
@@ -351,12 +372,12 @@ export const Step5Simulator: React.FC = () => {
               </div>
               <div>
                 <h4 className="font-bold text-gray-900 text-base">חיסכון נוסף בביטוח המשכנתא</h4>
-                <p className="text-gray-600 text-sm">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
+                <p className="text-gray-600 text-base">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
               </div>
             </div>
             <Button 
               onClick={() => alert("תודה! יועץ בכיר ייצור איתך קשר בשעות הקרובות עם הניתוח המלא והצעה מותאמת אישית.")} 
-              className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700"
+              className="px-4 py-2 text-base bg-green-600 hover:bg-green-700"
             >
               <i className="fa-solid fa-phone mr-1"></i>
               לשיחה עם המומחים

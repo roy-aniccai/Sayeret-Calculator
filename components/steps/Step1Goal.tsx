@@ -1,8 +1,6 @@
 import React from 'react';
 import { useForm } from '../../context/FormContext';
 import { TrackType } from '../../types';
-import { SelectionCard } from '../ui/SelectionCard';
-import { getTrackConfigSafe, getTrackDisplayName } from '../../utils/trackConfig';
 
 export const Step1Goal: React.FC = () => {
   const { updateFormData, nextStep } = useForm();
@@ -12,38 +10,49 @@ export const Step1Goal: React.FC = () => {
     nextStep();
   };
 
-  // Get track-specific configurations
-  const monthlyReductionConfig = getTrackConfigSafe(TrackType.MONTHLY_REDUCTION);
-  const shortenTermConfig = getTrackConfigSafe(TrackType.SHORTEN_TERM);
-
   return (
     <div className="animate-fade-in-up">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-8 text-center">מה המטרה העיקרית?</h2>
+      <h2 className="text-4xl font-extrabold text-gray-900 mb-8 text-center">מה המטרה העיקרית?</h2>
       <div className="space-y-6">
-        <SelectionCard
-          title={getTrackDisplayName(TrackType.MONTHLY_REDUCTION)}
-          description={monthlyReductionConfig.messaging.ctaTexts.primary}
-          icon={`fa-solid ${monthlyReductionConfig.ui.iconClass}`}
-          colorClass={monthlyReductionConfig.ui.primaryColor}
+        <button 
           onClick={() => handleSelect(TrackType.MONTHLY_REDUCTION)}
-          trackSpecific={{
-            priority: monthlyReductionConfig.calculation.optimizationPriority,
-            focusMetric: monthlyReductionConfig.calculation.simulatorDefaults.focusMetric,
-            tooltip: monthlyReductionConfig.messaging.tooltips.simulator
-          }}
-        />
-        <SelectionCard
-          title={getTrackDisplayName(TrackType.SHORTEN_TERM)}
-          description={shortenTermConfig.messaging.ctaTexts.primary}
-          icon={`fa-solid ${shortenTermConfig.ui.iconClass}`}
-          colorClass={shortenTermConfig.ui.primaryColor}
+          className="w-full text-right cursor-pointer block border-2 border-gray-200 rounded-2xl p-6 hover:border-blue-500 hover:bg-blue-50 transition-all group"
+        >
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-3xl shrink-0">
+              <i className="fa-solid fa-arrow-trend-down"></i>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-gray-900 text-3xl mb-2">הפחתת תשלום חודשי</h3>
+              <p className="text-xl text-gray-600 leading-snug mb-3">
+                ההחזר כבד? נבדוק פריסה נוחה יותר.
+              </p>
+              <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-base font-medium">
+                מיקוד: הפחתת תשלום
+              </span>
+            </div>
+          </div>
+        </button>
+
+        <button 
           onClick={() => handleSelect(TrackType.SHORTEN_TERM)}
-          trackSpecific={{
-            priority: shortenTermConfig.calculation.optimizationPriority,
-            focusMetric: shortenTermConfig.calculation.simulatorDefaults.focusMetric,
-            tooltip: shortenTermConfig.messaging.tooltips.simulator
-          }}
-        />
+          className="w-full text-right cursor-pointer block border-2 border-gray-200 rounded-2xl p-6 hover:border-green-500 hover:bg-green-50 transition-all group"
+        >
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-3xl shrink-0">
+              <i className="fa-solid fa-piggy-bank"></i>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-gray-900 text-2xl mb-2">קיצור תקופת המשכנתא</h3>
+              <p className="text-lg text-gray-600 leading-snug mb-3">
+                רוצה לסיים מוקדם? נראה אם אפשר לקצר ולשלם פחות ריביות לבנק.
+              </p>
+              <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-600 text-base font-medium">
+                מיקוד: קיצור שנים
+              </span>
+            </div>
+          </div>
+        </button>
       </div>
     </div>
   );

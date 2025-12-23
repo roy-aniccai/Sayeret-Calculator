@@ -134,8 +134,8 @@ export const Step4Contact: React.FC = () => {
           <div className="flex items-center gap-3">
             <i className="fa-solid fa-shield-check text-green-600 text-lg"></i>
             <div>
-              <p className="text-green-700 text-sm font-medium">פרטיות מובטחת</p>
-              <p className="text-green-600 text-xs">מידע מוצפן ומאובטח</p>
+              <p className="text-green-700 text-base font-medium">פרטיות מובטחת</p>
+              <p className="text-green-600 text-sm">מידע מוצפן ומאובטח</p>
             </div>
           </div>
         </div>
@@ -145,13 +145,13 @@ export const Step4Contact: React.FC = () => {
           <div className="flex items-center gap-3">
             <i className="fa-solid fa-rocket text-blue-600 text-lg"></i>
             <div>
-              <p className="text-blue-700 text-sm font-medium">קבל סימולטור אינטראקטיבי</p>
-              <p className="text-blue-600 text-xs">שחק עם המספרים וראה את החיסכון</p>
+              <p className="text-blue-700 text-base font-medium">קבל סימולטור אינטראקטיבי</p>
+              <p className="text-blue-600 text-sm">שחק עם המספרים וראה את החיסכון</p>
             </div>
           </div>
           <Button 
             onClick={handleNext} 
-            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700"
+            className="px-4 py-2 text-base bg-blue-600 hover:bg-blue-700"
             disabled={isSubmitting}
           >
             {isSubmitting ? (

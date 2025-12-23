@@ -150,7 +150,7 @@ export const Step1Debts: React.FC = () => {
         <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
           {trackContent.stepTitle}
         </h2>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 text-base">
           {trackContent.stepDescription}
         </p>
       </div>

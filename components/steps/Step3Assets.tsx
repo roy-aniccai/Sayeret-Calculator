@@ -109,15 +109,15 @@ export const Step3Assets: React.FC = () => {
         {formData.propertyValue > 0 && totalDebt > 0 && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-700 font-medium text-sm">יחס מימון (LTV):</span>
+              <span className="text-gray-700 font-medium text-base">יחס מימון (LTV):</span>
               <span className={`text-xl font-bold ${getLtvColor(ltvRatio)}`}>
                 {ltvRatio.toFixed(1)}%
               </span>
             </div>
-            <p className={`text-sm ${getLtvColor(ltvRatio)}`}>
+            <p className={`text-base ${getLtvColor(ltvRatio)}`}>
               {getLtvMessage(ltvRatio)}
             </p>
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-sm text-gray-500">
               סך חובות: {formatNumberWithCommas(totalDebt)} ₪ / שווי נכס: {formatNumberWithCommas(formData.propertyValue)} ₪
             </div>
           </div>
@@ -128,17 +128,17 @@ export const Step3Assets: React.FC = () => {
           <div className="flex items-center gap-3">
             <i className="fa-solid fa-chart-line text-blue-600 text-lg"></i>
             <div>
-              <p className="text-blue-700 text-sm font-medium">
+              <p className="text-blue-700 text-base font-medium">
                 יחס מימון נמוך = תנאים טובים יותר
               </p>
-              <p className="text-blue-600 text-xs">
+              <p className="text-blue-600 text-sm">
                 ככל שהיחס נמוך יותר, החיסכון גדול יותר
               </p>
             </div>
           </div>
           <Button 
             onClick={handleNext} 
-            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700"
+            className="px-4 py-2 text-base bg-blue-600 hover:bg-blue-700"
           >
             המשך לחישוב
           </Button>
