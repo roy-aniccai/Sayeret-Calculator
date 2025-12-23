@@ -213,7 +213,7 @@ export const Step5Simulator: React.FC = () => {
               <div className="flex justify-center">
                 <div className="w-48">
                   {/* Combined Bar Container - Constrained height */}
-                  <div className="relative mb-3" style={{ height: '120px' }}> {/* Reduced container height */}
+                  <div className="relative" style={{ height: '120px' }}> {/* Reduced container height */}
                     {/* Current Payment Bar (Background) - Always visible as baseline */}
                     <div 
                       className="absolute bottom-0 w-full bg-gradient-to-t from-gray-400 to-gray-500 rounded-lg shadow-lg border-2 border-gray-600"
@@ -249,14 +249,6 @@ export const Step5Simulator: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  
-                  {/* Term Display */}
-                  <div className="bg-gray-100 rounded-lg p-3 text-center border">
-                    <div className="text-xs text-gray-600 mb-1">תקופת המשכנתא החדשה</div>
-                    <div className="font-bold text-lg text-gray-900">
-                      {simulatorYears} שנים
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -264,9 +256,16 @@ export const Step5Simulator: React.FC = () => {
 
           {/* Years Slider */}
           <div className="bg-white rounded-xl p-4 border border-gray-200">
-            <label className="block text-base font-semibold text-gray-900 mb-4">
-              <i className="fa-solid fa-sliders mr-2 text-blue-600"></i>
-              תקופת המשכנתא החדשה (שנים)
+            <label className="flex items-center justify-between text-base font-semibold text-gray-900 mb-4">
+              <div className="flex items-center">
+                <i className="fa-solid fa-sliders mr-2 text-blue-600"></i>
+                תקופת המשכנתא החדשה (שנים)
+              </div>
+              {formData.age && (
+                <div className="text-blue-600 font-bold">
+                  {simulatorYears} שנים
+                </div>
+              )}
             </label>
             
             {!formData.age ? (
@@ -281,11 +280,6 @@ export const Step5Simulator: React.FC = () => {
                     disabled={true}
                     className="w-full h-4 bg-gradient-to-r from-green-300 via-blue-300 to-purple-300 rounded-lg appearance-none slider-enhanced cursor-not-allowed opacity-50"
                   />
-                  <div 
-                    className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold pointer-events-none"
-                  >
-                    כ-20 שנים
-                  </div>
                 </div>
                 
                 <div className="flex justify-between text-sm text-gray-400 mb-4">
@@ -313,14 +307,6 @@ export const Step5Simulator: React.FC = () => {
                     onChange={handleYearsChange}
                     className="w-full h-4 bg-gradient-to-r from-green-300 via-blue-300 to-purple-300 rounded-lg appearance-none slider-enhanced cursor-pointer"
                   />
-                  <div 
-                    className="absolute -top-8 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold pointer-events-none transition-all duration-300"
-                    style={{
-                      right: `${((simulatorYears - minYears) / (maxYears - minYears)) * 100}%`
-                    }}
-                  >
-                    כ-{simulatorYears} שנים
-                  </div>
                 </div>
                 
                 <div className="flex justify-between text-sm text-gray-500 mb-4">
