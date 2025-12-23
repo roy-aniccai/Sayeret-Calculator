@@ -206,8 +206,8 @@ export const Step5Simulator: React.FC = () => {
 
             {/* Bar Chart - Single Bar with Current Payment Line */}
             <div className="mb-6">
-              <div className="flex justify-center">
-                <div className="w-80">
+              <div className="px-4">
+                <div className="w-full">
                   {/* Single Payment Bar */}
                   <div className="relative">
                     {/* Single Bar Container */}
@@ -224,10 +224,6 @@ export const Step5Simulator: React.FC = () => {
                           ? Math.max(((newPayment - minPayment) / paymentRange) * 100, 10)
                           : 50; // Fallback if range calculation fails
                         
-                        const currentPaymentPosition = paymentRange > 0
-                          ? ((currentPayment - minPayment) / paymentRange) * 100
-                          : 50; // Fallback position
-                        
                         return (
                           <>
                             {/* New Payment Bar */}
@@ -241,16 +237,6 @@ export const Step5Simulator: React.FC = () => {
                               <span className="text-white font-bold text-sm">
                                 {formatNumberWithCommas(Math.round(newPayment))} ש"ח
                               </span>
-                            </div>
-                            
-                            {/* Current Payment Line Marker */}
-                            <div 
-                              className="absolute top-0 h-full w-0.5 bg-gray-600 shadow-sm z-10"
-                              style={{ 
-                                left: `${Math.min(Math.max(currentPaymentPosition, 0), 100)}%`,
-                                transform: 'translateX(-50%)'
-                              }}
-                            >
                             </div>
                           </>
                         );
