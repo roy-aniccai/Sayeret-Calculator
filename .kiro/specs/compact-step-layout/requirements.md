@@ -51,3 +51,27 @@ This feature focuses on improving the user experience of the mortgage calculator
 3. WHEN a step loads THEN the system SHALL ensure CTAs are visible without requiring scrolling
 4. WHEN users interact with the form THEN the system SHALL maintain CTA visibility throughout the interaction
 5. WHERE multiple actions are available THE system SHALL prioritize the primary CTA for visibility
+
+### Requirement 4
+
+**User Story:** As a user navigating through the mortgage calculator steps, I want a restructured header hierarchy that makes better use of space, so that I can see more relevant content without scrolling.
+
+#### Acceptance Criteria
+
+1. WHEN a user views any step (except the home step) THEN the system SHALL display the step-specific title in the main header instead of the generic "בדיקת דופק למשכנתא"
+2. WHEN a step loads THEN the system SHALL promote the step subtitle to become the primary step title within the content area
+3. WHEN displaying step headers THEN the system SHALL maintain visual hierarchy while reducing overall header height
+4. WHEN a user is on step 2 (debts) THEN the system SHALL show "מצב חובות נוכחי" in the main header and "נבדוק את המצב הכספי הנוכחי" as the step title
+5. WHEN a user is on step 3 (payments) THEN the system SHALL show "החזרים חודשיים נוכחיים" in the main header and "כמה אתה משלם היום?" as the step title
+
+### Requirement 5
+
+**User Story:** As a user navigating between steps in the mortgage calculator, I want contextual back navigation that clearly indicates where I'm going, so that I understand the navigation flow.
+
+#### Acceptance Criteria
+
+1. WHEN a user views the back navigation button THEN the system SHALL display text that indicates the specific previous step they will return to
+2. WHEN a user is on step 2 (debts) THEN the system SHALL show "חזור לבחירת מטרה" as the back button text
+3. WHEN a user is on step 3 (payments) THEN the system SHALL show "חזור למצב חובות" as the back button text
+4. WHEN a user is on step 4 (assets) THEN the system SHALL show "חזור להחזרים" as the back button text
+5. WHEN a user is on step 5 (contact) THEN the system SHALL show "חזור לשווי נכסים" as the back button text

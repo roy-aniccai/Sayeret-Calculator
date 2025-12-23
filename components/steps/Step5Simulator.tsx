@@ -224,9 +224,8 @@ export const Step5Simulator: React.FC = () => {
                               {/* New Payment Amount Inside Bar - only if bar is wide enough */}
                               {scaledWidth >= 30 && (
                                 <div className="flex items-center justify-center h-full">
-                                  <span className="text-white font-bold text-base text-center">
-                                    <div>{formatNumberWithCommas(Math.round(newPayment))} ש"ח</div>
-                                    <div className="text-sm opacity-90">החזר חדש</div>
+                                  <span className="text-white font-bold text-lg">
+                                    {formatNumberWithCommas(Math.round(newPayment))} ש"ח
                                   </span>
                                 </div>
                               )}
@@ -235,16 +234,13 @@ export const Step5Simulator: React.FC = () => {
                             {/* New Payment Amount Outside Bar - when bar is too narrow */}
                             {scaledWidth < 30 && (
                               <div 
-                                className="absolute top-1/2 transform -translate-y-1/2"
+                                className="absolute top-1/2 transform -translate-y-1/2 text-gray-800 font-bold text-lg bg-white px-3 py-2 rounded-lg shadow-sm border"
                                 style={{ 
                                   left: `${Math.min(Math.max(scaledWidth, 10), 100)}%`,
-                                  marginLeft: '8px'
+                                  marginLeft: '12px'
                                 }}
                               >
-                                <div className="text-gray-800 font-bold text-base bg-white px-2 py-1 rounded shadow-sm border text-center">
-                                  <div>{formatNumberWithCommas(Math.round(newPayment))} ש"ח</div>
-                                  <div className="text-sm text-gray-600">החזר חדש</div>
-                                </div>
+                                {formatNumberWithCommas(Math.round(newPayment))} ש"ח
                               </div>
                             )}
                           </>
@@ -270,8 +266,8 @@ export const Step5Simulator: React.FC = () => {
                       >
                         <div className="flex flex-col items-center">
                           <div className="w-0.5 h-3 bg-gray-600"></div>
-                          <div className="bg-gray-600 text-white text-sm px-2 py-1 rounded mt-1 whitespace-nowrap">
-                            נוכחי: {formatNumberWithCommas(Math.round(currentPayment))}
+                          <div className="bg-gray-600 text-white text-base px-3 py-2 rounded-lg mt-1 whitespace-nowrap font-bold">
+                            נוכחי: {formatNumberWithCommas(Math.round(currentPayment))} ש"ח
                           </div>
                         </div>
                       </div>
@@ -305,7 +301,7 @@ export const Step5Simulator: React.FC = () => {
                   />
                 </div>
                 
-                <div className="flex justify-between text-base text-gray-400 mb-4">
+                <div className="flex justify-between text-lg text-gray-400 mb-4">
                   <span>10 שנים</span>
                   <span>30 שנים</span>
                 </div>
@@ -332,7 +328,7 @@ export const Step5Simulator: React.FC = () => {
                   />
                 </div>
                 
-                <div className="flex justify-between text-base text-gray-500 mb-4">
+                <div className="flex justify-between text-lg text-gray-500 mb-4">
                   <span>{minYears} שנים</span>
                   <span>{maxYears} שנים</span>
                 </div>
@@ -340,7 +336,7 @@ export const Step5Simulator: React.FC = () => {
                 {/* Validation Messages */}
                 {!validation.isValid && (
                   <div className="bg-red-100 border border-red-300 rounded-lg p-3 mb-3">
-                    <div className="text-red-700 font-medium text-base">
+                    <div className="text-red-700 font-medium text-lg">
                       <i className="fa-solid fa-exclamation-triangle mr-2"></i>
                       {validation.violations[0]}
                     </div>
@@ -349,7 +345,7 @@ export const Step5Simulator: React.FC = () => {
 
                 {/* Advanced Info */}
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-base text-green-700">
+                  <div className="flex items-center gap-2 text-lg text-green-700">
                     <i className="fa-solid fa-check-circle"></i>
                     <span>
                       <span className="font-medium">סימולטור מתקדם פעיל</span> - 
@@ -371,13 +367,13 @@ export const Step5Simulator: React.FC = () => {
                 <i className="fa-solid fa-shield-heart text-sm"></i>
               </div>
               <div>
-                <h4 className="font-bold text-gray-900 text-base">חיסכון נוסף בביטוח המשכנתא</h4>
-                <p className="text-gray-600 text-base">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
+                <h4 className="font-bold text-gray-900 text-lg">חיסכון נוסף בביטוח המשכנתא</h4>
+                <p className="text-gray-600 text-lg">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
               </div>
             </div>
             <Button 
               onClick={() => alert("תודה! יועץ בכיר ייצור איתך קשר בשעות הקרובות עם הניתוח המלא והצעה מותאמת אישית.")} 
-              className="px-4 py-2 text-base bg-green-600 hover:bg-green-700"
+              className="px-4 py-2 text-lg bg-green-600 hover:bg-green-700"
             >
               <i className="fa-solid fa-phone mr-1"></i>
               לשיחה עם המומחים
@@ -385,7 +381,7 @@ export const Step5Simulator: React.FC = () => {
           </div>
           
           {/* Secondary CTA */}
-          <button onClick={resetForm} className="w-full text-blue-600 font-medium text-base hover:underline">
+          <button onClick={resetForm} className="w-full text-blue-600 font-medium text-lg hover:underline">
             בדוק תרחיש אחר
           </button>
         </div>
