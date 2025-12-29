@@ -4,6 +4,7 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { submitData } from '../../utils/api';
+import { generateContextualBackText } from '../../utils/navigationContext';
 
 // Enhanced InputWithTooltip using the new Tooltip component
 const InputWithTooltip: React.FC<{
@@ -99,8 +100,10 @@ export const Step4Contact: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      {/* Compact Step Header */}
-      <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">פרטי קשר</h2>
+      {/* Promoted Subtitle as Primary Step Title */}
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">נשלח לך את התוצאות</h2>
+      </div>
 
       <div className="space-y-4">
         <Input
@@ -171,7 +174,7 @@ export const Step4Contact: React.FC = () => {
           className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors"
           disabled={isSubmitting}
         >
-          חזור אחורה
+          {generateContextualBackText(5)}
         </button>
       </div>
     </div>

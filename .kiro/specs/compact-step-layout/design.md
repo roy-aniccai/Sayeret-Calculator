@@ -17,14 +17,17 @@ The design follows a component-based architecture with three main areas of modif
 ### Modified Components
 
 **App.tsx**
-- Remove or minimize the fixed blue header section
-- Integrate step identification into the content area
-- Maintain progress bar functionality in a more compact form
+- Modify the fixed blue header to display step-specific titles instead of the generic "בדיקת דופק למשכנתא"
+- Implement dynamic header content based on current step
+- Maintain progress bar functionality in the compact form
+- Add step-to-header mapping logic
 
 **Step Components (Step1Debts, Step2Payments, etc.)**
-- Replace the current `<h2>` header structure with a more compact version
+- Replace the current `<h2>` header structure with promoted subtitle content
 - Remove or integrate explanation boxes with CTA elements
+- Implement contextual back navigation with step-specific text
 - Ensure all essential content fits within viewport constraints
+- Update header hierarchy to use promoted subtitles as main step titles
 
 **InputWithTooltip Component**
 - Enhance tooltip positioning logic to prevent viewport overflow
@@ -49,6 +52,19 @@ interface CompactLayoutProps {
   primaryCTA: React.ReactNode;
   secondaryCTA?: React.ReactNode;
 }
+
+interface StepHeaderConfig {
+  stepNumber: number;
+  mainHeaderTitle: string;
+  stepTitle: string;
+  backNavigationText: string;
+}
+
+interface NavigationContext {
+  currentStep: number;
+  previousStepName: string;
+  nextStepName: string;
+}
 ```
 
 ## Data Models
@@ -70,6 +86,57 @@ interface ViewportConstraints {
   width: number;
   availableHeight: number; // After header/footer
   contentMaxHeight: number;
+}
+```
+
+### Step Header Mapping Model
+```typescript
+interface StepHeaderMapping {
+  [stepNumber: number]: {
+    mainHeaderTitle: string;
+    stepTitle: string;
+    backNavigationText: string;
+  };
+}
+
+// Example mapping
+const stepHeaderConfig: StepHeaderMapping = {
+  1: {
+    mainHeaderTitle: "בדיקת דופק למשכנתא", // Home step keeps original
+    stepTitle: "בחירת מטרה",
+    backNavigationText: ""
+  },
+  2: {
+    mainHeaderTitle: "מצב חובות נוכחי",
+    stepTitle: "נבדוק את המצב הכספי הנוכחי", 
+    backNavigationText: "חזור לבחירת מטרה"
+  },
+  3: {
+    mainHeaderTitle: "החזרים חודשיים נוכחיים",
+    stepTitle: "כמה אתה משלם היום?",
+    backNavigationText: "חזור למצב חובות"
+  },
+  4: {
+    mainHeaderTitle: "שווי נכסים",
+    stepTitle: "נבדוק את שווי הנכסים",
+    backNavigationText: "חזור להחזרים"
+  },
+  5: {
+    mainHeaderTitle: "פרטי קשר",
+    stepTitle: "נשלח לך את התוצאות",
+    backNavigationText: "חזור לשווי נכסים"
+  }
+};
+```
+
+### Navigation State Model
+```typescript
+interface NavigationState {
+  currentStep: number;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  backDestination: number;
+  forwardDestination: number;
 }
 ```
 
@@ -137,6 +204,34 @@ After reviewing all properties identified in the prework, several can be consoli
 **Property 12: CTA prioritization**
 *For any* step with multiple available actions, the primary CTA should have greater visual prominence and better positioning than secondary actions
 **Validates: Requirements 3.5**
+
+### Header Restructuring Properties
+
+**Property 13: Step-specific header display**
+*For any* step component (except home step), when rendered, the main header should display the step-specific title instead of the generic application title
+**Validates: Requirements 4.1**
+
+**Property 14: Subtitle promotion**
+*For any* step component, when loaded, the previous subtitle should become the primary step title within the content area
+**Validates: Requirements 4.2**
+
+**Property 15: Header hierarchy maintenance**
+*For any* step component, when displaying headers, the visual hierarchy should be maintained while reducing overall header height
+**Validates: Requirements 4.3**
+
+**Property 16: Specific step header mapping**
+*For any* specific step (debts, payments, assets, etc.), when loaded, the correct step-specific title should appear in the main header and the correct promoted subtitle should appear as the step title
+**Validates: Requirements 4.4, 4.5**
+
+### Contextual Navigation Properties
+
+**Property 17: Contextual back navigation text**
+*For any* step with back navigation, the back button text should indicate the specific previous step the user will return to
+**Validates: Requirements 5.1**
+
+**Property 18: Step-specific back navigation mapping**
+*For any* specific step, when displaying back navigation, the text should correctly reference the previous step in the flow
+**Validates: Requirements 5.2, 5.3, 5.4, 5.5**
 
 ## Error Handling
 

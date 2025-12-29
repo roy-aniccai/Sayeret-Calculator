@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
+import { auth } from '../src/firebase';
 const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3005/api';
+const ADMIN_API_BASE_URL = import.meta.env.PROD ? '/admin-api' : 'http://localhost:3005/admin-api';
 
 export const submitData = async (data: any) => {
     try {
@@ -17,7 +19,7 @@ export const submitData = async (data: any) => {
         }
         return await response.json();
     } catch (error) {
-        console.error('CRITICAL: Error submitting data. Ensure backend is running on port 3005.', error);
+        console.error('CRITICAL: Error submitting data.', error);
         throw error;
     }
 };
@@ -36,14 +38,23 @@ export const trackEvent = async (sessionId: string, eventType: string, eventData
             }),
         });
     } catch (error) {
-        // Fail silently for analytics to not disrupt user experience
         console.warn('Failed to track event:', error);
     }
 };
 
+const getAuthHeaders = async () => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not authenticated");
+    const token = await user.getIdToken();
+    return {
+        'Authorization': `Bearer ${token}`
+    };
+};
+
 export const getSubmissions = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/admin/submissions`);
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${ADMIN_API_BASE_URL}/submissions`, { headers });
         if (!response.ok) throw new Error('Failed to fetch submissions');
         return await response.json();
     } catch (error) {
@@ -54,7 +65,8 @@ export const getSubmissions = async () => {
 
 export const getEvents = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/admin/events`);
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${ADMIN_API_BASE_URL}/events`, { headers });
         if (!response.ok) throw new Error('Failed to fetch events');
         return await response.json();
     } catch (error) {

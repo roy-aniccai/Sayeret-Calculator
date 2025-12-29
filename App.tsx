@@ -7,6 +7,7 @@ import { Step3Assets } from './components/steps/Step3Assets';
 import { Step4Contact } from './components/steps/Step4Contact';
 import { Step5Simulator } from './components/steps/Step5Simulator';
 import { validateAllTrackConfigs } from './utils/trackConfig';
+import { getMainHeaderTitle } from './utils/stepHeaderConfig';
 
 
 const AppContent: React.FC = () => {
@@ -25,13 +26,31 @@ const AppContent: React.FC = () => {
   };
 
   const progressPercentage = (step / 6) * 100;
-  const [showAdmin, setShowAdmin] = React.useState(false);
+  // Simple routing for Admin
+  const [showAdmin, setShowAdmin] = React.useState(window.location.pathname === '/admin');
+
+  React.useEffect(() => {
+    // Handle browser back/forward buttons
+    const handlePopState = () => {
+      setShowAdmin(window.location.pathname === '/admin');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Get dynamic header title based on current step
+  const headerTitle = getMainHeaderTitle(step);
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 relative">
       <div className={`fixed inset-0 z-50 ${showAdmin ? 'block' : 'hidden'}`}>
         <React.Suspense fallback={<div className="fixed inset-0 flex items-center justify-center bg-white z-50">Loading Admin Panel...</div>}>
-          {showAdmin && React.createElement(React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard }))), { onClose: () => setShowAdmin(false) })}
+          {showAdmin && React.createElement(React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard }))), {
+            onClose: () => {
+              setShowAdmin(false);
+              window.history.pushState({}, '', '/');
+            }
+          })}
         </React.Suspense>
       </div>
 
@@ -40,12 +59,11 @@ const AppContent: React.FC = () => {
         {/* Compact Header */}
         <div className="bg-blue-600 px-4 py-3 text-white relative">
           <div className="flex items-center justify-between">
-            <button onClick={() => setShowAdmin(true)} className="text-blue-400 hover:text-white text-xs opacity-50 hover:opacity-100" title="Admin">
-              <i className="fa-solid fa-lock"></i>
-            </button>
+            {/* Admin button removed - access via /admin */}
+            <div className="w-4"></div>
 
             <div className="text-center flex-1">
-              <h1 className="text-lg font-bold">בדיקת דופק למשכנתא</h1>
+              <h1 className="text-lg font-bold">{headerTitle}</h1>
             </div>
 
             <button

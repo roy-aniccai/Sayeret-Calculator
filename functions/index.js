@@ -3,27 +3,26 @@ const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
 
+const { getFirestore } = require('firebase-admin/firestore');
+
 admin.initializeApp();
-const db = admin.firestore();
+const db = getFirestore(admin.app(), 'mortgage');
 
-const app = express();
-app.use(cors({ origin: true }));
-app.use(express.json());
+// --- PUBLIC API (Submissions & Tracking) ---
+const publicApp = express();
+publicApp.use(cors({ origin: true }));
+publicApp.use(express.json());
 
-// Create a router to define routes once
-const router = express.Router();
+const publicRouter = express.Router();
 
-// Health Check
-router.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+publicRouter.get('/health', (req, res) => {
+    res.json({ status: 'ok', type: 'public', timestamp: new Date().toISOString() });
 });
 
-// API: Submit Form Data
-router.post('/submit', async (req, res) => {
-    console.log('Received submission request', req.body);
+publicRouter.post('/submit', async (req, res) => {
+    console.log('Received submission', req.body);
     try {
         const { leadName, leadPhone, leadEmail, sessionId } = req.body;
-
         const submission = {
             leadName: leadName || '',
             leadPhone: leadPhone || '',
@@ -32,97 +31,94 @@ router.post('/submit', async (req, res) => {
             fullDataJson: req.body,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         };
-
         const docRef = await db.collection('submissions').add(submission);
-        console.log('Submission saved with ID:', docRef.id);
-
-        res.json({
-            message: 'success',
-            data: req.body,
-            id: docRef.id
-        });
+        res.json({ message: 'success', id: docRef.id });
     } catch (error) {
-        console.error('Error submitting data:', error);
+        console.error('Submission error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// API: Track Event
-router.post('/event', async (req, res) => {
+publicRouter.post('/event', async (req, res) => {
     try {
         const { sessionId, eventType, eventData } = req.body;
-
         const event = {
             sessionId: sessionId || '',
             eventType: eventType || '',
             eventData: eventData || {},
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         };
-
-        const docRef = await db.collection('events').add(event);
-
-        res.json({
-            message: 'success',
-            id: docRef.id
-        });
+        await db.collection('events').add(event);
+        res.json({ message: 'success' });
     } catch (error) {
-        console.error('Error tracking event:', error);
+        console.error('Event error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Admin API: Get Submissions
-router.get('/admin/submissions', async (req, res) => {
+publicApp.use('/', publicRouter);
+publicApp.use('/api', publicRouter);
+
+
+// --- ADMIN API (Protected) ---
+const adminApp = express();
+adminApp.use(cors({ origin: true }));
+adminApp.use(express.json());
+
+// Security Middleware (Firebase Auth)
+const authMiddleware = async (req, res, next) => {
+    try {
+        if ((!req.headers.authorization || !req.headers.authorization.startsWith('Bearer '))) {
+            console.error('No ID token found');
+            return res.status(403).send('Unauthorized');
+        }
+        const idToken = req.headers.authorization.split('Bearer ')[1];
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        req.user = decodedToken;
+        next();
+    } catch (error) {
+        console.error('Error verifying auth token', error);
+        res.status(403).send('Unauthorized');
+    }
+};
+
+adminApp.use(authMiddleware);
+
+const adminRouter = express.Router();
+
+adminRouter.get('/health', (req, res) => {
+    res.json({ status: 'ok', type: 'admin' });
+});
+
+// Note: Paths are simple because we will rewrite /admin-api/submissions -> /submissions
+adminRouter.get('/submissions', async (req, res) => {
     try {
         const snapshot = await db.collection('submissions').orderBy('createdAt', 'desc').get();
-        const submissions = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            full_data_json: doc.data().fullDataJson
-        }));
-
-        res.json({
-            message: 'success',
-            data: submissions
-        });
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), full_data_json: doc.data().fullDataJson }));
+        res.json({ message: 'success', data });
     } catch (error) {
-        console.error('Error getting submissions:', error);
+        console.error('Admin error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Admin API: Get Events
-router.get('/admin/events', async (req, res) => {
+adminRouter.get('/events', async (req, res) => {
     try {
         const snapshot = await db.collection('events').orderBy('createdAt', 'desc').limit(100).get();
-        const events = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            event_data_json: doc.data().eventData
-        }));
-
-        res.json({
-            message: 'success',
-            data: events
-        });
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), event_data_json: doc.data().eventData }));
+        res.json({ message: 'success', data });
     } catch (error) {
-        console.error('Error getting events:', error);
+        console.error('Admin error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Mount the router on both '/' and '/api' paths
-// This handles:
-// 1. Direct calls: https://.../api/submit -> matches /submit in router (path relative to function)
-// 2. Hosting rewrite: domain.com/api/submit -> matches /api/submit (if prefix preserved)
-// 3. Hosting rewrite stripping?: mounts on / just in case.
-app.use('/', router);
-// Note: If request comes in as /api/submit, app.use('/', router) usually matches /api/submit against router routes if router is on /.
-// But express router matching depends on `req.path`.
-// If app is mounted on '/', `req.path` is the full path.
-// So if req.path is `/api/submit`, `router.post('/submit')` will NOT match.
-// So we explicitly mount on /api as well.
-app.use('/api', router);
+adminApp.use('/', adminRouter);
+adminApp.use('/admin-api', adminRouter); // Support direct path if needed
 
-// Export naming it "api" using v2 syntax
-exports.api = onRequest({ region: 'us-central1', cors: true }, app);
+// EXPORTS
+// 1. Public API (Open to internet)
+exports.api = onRequest({ region: 'us-central1', cors: true, invoker: 'public' }, publicApp);
+
+// 2. Admin API (Open to internet but protected by Header Key)
+exports.adminApi = onRequest({ region: 'us-central1', cors: true, invoker: 'public' }, adminApp);

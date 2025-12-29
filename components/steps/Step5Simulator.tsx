@@ -113,8 +113,10 @@ export const Step5Simulator: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      {/* Compact Step Header */}
-      <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">סימולטור מיחזור</h2>
+      {/* Promoted Subtitle as Primary Step Title */}
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">תוצאות הסימולציה</h2>
+      </div>
       
       {/* All-in-One Calculator */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 shadow-lg">

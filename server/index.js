@@ -59,9 +59,15 @@ app.get('/api/admin/submissions', (req, res) => {
             return;
         }
         // Parse the JSON string back to object for the frontend
+        // AND Transform snake_case columns to camelCase to match Production (Firebase) schema
         const submissions = rows.map(row => ({
-            ...row,
-            full_data_json: JSON.parse(row.full_data_json)
+            id: row.id,
+            createdAt: row.created_at, // Map created_at -> createdAt
+            leadName: row.lead_name,   // Map lead_name -> leadName
+            leadPhone: row.lead_phone, // Map lead_phone -> leadPhone
+            leadEmail: row.lead_email, // Map lead_email -> leadEmail
+            sessionId: row.session_id, // Map session_id -> sessionId
+            full_data_json: JSON.parse(row.full_data_json) // Keep this for legacy compat, but data is also in top level now
         }));
         res.json({
             message: 'success',
@@ -79,7 +85,10 @@ app.get('/api/admin/events', (req, res) => {
             return;
         }
         const events = rows.map(row => ({
-            ...row,
+            id: row.id,
+            createdAt: row.created_at, // Map created_at -> createdAt
+            sessionId: row.session_id, // Map session_id -> sessionId
+            eventType: row.event_type, // Map event_type -> eventType
             event_data_json: JSON.parse(row.event_data_json)
         }));
         res.json({

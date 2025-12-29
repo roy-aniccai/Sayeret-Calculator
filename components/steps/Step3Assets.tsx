@@ -4,6 +4,7 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
+import { generateContextualBackText } from '../../utils/navigationContext';
 
 // Enhanced InputWithTooltip using the new Tooltip component
 const InputWithTooltip: React.FC<{
@@ -86,8 +87,10 @@ export const Step3Assets: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      {/* Compact Step Header */}
-      <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">שווי הנכסים</h2>
+      {/* Promoted Subtitle as Primary Step Title */}
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">נבדוק את שווי הנכסים</h2>
+      </div>
       
       <div className="space-y-4">
         <InputWithTooltip
@@ -146,7 +149,7 @@ export const Step3Assets: React.FC = () => {
 
         {/* Secondary CTA for going back */}
         <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-          חזור אחורה
+          {generateContextualBackText(4)}
         </button>
       </div>
     </div>
