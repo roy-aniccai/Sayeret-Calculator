@@ -5,8 +5,9 @@ import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
 import { calculateRefinancedPayment } from '../../utils/calculator';
-import { currentMortgageParams } from '../../utils/mortgageParams';
+import { currentMortgageParams, calculateMonthlyPayment } from '../../utils/mortgageParams';
 import { TrackType } from '../../types';
+import { generateContextualBackText } from '../../utils/navigationContext';
 
 // Enhanced InputWithTooltip using the new Tooltip component
 const InputWithTooltip: React.FC<{
@@ -29,7 +30,7 @@ const InputWithTooltip: React.FC<{
       <label className="block text-lg font-semibold text-gray-900">
         {label}
       </label>
-      <Tooltip 
+      <Tooltip
         content={tooltip}
         position="auto"
         fontSize="base"
@@ -84,7 +85,7 @@ export const Step2Payments: React.FC = () => {
         increaseText: 'השקעה נוספת של'
       };
     }
-    
+
     // Default content
     return {
       stepTitle: 'החזרים חודשיים',
@@ -101,43 +102,55 @@ export const Step2Payments: React.FC = () => {
 
   const trackContent = getTrackSpecificContent();
 
-  // חישוב מגבלות רגולטוריות
-  const refinanceResult = calculateRefinancedPayment(formData);
-  const minPaymentByRegulation = Math.max(
-    currentMortgageParams.regulations.minMonthlyPayment,
-    refinanceResult.breakdown.totalAmount * (refinanceResult.breakdown.weightedRate / 12) + 100
-  );
+  // Calculate Regulatory Minimum Payment (Max Term = 30 years)
+  const calculateRegulatoryMin = useCallback(() => {
+    const totalAmount = formData.mortgageBalance + formData.otherLoansBalance + Math.abs(formData.bankAccountBalance);
 
-  // Track-specific payment range calculation
+    // We need the weighted rate. We can get it from the helper or calculate it similarly to calculateRefinancedPayment
+    // For simplicity and consistency, let's use the one from the refinance result or recalculate using standard params
+    const refinanceResult = calculateRefinancedPayment(formData);
+    const weightedRate = refinanceResult.breakdown.weightedRate;
+
+    // Calculate payment for max term (30 years)
+    const maxTerm = currentMortgageParams.regulations.maxLoanTermYears;
+    const minPayment = calculateMonthlyPayment(totalAmount, weightedRate, maxTerm);
+
+    // Ensure it's not below the absolute minimum of 1000 NIS
+    return Math.max(minPayment, currentMortgageParams.regulations.minMonthlyPayment);
+  }, [formData]);
+
+  const regulatoryMinPayment = calculateRegulatoryMin();
+
+  // Track-specific payment range calculation - MODIFIED for new logic
   const getPaymentRange = () => {
-    if (formData.track) {
+    if (formData.track === TrackType.SHORTEN_TERM) {
+      // For shorten term, we want to pay MORE, so min is current, max is higher
       const trackRange = getTrackOptimizedRange(currentTotal);
       return {
-        min: Math.max(minPaymentByRegulation, trackRange.min),
+        min: currentTotal,
         max: trackRange.max
       };
     }
-    
-    // Default range
-    const rangePercent = currentMortgageParams.simulator.paymentRangePercent;
-    const rangeAmount = Math.round(currentTotal * rangePercent);
+
+    // For Monthly Reduction (default), range is from Regulatory Min to Current
+    // We add a small buffer above current for user freedom, but focus is reduction
     return {
-      min: Math.max(minPaymentByRegulation, currentTotal - rangeAmount),
-      max: currentTotal + rangeAmount
+      min: regulatoryMinPayment,
+      max: currentTotal * 1.1 // Allow 10% above current just in case
     };
   };
 
   const { min: minTarget, max: maxTarget } = getPaymentRange();
 
   useEffect(() => {
-    // Update target when individual payments change
-    const newTotal = formData.mortgagePayment + formData.otherLoansPayment;
-    updateFormData({ targetTotalPayment: newTotal });
-  }, [formData.mortgagePayment, formData.otherLoansPayment]);
+    // If current target is out of new bounds, adjust it (only if it hasn't been touched yet or is invalid)
+    // We only force it if it's way off to avoid jarring jumps, but primarily we want to start at "Current" or "Optimized"
+    // actually, keeping the previous logic of updating targetTotalPayment when inputs change is fine
+    // but we should ensure valid bounds
+  }, [formData.mortgagePayment, formData.otherLoansPayment]); // reduced dependencies to avoid loops
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -152,7 +165,6 @@ export const Step2Payments: React.FC = () => {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.mortgagePayment) newErrors.mortgagePayment = 'נא להזין החזר משכנתא';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -162,25 +174,17 @@ export const Step2Payments: React.FC = () => {
     nextStep();
   };
 
-
-
   const savingsAmount = currentTotal - formData.targetTotalPayment;
   const isReduction = savingsAmount > 0;
 
-  // Track-specific slider styling and behavior
+  // New clean slider styling (no red/green gradient)
   const getSliderStyling = () => {
-    let colorClass = formData.track === TrackType.MONTHLY_REDUCTION ? 'green' : 'blue';
-    if (formData.track === TrackType.SHORTEN_TERM) {
-      colorClass = 'green'; // Green for term shortening (savings focus)
-    }
-    
+    const percent = ((formData.targetTotalPayment - minTarget) / (maxTarget - minTarget)) * 100;
+    const activeColor = formData.track === TrackType.SHORTEN_TERM ? '#10b981' : '#3b82f6'; // Green for shorten term, Blue for standard
+
     return {
-      background: `linear-gradient(to right, 
-        #10b981 0%, 
-        #10b981 ${((currentTotal - formData.targetTotalPayment + (maxTarget - minTarget)/2) / (maxTarget - minTarget)) * 100}%, 
-        #ef4444 ${((currentTotal - formData.targetTotalPayment + (maxTarget - minTarget)/2) / (maxTarget - minTarget)) * 100}%, 
-        #ef4444 100%)`,
-      thumbColor: formData.track === TrackType.MONTHLY_REDUCTION ? '#3b82f6' : '#10b981'
+      background: `linear-gradient(to right, ${activeColor} 0%, ${activeColor} ${percent}%, #e5e7eb ${percent}%, #e5e7eb 100%)`,
+      thumbColor: activeColor
     };
   };
 
@@ -188,14 +192,11 @@ export const Step2Payments: React.FC = () => {
 
   return (
     <div className={`animate-fade-in-up track-${formData.track || 'default'}`}>
-      {/* Track-specific Step Header */}
+      {/* Promoted Subtitle as Primary Step Title */}
       <div className="text-center mb-6">
         <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
-          {trackContent.stepTitle}
-        </h2>
-        <p className="text-gray-600 text-base">
           {trackContent.stepDescription}
-        </p>
+        </h2>
       </div>
 
       <div className="space-y-4">
@@ -243,7 +244,7 @@ export const Step2Payments: React.FC = () => {
               <label className="block text-lg font-semibold text-gray-900">
                 {formData.track === TrackType.SHORTEN_TERM ? 'יעד תשלום מוגבר לקיצור שנים' : 'יעד החזר חודשי חדש'}
               </label>
-              <Tooltip 
+              <Tooltip
                 content={trackContent.sliderTooltip}
                 position="auto"
                 fontSize="base"
@@ -264,9 +265,15 @@ export const Step2Payments: React.FC = () => {
                 className="w-full h-3 rounded-lg appearance-none cursor-pointer slider"
                 style={sliderStyling}
               />
-              <div className="flex justify-between text-sm text-gray-500 mt-1">
-                <span>{formatNumberWithCommas(minTarget)} ₪</span>
-                <span>{formatNumberWithCommas(maxTarget)} ₪</span>
+              <div className="flex justify-between text-sm text-gray-500 mt-2 font-medium">
+                <div className="flex flex-col items-start">
+                  <span className="text-gray-400 text-xs">מינימום אפשרי (30 שנה)</span>
+                  <span>{formatNumberWithCommas(minTarget)} ₪</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-gray-400 text-xs">החזר נוכחי</span>
+                  <span>{formatNumberWithCommas(currentTotal)} ₪</span>
+                </div>
               </div>
             </div>
 
@@ -302,8 +309,8 @@ export const Step2Payments: React.FC = () => {
               {trackContent.ctaMessage}
             </p>
           </div>
-          <Button 
-            onClick={handleNext} 
+          <Button
+            onClick={handleNext}
             className={`px-4 py-2 text-base ${buttonStyling}`}
           >
             {trackContent.ctaText}
@@ -312,7 +319,7 @@ export const Step2Payments: React.FC = () => {
 
         {/* Secondary CTA for going back */}
         <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-          {config.messaging.ctaTexts.secondary || 'חזור אחורה'}
+          {generateContextualBackText(3)}
         </button>
       </div>
 
