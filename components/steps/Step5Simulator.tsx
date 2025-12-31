@@ -1,40 +1,88 @@
 import React, { useState, useCallback } from 'react';
 import { useForm } from '../../context/FormContext';
 import { Button } from '../ui/Button';
+import { Dialog } from '../ui/Dialog';
 import { formatNumberWithCommas } from '../../utils/helpers';
-import { 
-  validateLoanParams, 
-  currentMortgageParams, 
+import {
+  validateLoanParams,
+  currentMortgageParams,
   calculateMonthlyPayment,
   calculateWeightedMortgageRate,
   calculateWeightedOtherLoansRate
 } from '../../utils/mortgageParams';
+import { TrackType } from '../../types';
+import { generateContextualBackText } from '../../utils/navigationContext';
 
 export const Step5Simulator: React.FC = () => {
-  const { formData, updateFormData, resetForm } = useForm();
+  console.log('Simulator RTL Fix Applied: v1.1 (Consistent Scale)');
+  const { formData, updateFormData, resetForm, getTrackConfig } = useForm();
+  const config = getTrackConfig();
+  const primaryColor = config.ui.primaryColor;
+
   const [simulatorYears, setSimulatorYears] = useState(20); // Start with 20 years
+  const [showDialog, setShowDialog] = useState(false);
 
   // Calculate what payment would be needed for the selected years
   const calculatePaymentForYears = (years: number) => {
     const mortgageAmount = formData.mortgageBalance;
     const otherLoansAmount = formData.otherLoansBalance + Math.abs(formData.bankAccountBalance);
-    const totalAmount = mortgageAmount + otherLoansAmount;
-    
+    // Reduce total amount by one-time payment if available
+    const oneTimePayment = formData.oneTimePaymentAmount || 0;
+    const totalAmount = Math.max(0, mortgageAmount + otherLoansAmount - oneTimePayment);
+
     // Use the exact same calculation as in the main calculator
     const mortgageRate = calculateWeightedMortgageRate();
     const otherLoansRate = calculateWeightedOtherLoansRate();
-    
+
     // Calculate weighted rate exactly like in calculator.ts
-    const weightedRate = totalAmount > 0 ? 
-      (mortgageAmount * mortgageRate + otherLoansAmount * otherLoansRate) / totalAmount : 
+    const weightedRate = totalAmount > 0 ?
+      (mortgageAmount * mortgageRate + otherLoansAmount * otherLoansRate) / totalAmount :
       mortgageRate;
-    
+
     return calculateMonthlyPayment(totalAmount, weightedRate, years);
   };
 
+  // Logic to solve for years based on target payment (for Shorten Term track)
+  const calculateYearsForPayment = (targetPayment: number) => {
+    const mortgageAmount = formData.mortgageBalance;
+    const otherLoansAmount = formData.otherLoansBalance + Math.abs(formData.bankAccountBalance);
+    const oneTimePayment = formData.oneTimePaymentAmount || 0;
+    const totalAmount = Math.max(0, mortgageAmount + otherLoansAmount - oneTimePayment);
+
+    const mortgageRate = calculateWeightedMortgageRate();
+    const otherLoansRate = calculateWeightedOtherLoansRate();
+    const weightedRate = totalAmount > 0 ?
+      (mortgageAmount * mortgageRate + otherLoansAmount * otherLoansRate) / totalAmount :
+      mortgageRate;
+
+    // Iterate to find the closest year match
+    // Standard constraints: 5 to 30 years
+    let closestYears = 20;
+    let minDiff = Infinity;
+
+    for (let y = 4; y <= 35; y++) {
+      const p = calculateMonthlyPayment(totalAmount, weightedRate, y);
+      const diff = Math.abs(p - targetPayment);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestYears = y;
+      }
+    }
+    return closestYears;
+  };
+
+  // Initialize years based on track intent
+  React.useEffect(() => {
+    if (formData.track === TrackType.SHORTEN_TERM && formData.targetTotalPayment > 0) {
+      const optimalYears = calculateYearsForPayment(formData.targetTotalPayment);
+      setSimulatorYears(optimalYears);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount to set initial state based on previous steps
+
   const newPayment = calculatePaymentForYears(simulatorYears);
   const currentPayment = formData.mortgagePayment + formData.otherLoansPayment;
-  
+
   // Validation with current parameters
   const validation = validateLoanParams(
     formData.mortgageBalance + formData.otherLoansBalance + Math.abs(formData.bankAccountBalance),
@@ -49,36 +97,37 @@ export const Step5Simulator: React.FC = () => {
   // Calculate valid years range based on mathematical constraints
   const calculateValidYearsRange = () => {
     if (!formData.age) return { min: 10, max: 30 };
-    
+
     const maxYearsByAge = currentMortgageParams.regulations.maxBorrowerAge - formData.age;
     const maxYears = Math.min(maxYearsByAge, currentMortgageParams.regulations.maxLoanTermYears);
-    
+
     // Minimum years - ensure payment doesn't exceed reasonable limits
     const mortgageAmount = formData.mortgageBalance;
     const otherLoansAmount = formData.otherLoansBalance + Math.abs(formData.bankAccountBalance);
-    const totalAmount = mortgageAmount + otherLoansAmount;
+    const oneTimePayment = formData.oneTimePaymentAmount || 0;
+    const totalAmount = Math.max(0, mortgageAmount + otherLoansAmount - oneTimePayment);
     const maxReasonablePayment = currentPayment * 2; // Don't allow more than double current payment
-    
+
     // Use the same weighted rate calculation
     const mortgageRate = calculateWeightedMortgageRate();
     const otherLoansRate = calculateWeightedOtherLoansRate();
-    const weightedRate = totalAmount > 0 ? 
-      (mortgageAmount * mortgageRate + otherLoansAmount * otherLoansRate) / totalAmount : 
+    const weightedRate = totalAmount > 0 ?
+      (mortgageAmount * mortgageRate + otherLoansAmount * otherLoansRate) / totalAmount :
       mortgageRate;
-    
+
     const monthlyRate = weightedRate / 12;
-    
+
     let minYears = 5;
     if (monthlyRate > 0 && totalAmount > 0) {
       // Calculate minimum years needed to keep payment under maxReasonablePayment
-      const minPayments = Math.log(1 + (totalAmount * monthlyRate) / maxReasonablePayment) / 
-                         Math.log(1 + monthlyRate);
+      const minPayments = Math.log(1 + (totalAmount * monthlyRate) / maxReasonablePayment) /
+        Math.log(1 + monthlyRate);
       minYears = Math.max(Math.ceil(minPayments / 12), 5);
     }
-    
-    return { 
-      min: Math.max(minYears, 5), 
-      max: Math.min(maxYears, 35) 
+
+    return {
+      min: Math.max(minYears, 5),
+      max: Math.min(maxYears, 35)
     };
   };
 
@@ -87,7 +136,7 @@ export const Step5Simulator: React.FC = () => {
   const handleYearsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!formData.age) return;
     const years = parseInt(e.target.value);
-    
+
     // Ensure the years are within valid range
     if (years >= minYears && years <= maxYears) {
       setSimulatorYears(years);
@@ -97,7 +146,7 @@ export const Step5Simulator: React.FC = () => {
   const handleAgeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const age = parseInt(e.target.value) || null;
     updateFormData({ age });
-    
+
     // Reset years to a safe middle value when age changes
     if (age) {
       const newRange = calculateValidYearsRange();
@@ -117,14 +166,14 @@ export const Step5Simulator: React.FC = () => {
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">תוצאות הסימולציה</h2>
       </div>
-      
+
       {/* All-in-One Calculator */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 shadow-lg">
+      <div className={`bg-gradient-to-br from-${primaryColor}-50 to-indigo-50 border-2 border-${primaryColor}-200 rounded-2xl p-4 shadow-lg`}>
         {/* Age Input Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <i className="fa-solid fa-calculator text-blue-600 text-lg"></i>
+              <i className={`fa-solid fa-calculator text-${primaryColor}-600 text-lg`}></i>
               <h3 className="text-lg font-bold text-gray-900">מחשבון מיחזור משכנתא</h3>
             </div>
             <div className="flex items-center gap-3">
@@ -137,11 +186,10 @@ export const Step5Simulator: React.FC = () => {
                   value={formData.age || ''}
                   onChange={handleAgeChange}
                   placeholder="35"
-                  className={`w-20 px-3 py-2 text-lg font-bold border-2 rounded-xl focus:outline-none focus:ring-2 text-center shadow-sm ${
-                    !formData.age 
-                      ? 'border-blue-400 ring-blue-200 bg-blue-50 text-blue-900 placeholder-blue-400' 
-                      : 'border-gray-300 focus:ring-blue-500 text-gray-900 bg-white'
-                  }`}
+                  className={`w-20 px-3 py-2 text-lg font-bold border-2 rounded-xl focus:outline-none focus:ring-2 text-center shadow-sm ${!formData.age
+                    ? `border-${primaryColor}-400 ring-${primaryColor}-200 bg-${primaryColor}-50 text-${primaryColor}-900 placeholder-${primaryColor}-400`
+                    : `border-gray-300 focus:ring-${primaryColor}-500 text-gray-900 bg-white`
+                    }`}
                 />
                 <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-sm text-gray-500">
                   שנים
@@ -184,8 +232,8 @@ export const Step5Simulator: React.FC = () => {
                   );
                 } else {
                   return (
-                    <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                      <h4 className="text-xl font-bold text-blue-700 mb-1">
+                    <div className={`bg-${primaryColor}-100 border border-${primaryColor}-300 rounded-lg p-3`}>
+                      <h4 className={`text-xl font-bold text-${primaryColor}-700 mb-1`}>
                         תוספת של כ-{formatNumberWithCommas(Math.round(paymentDiff))} ש"ח בחודש
                       </h4>
                     </div>
@@ -207,24 +255,32 @@ export const Step5Simulator: React.FC = () => {
                         const { min: minYears, max: maxYears } = calculateValidYearsRange();
                         const maxPayment = calculatePaymentForYears(minYears); // Shorter term = higher payment
                         const minPayment = calculatePaymentForYears(maxYears); // Longer term = lower payment
-                        
-                        // Use the full range for scaling, with some padding
+
+                        // Use the full range for scaling
                         const paymentRange = maxPayment - minPayment;
-                        const scaledWidth = paymentRange > 0 
-                          ? Math.max(((newPayment - minPayment) / paymentRange) * 100, 10)
-                          : 50; // Fallback if range calculation fails
-                        
+
+                        // Consistent linear scaling function mapping value to visual % (5% to 100%)
+                        // We reserve 5% as minimum visual width/padding to avoid invisible bars or edgeclipping
+                        const getVisualPercent = (amount: number) => {
+                          if (paymentRange <= 0) return 50;
+                          const rawPercent = Math.min(Math.max(((amount - minPayment) / paymentRange), 0), 1);
+                          return 5 + (rawPercent * 95); // Map 0-1 to 5-100
+                        };
+
+                        const visualWidth = getVisualPercent(newPayment);
+                        const visualMarkerPos = getVisualPercent(currentPayment);
+
                         return (
                           <>
                             {/* New Payment Bar */}
-                            <div 
-                              className={`absolute left-0 top-0 h-full bg-gradient-to-r ${gradientColor} rounded-lg shadow-sm transition-all duration-700 ease-out`}
-                              style={{ 
-                                width: `${Math.min(Math.max(scaledWidth, 10), 100)}%`
+                            <div
+                              className={`absolute right-0 top-0 h-full bg-gradient-to-l ${gradientColor} rounded-lg shadow-sm transition-all duration-700 ease-out`}
+                              style={{
+                                width: `${visualWidth}%`
                               }}
                             >
                               {/* New Payment Amount Inside Bar - only if bar is wide enough */}
-                              {scaledWidth >= 30 && (
+                              {visualWidth >= 30 && (
                                 <div className="flex items-center justify-center h-full">
                                   <span className="text-white font-bold text-lg">
                                     {formatNumberWithCommas(Math.round(newPayment))} ש"ח
@@ -232,14 +288,14 @@ export const Step5Simulator: React.FC = () => {
                                 </div>
                               )}
                             </div>
-                            
+
                             {/* New Payment Amount Outside Bar - when bar is too narrow */}
-                            {scaledWidth < 30 && (
-                              <div 
+                            {visualWidth < 30 && (
+                              <div
                                 className="absolute top-1/2 transform -translate-y-1/2 text-gray-800 font-bold text-lg bg-white px-3 py-2 rounded-lg shadow-sm border"
-                                style={{ 
-                                  left: `${Math.min(Math.max(scaledWidth, 10), 100)}%`,
-                                  marginLeft: '12px'
+                                style={{
+                                  right: `${visualWidth}%`,
+                                  marginRight: '12px'
                                 }}
                               >
                                 {formatNumberWithCommas(Math.round(newPayment))} ש"ח
@@ -249,20 +305,26 @@ export const Step5Simulator: React.FC = () => {
                         );
                       })()}
                     </div>
-                    
+
                     {/* Current Payment Indicator - Below the bar */}
                     <div className="relative mt-2">
-                      <div 
-                        className="absolute top-0 transform -translate-x-1/2"
-                        style={{ 
-                          left: `${(() => {
+                      <div
+                        className="absolute top-0 transform translate-x-1/2"
+                        style={{
+                          right: `${(() => {
                             const { min: minYears, max: maxYears } = calculateValidYearsRange();
                             const maxPayment = calculatePaymentForYears(minYears);
                             const minPayment = calculatePaymentForYears(maxYears);
                             const paymentRange = maxPayment - minPayment;
-                            return paymentRange > 0
-                              ? Math.min(Math.max(((currentPayment - minPayment) / paymentRange) * 100, 0), 100)
-                              : 50;
+
+                            // Replicate the exact same scaling logic
+                            const getVisualPercent = (amount: number) => {
+                              if (paymentRange <= 0) return 50;
+                              const rawPercent = Math.min(Math.max(((amount - minPayment) / paymentRange), 0), 1);
+                              return 5 + (rawPercent * 95);
+                            };
+
+                            return getVisualPercent(currentPayment);
                           })()}%`
                         }}
                       >
@@ -284,11 +346,11 @@ export const Step5Simulator: React.FC = () => {
           <div className="bg-white rounded-xl p-4 border border-gray-200">
             <label className="flex items-center justify-between text-lg font-semibold text-gray-900 mb-4">
               <div className="flex items-center">
-                <i className="fa-solid fa-sliders mr-2 text-blue-600"></i>
+                <i className={`fa-solid fa-sliders mr-2 text-${primaryColor}-600`}></i>
                 {formData.age ? `המשכנתא החדשה תיפרס על פני ${simulatorYears} שנים` : 'תקופת המשכנתא החדשה (שנים)'}
               </div>
             </label>
-            
+
             {!formData.age ? (
               /* Locked Slider */
               <div className="relative">
@@ -302,7 +364,7 @@ export const Step5Simulator: React.FC = () => {
                     className="w-full h-4 bg-gradient-to-r from-green-300 via-blue-300 to-purple-300 rounded-lg appearance-none slider-enhanced cursor-not-allowed opacity-50"
                   />
                 </div>
-                
+
                 <div className="flex justify-between text-lg text-gray-400 mb-4">
                   <span>10 שנים</span>
                   <span>30 שנים</span>
@@ -311,8 +373,8 @@ export const Step5Simulator: React.FC = () => {
                 {/* Lock overlay */}
                 <div className="absolute inset-0 bg-white bg-opacity-80 rounded-lg flex items-center justify-center">
                   <div className="text-center">
-                    <i className="fa-solid fa-lock text-blue-500 text-2xl mb-2"></i>
-                    <p className="text-blue-900 font-semibold">הזן גיל למעלה לפתיחת הסימולטור</p>
+                    <i className={`fa-solid fa-lock text-${primaryColor}-500 text-2xl mb-2`}></i>
+                    <p className={`text-${primaryColor}-900 font-semibold`}>הזן גיל למעלה לפתיחת הסימולטור</p>
                   </div>
                 </div>
               </div>
@@ -329,7 +391,7 @@ export const Step5Simulator: React.FC = () => {
                     className="w-full h-4 bg-gradient-to-r from-green-300 via-blue-300 to-purple-300 rounded-lg appearance-none slider-enhanced cursor-pointer"
                   />
                 </div>
-                
+
                 <div className="flex justify-between text-lg text-gray-500 mb-4">
                   <span>{minYears} שנים</span>
                   <span>{maxYears} שנים</span>
@@ -350,7 +412,7 @@ export const Step5Simulator: React.FC = () => {
                   <div className="flex items-center gap-2 text-lg text-green-700">
                     <i className="fa-solid fa-check-circle"></i>
                     <span>
-                      <span className="font-medium">סימולטור מתקדם פעיל</span> - 
+                      <span className="font-medium">סימולטור מתקדם פעיל</span> -
                       מקסימום שנים מותר: {maxAllowedYears} שנים (עד גיל {currentMortgageParams.regulations.maxBorrowerAge})
                     </span>
                   </div>
@@ -373,20 +435,37 @@ export const Step5Simulator: React.FC = () => {
                 <p className="text-gray-600 text-lg">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
               </div>
             </div>
-            <Button 
-              onClick={() => alert("תודה! יועץ בכיר ייצור איתך קשר בשעות הקרובות עם הניתוח המלא והצעה מותאמת אישית.")} 
+            <Button
+              onClick={() => setShowDialog(true)}
               className="px-4 py-2 text-lg bg-green-600 hover:bg-green-700"
             >
               <i className="fa-solid fa-phone mr-1"></i>
               לשיחה עם המומחים
             </Button>
           </div>
-          
+
           {/* Secondary CTA */}
-          <button onClick={resetForm} className="w-full text-blue-600 font-medium text-lg hover:underline">
+          <button onClick={resetForm} className={`w-full text-${primaryColor}-600 font-medium text-lg hover:underline`}>
             בדוק תרחיש אחר
           </button>
         </div>
+
+        <Dialog
+          isOpen={showDialog}
+          onClose={() => setShowDialog(false)}
+          title="סיירת המשכנתא"
+          confirmText="תודה, מעולה!"
+        >
+          <p>
+            תודה שבחרת בנו!
+            <br />
+            קיבלנו את הפנייה שלך, ויועץ מומחה מסיירת המשכנתא כבר עובר על הנתונים.
+            <br />
+            נחזור אליך בהקדם עם ניתוח מלא והצעה שתחסוך לך כסף.
+            <br />
+            שיהיה יום נפלא!
+          </p>
+        </Dialog>
       </div>
 
       <style>{`

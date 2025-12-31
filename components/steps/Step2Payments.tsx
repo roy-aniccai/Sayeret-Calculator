@@ -24,27 +24,34 @@ const InputWithTooltip: React.FC<{
   helperText?: string;
   autoAdvance?: boolean;
   maxLength?: number;
-}> = ({ label, tooltip, ...inputProps }) => (
-  <div>
-    <div className="flex items-center gap-2 mb-2">
-      <label className="block text-lg font-semibold text-gray-900">
-        {label}
-      </label>
-      <Tooltip
-        content={tooltip}
-        position="auto"
-        fontSize="base"
-        allowWrap={true}
-        maxWidth={280}
-      >
-        <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-sm"></i>
-      </Tooltip>
+}> = ({ label, tooltip, ...inputProps }) => {
+  const { getTrackConfig } = useForm();
+  const config = getTrackConfig();
+  const primaryColor = config.ui.primaryColor;
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <label className="block text-lg font-semibold text-gray-900">
+          {label}
+        </label>
+        <Tooltip
+          content={tooltip}
+          position="auto"
+          fontSize="base"
+          allowWrap={true}
+          maxWidth={280}
+        >
+          <i className={`fa-solid fa-info-circle text-${primaryColor}-400 hover:text-${primaryColor}-600 cursor-help text-sm`}></i>
+        </Tooltip>
+      </div>
+      <Input {...inputProps} label="" />
     </div>
-    <Input {...inputProps} label="" />
-  </div>
-);
+  );
+};
 
 export const Step2Payments: React.FC = () => {
+  console.log('Regulator Fix Applied: v1.4 (Manual Input)');
   const { formData, updateFormData, nextStep, prevStep, getTrackConfig, getTrackSpecificStyling, getTrackOptimizedRange } = useForm();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -121,22 +128,22 @@ export const Step2Payments: React.FC = () => {
 
   const regulatoryMinPayment = calculateRegulatoryMin();
 
-  // Track-specific payment range calculation - MODIFIED for new logic
+  /* New Logic for Shorten Term - Max is 40% of Net Income if available, else standard multiplier */
   const getPaymentRange = () => {
     if (formData.track === TrackType.SHORTEN_TERM) {
-      // For shorten term, we want to pay MORE, so min is current, max is higher
-      const trackRange = getTrackOptimizedRange(currentTotal);
+      // Logic: Min is current payment, Max is 40% of Net Income (if valid) or fallback to 1.5x current
+      const maxIncomeBased = formData.netIncome ? formData.netIncome * 0.4 : currentTotal * 1.5;
       return {
         min: currentTotal,
-        max: trackRange.max
+        max: Math.max(maxIncomeBased, currentTotal * 1.1) // Ensure max is at least 10% more than min
       };
     }
 
     // For Monthly Reduction (default), range is from Regulatory Min to Current
-    // We add a small buffer above current for user freedom, but focus is reduction
+    // FIXED: Set max exactly to currentTotal so the scale aligns with the "Current Payment" label at the edge
     return {
       min: regulatoryMinPayment,
-      max: currentTotal * 1.1 // Allow 10% above current just in case
+      max: currentTotal
     };
   };
 
@@ -178,17 +185,217 @@ export const Step2Payments: React.FC = () => {
   const isReduction = savingsAmount > 0;
 
   // New clean slider styling (no red/green gradient)
+  // FIXED: Changed to 'to left' for RTL support (fills from Right to Left)
   const getSliderStyling = () => {
     const percent = ((formData.targetTotalPayment - minTarget) / (maxTarget - minTarget)) * 100;
     const activeColor = formData.track === TrackType.SHORTEN_TERM ? '#10b981' : '#3b82f6'; // Green for shorten term, Blue for standard
 
     return {
-      background: `linear-gradient(to right, ${activeColor} 0%, ${activeColor} ${percent}%, #e5e7eb ${percent}%, #e5e7eb 100%)`,
+      background: `linear-gradient(to left, ${activeColor} 0%, ${activeColor} ${percent}%, #e5e7eb ${percent}%, #e5e7eb 100%)`,
       thumbColor: activeColor
     };
   };
 
   const sliderStyling = getSliderStyling();
+
+  // Helper for dynamic labels
+  const getSliderLabels = () => {
+    if (formData.track === TrackType.SHORTEN_TERM) {
+      return {
+        start: 'החזר נוכחי',
+        end: 'מקסימום אפשרי'
+      };
+    }
+    return {
+      start: 'מינימום אפשרי (30 שנה)',
+      end: 'החזר נוכחי'
+    };
+  };
+
+  const sliderLabels = getSliderLabels();
+
+  const handleManualInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove non-digits
+    const rawValue = e.target.value.replace(/[^0-9]/g, '');
+    const value = parseInt(rawValue);
+
+    // Allow empty string temporarily, otherwise default to 0
+    if (isNaN(value)) {
+      updateFormData({ targetTotalPayment: 0 });
+      return;
+    }
+
+    updateFormData({ targetTotalPayment: value });
+  };
+
+  const handleManualInputBlur = () => {
+    let val = formData.targetTotalPayment;
+    // Clamp to valid range on blur
+    if (val < minTarget) val = minTarget;
+    if (val > maxTarget) val = maxTarget;
+    updateFormData({ targetTotalPayment: val });
+  };
+
+  const isShortenTerm = formData.track === TrackType.SHORTEN_TERM;
+
+  if (isShortenTerm) {
+    return (
+      <div className={`animate-fade-in-up track-${formData.track || 'default'}`}>
+        {/* Promoted Subtitle as Primary Step Title */}
+        <div className="text-center mb-6">
+          <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
+            {trackContent.stepDescription}
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+          {/* Current Mortgage Payment */}
+          <InputWithTooltip
+            label="החזר משכנתא חודשי נוכחי"
+            tooltip={trackContent.mortgageTooltip}
+            name="mortgagePayment"
+            inputMode="numeric"
+            suffix="₪"
+            value={formatNumberWithCommas(formData.mortgagePayment)}
+            onChange={handleChange}
+            placeholder="6,500"
+            error={errors.mortgagePayment}
+            icon={<i className={`fa-solid fa-home ${accentStyling.split(' ')[0]}`}></i>}
+            autoAdvance={true}
+          />
+
+          {/* Net Income Input */}
+          <InputWithTooltip
+            label="הכנסה נטו (זוגית)"
+            tooltip="משמש לחישוב יכולת ההחזר לפי כללי האצבע"
+            name="netIncome"
+            inputMode="numeric"
+            suffix="₪"
+            value={formatNumberWithCommas(formData.netIncome || 0)}
+            onChange={handleChange}
+            placeholder="20,000"
+            icon={<i className={`fa-solid fa-wallet ${accentStyling.split(' ')[0]}`}></i>}
+            autoAdvance={true}
+          />
+
+          {/* Rule of Thumb Message */}
+          {formData.netIncome > 0 && (
+            <div className={`${primaryStyling} rounded-lg p-3 text-sm text-gray-800`}>
+              <p className={`font-bold mb-1 ${accentStyling.split(' ')[0]}`}><i className="fa-solid fa-circle-info mr-1"></i> כלל אצבע:</p>
+              <p>ההחזר החודשי המומלץ הוא עד 33%-35% מההכנסה הפנויה (במקרים חריגים עד 40% ללווים חזקים).</p>
+              <p className="mt-1 font-semibold">מקסימום מומלץ עבורכם: כ-{formatNumberWithCommas(Math.round(formData.netIncome * 0.35))} ₪</p>
+            </div>
+          )}
+
+          {/* Track-specific Target Payment Slider */}
+          <div className="space-y-3 pt-2">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="block text-lg font-semibold text-gray-900">
+                  {formData.track === TrackType.SHORTEN_TERM ? 'יעד תשלום מוגבר לקיצור שנים' : 'יעד החזר חודשי חדש'}
+                </label>
+                <Tooltip
+                  content={trackContent.sliderTooltip}
+                  position="auto"
+                  fontSize="base"
+                  allowWrap={true}
+                  maxWidth={280}
+                >
+                  <i className={`fa-solid fa-info-circle ${accentStyling.split(' ')[0]} hover:opacity-80 cursor-help text-sm`}></i>
+                </Tooltip>
+              </div>
+
+              <div className="relative">
+                <input
+                  type="range"
+                  min={minTarget}
+                  max={maxTarget}
+                  value={formData.targetTotalPayment}
+                  onChange={handleSliderChange}
+                  className="w-full h-3 rounded-lg appearance-none cursor-pointer slider"
+                  style={sliderStyling}
+                />
+                <div className="flex justify-between text-sm text-gray-500 mt-2 font-medium">
+                  <div className="flex flex-col items-start">
+                    <span className="text-gray-400 text-xs">{sliderLabels.start}</span>
+                    <span>{formatNumberWithCommas(minTarget)} ₪</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-gray-400 text-xs">{sliderLabels.end}</span>
+                    <span>{formatNumberWithCommas(maxTarget)} ₪</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 text-center">
+                {/* Manual Input Field for Payment Target */}
+                <div className="relative inline-block">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatNumberWithCommas(formData.targetTotalPayment)}
+                    onChange={handleManualInputChange}
+                    onBlur={handleManualInputBlur}
+                    className={`text-2xl font-bold mb-1 text-center bg-transparent border-b-2 border-dashed border-gray-300 focus:border-${config.ui.primaryColor}-500 focus:outline-none w-32 ${accentStyling.split(' ')[0]}`}
+                  />
+                  <span className={`text-2xl font-bold ml-1 ${accentStyling.split(' ')[0]}`}>₪</span>
+                </div>
+                <div className="text-green-600 font-semibold text-base">
+                  <i className="fa-solid fa-piggy-bank mr-2"></i>
+                  {savingsAmount < 0 ? `${trackContent.increaseText} ${formatNumberWithCommas(Math.abs(savingsAmount))} ₪ לקיצור שנים` : `${trackContent.reductionText} ${formatNumberWithCommas(savingsAmount)} ₪`}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Track-specific Integrated CTA */}
+          <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between`}>
+            <div className="flex items-center gap-3">
+              <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-lg`}></i>
+              <p className={`${accentStyling.split(' ')[0]} text-base font-medium`}>
+                {trackContent.ctaMessage}
+              </p>
+            </div>
+            <Button
+              onClick={handleNext}
+              className={`px-4 py-2 text-base ${buttonStyling}`}
+            >
+              {trackContent.ctaText}
+            </Button>
+          </div>
+
+          {/* Secondary CTA for going back */}
+          <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
+            {generateContextualBackText(3)}
+          </button>
+        </div>
+
+        <style>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 24px;
+          width: 24px;
+          border-radius: 50%;
+          background: ${sliderStyling.thumbColor};
+          border: 2px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+          height: 24px;
+          width: 24px;
+          border-radius: 50%;
+          background: ${sliderStyling.thumbColor};
+          border: 2px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          cursor: pointer;
+          border: none;
+        }
+      `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className={`animate-fade-in-up track-${formData.track || 'default'}`}>
@@ -267,19 +474,28 @@ export const Step2Payments: React.FC = () => {
               />
               <div className="flex justify-between text-sm text-gray-500 mt-2 font-medium">
                 <div className="flex flex-col items-start">
-                  <span className="text-gray-400 text-xs">מינימום אפשרי (30 שנה)</span>
+                  <span className="text-gray-400 text-xs">{sliderLabels.start}</span>
                   <span>{formatNumberWithCommas(minTarget)} ₪</span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-gray-400 text-xs">החזר נוכחי</span>
-                  <span>{formatNumberWithCommas(currentTotal)} ₪</span>
+                  <span className="text-gray-400 text-xs">{sliderLabels.end}</span>
+                  <span>{formatNumberWithCommas(maxTarget)} ₪</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-3 text-center">
-              <div className={`text-2xl font-bold mb-1 ${accentStyling.split(' ')[0]}`}>
-                {formatNumberWithCommas(formData.targetTotalPayment)} ₪
+              {/* Manual Input Field for Payment Target */}
+              <div className="relative inline-block">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatNumberWithCommas(formData.targetTotalPayment)}
+                  onChange={handleManualInputChange}
+                  onBlur={handleManualInputBlur}
+                  className={`text-2xl font-bold mb-1 text-center bg-transparent border-b-2 border-dashed border-gray-300 focus:border-${config.ui.primaryColor}-500 focus:outline-none w-32 ${accentStyling.split(' ')[0]}`}
+                />
+                <span className={`text-2xl font-bold ml-1 ${accentStyling.split(' ')[0]}`}>₪</span>
               </div>
               {formData.track === TrackType.SHORTEN_TERM ? (
                 <div className="text-green-600 font-semibold text-base">

@@ -22,25 +22,31 @@ const InputWithTooltip: React.FC<{
   helperText?: string;
   autoAdvance?: boolean;
   maxLength?: number;
-}> = ({ label, tooltip, ...inputProps }) => (
-  <div>
-    <div className="flex items-center gap-2 mb-2">
-      <label className="block text-lg font-semibold text-gray-900">
-        {label}
-      </label>
-      <Tooltip 
-        content={tooltip}
-        position="auto"
-        fontSize="base"
-        allowWrap={true}
-        maxWidth={280}
-      >
-        <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-sm"></i>
-      </Tooltip>
+}> = ({ label, tooltip, ...inputProps }) => {
+  const { getTrackConfig } = useForm();
+  const config = getTrackConfig();
+  const primaryColor = config.ui.primaryColor;
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <label className="block text-lg font-semibold text-gray-900">
+          {label}
+        </label>
+        <Tooltip
+          content={tooltip}
+          position="auto"
+          fontSize="base"
+          allowWrap={true}
+          maxWidth={280}
+        >
+          <i className={`fa-solid fa-info-circle text-${primaryColor}-400 hover:text-${primaryColor}-600 cursor-help text-sm`}></i>
+        </Tooltip>
+      </div>
+      <Input {...inputProps} label="" />
     </div>
-    <Input {...inputProps} label="" />
-  </div>
-);
+  );
+};
 
 export const Step1Debts: React.FC = () => {
   const { formData, updateFormData, nextStep, prevStep, getTrackConfig, getTrackSpecificStyling } = useForm();
@@ -53,7 +59,7 @@ export const Step1Debts: React.FC = () => {
   const primaryStyling = getTrackSpecificStyling('primary');
   const buttonStyling = getTrackSpecificStyling('button');
   const accentStyling = getTrackSpecificStyling('accent');
-  
+
   // Track-specific content
   const getTrackSpecificContent = () => {
     if (formData.track === TrackType.MONTHLY_REDUCTION) {
@@ -77,7 +83,7 @@ export const Step1Debts: React.FC = () => {
         ctaMessage: 'מידע מדויק = חיסכון מקסימלי בשנים ובריבית'
       };
     }
-    
+
     // Default content
     return {
       stepTitle: 'נתוני משכנתא והלוואות',
@@ -95,7 +101,7 @@ export const Step1Debts: React.FC = () => {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const numValue = parseFormattedNumber(value);
-    
+
     // Clear error when user types
     setErrors(prev => {
       if (prev[name]) {
@@ -105,7 +111,7 @@ export const Step1Debts: React.FC = () => {
       }
       return prev;
     });
-    
+
     updateFormData({ [name]: numValue });
   }, [updateFormData]);
 
@@ -132,7 +138,11 @@ export const Step1Debts: React.FC = () => {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.mortgageBalance) newErrors.mortgageBalance = 'נא להזין יתרת משכנתא';
-    
+    if (formData.track === TrackType.SHORTEN_TERM) {
+      if (!formData.propertyValue) newErrors.propertyValue = 'נא להזין שווי נכס';
+      if (!formData.yearsRemaining) newErrors.yearsRemaining = 'נא להזין שנים נותרות';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -141,6 +151,89 @@ export const Step1Debts: React.FC = () => {
     if (!validate()) return;
     nextStep();
   };
+
+  // Condition for Shorten Term track
+  const isShortenTerm = formData.track === TrackType.SHORTEN_TERM;
+
+  if (isShortenTerm) {
+    return (
+      <div className={`animate-fade-in-up track-${formData.track || 'default'}`}>
+        {/* Promoted Subtitle as Primary Step Title */}
+        <div className="text-center mb-6">
+          <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
+            {trackContent.stepDescription}
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+          {/* Property Value (Moved from Step 3) */}
+          <InputWithTooltip
+            label="שווי נכס מוערך היום"
+            tooltip="קובע את אחוז המימון ותנאי ההלוואה החדשה"
+            name="propertyValue"
+            inputMode="numeric"
+            suffix="₪"
+            value={formatNumberWithCommas(formData.propertyValue)}
+            onChange={handleChange}
+            placeholder="2,500,000"
+            error={errors.propertyValue}
+            icon={<i className={`fa-solid fa-home ${accentStyling.split(' ')[0]}`}></i>}
+            autoAdvance={true}
+          />
+
+          {/* Mortgage Balance */}
+          <InputWithTooltip
+            label="יתרת משכנתא נוכחית"
+            tooltip={trackContent.mortgageTooltip}
+            name="mortgageBalance"
+            inputMode="numeric"
+            suffix="₪"
+            value={formatNumberWithCommas(formData.mortgageBalance)}
+            onChange={handleChange}
+            placeholder="1,200,000"
+            error={errors.mortgageBalance}
+            icon={<i className={`fa-solid fa-file-invoice-dollar ${accentStyling.split(' ')[0]}`}></i>}
+            autoAdvance={true}
+          />
+
+          {/* Remaining Years */}
+          <InputWithTooltip
+            label="שנים נותרות לסיום המשכנתא"
+            tooltip="כמה שנים נשארו עד לסיום המשכנתא הנוכחית?"
+            name="yearsRemaining"
+            inputMode="numeric"
+            value={formData.yearsRemaining?.toString() || ''}
+            onChange={handleChange}
+            placeholder="20"
+            error={errors.yearsRemaining}
+            icon={<i className={`fa-solid fa-hourglass-half ${accentStyling.split(' ')[0]}`}></i>}
+            autoAdvance={true}
+          />
+
+          {/* Track-specific Integrated CTA */}
+          <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between mt-6`}>
+            <div className="flex items-center gap-3">
+              <i className={`fa-solid fa-lightbulb ${accentStyling.split(' ')[0]} text-lg`}></i>
+              <p className={`${accentStyling.split(' ')[0]} text-sm font-medium`}>
+                {trackContent.ctaMessage}
+              </p>
+            </div>
+            <Button
+              onClick={handleNext}
+              className={`px-4 py-2 text-sm ${buttonStyling}`}
+            >
+              {trackContent.ctaText}
+            </Button>
+          </div>
+
+          {/* Secondary CTA for going back */}
+          <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
+            {generateContextualBackText(2)}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
 
 
@@ -152,7 +245,7 @@ export const Step1Debts: React.FC = () => {
           {trackContent.stepDescription}
         </h2>
       </div>
-      
+
       <div className="space-y-4">
         {/* Mortgage Balance */}
         <InputWithTooltip
@@ -180,22 +273,20 @@ export const Step1Debts: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleOtherLoansToggle(true)}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                  hasOtherLoans 
-                    ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${hasOtherLoans
+                  ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
               >
                 כן
               </button>
               <button
                 type="button"
                 onClick={() => handleOtherLoansToggle(false)}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                  !hasOtherLoans 
-                    ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${!hasOtherLoans
+                  ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
               >
                 לא
               </button>
@@ -234,22 +325,20 @@ export const Step1Debts: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleBankOverdraftToggle(true)}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                  hasBankOverdraft 
-                    ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${hasBankOverdraft
+                  ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
               >
                 כן
               </button>
               <button
                 type="button"
                 onClick={() => handleBankOverdraftToggle(false)}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                  !hasBankOverdraft 
-                    ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${!hasBankOverdraft
+                  ? buttonStyling.replace('hover:bg-', 'bg-').split(' ')[0] + ' text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
               >
                 לא
               </button>
@@ -284,8 +373,8 @@ export const Step1Debts: React.FC = () => {
               {trackContent.ctaMessage}
             </p>
           </div>
-          <Button 
-            onClick={handleNext} 
+          <Button
+            onClick={handleNext}
             className={`px-4 py-2 text-sm ${buttonStyling}`}
           >
             {trackContent.ctaText}

@@ -10,13 +10,13 @@ interface FormContextType {
   resetForm: () => void;
   nextStep: () => void;
   prevStep: () => void;
-  
+
   // Track-specific methods
   getTrackConfig: () => TrackConfig;
   isTrack: (track: TrackType) => boolean;
   getTrackSpecificValidation: (field: string) => any;
   getTrackSpecificStyling: (component: string) => string;
-  
+
   // Track-aware calculation methods
   getTrackOptimizedRange: (baseValue: number) => { min: number; max: number };
   calculateWithTrackPriority: (data: Partial<FormData>) => any;
@@ -25,27 +25,30 @@ interface FormContextType {
 const initialFormData: FormData = {
   // Step 1
   track: null,
-  
+
   // Step 1 - Debts
   mortgageBalance: 1200000,
   otherLoansBalance: 0,
   bankAccountBalance: 0,
-  
+
   // Step 2 - Monthly Payments
   mortgagePayment: 6500,
   otherLoansPayment: 0,
   targetTotalPayment: 6500,
-  
+
   // Step 3 - Assets
   propertyValue: 2500000,
-  
+
   // Step 4 - Contact
   leadName: '',
   leadPhone: '',
-  
+
   // Step 5 - Simulator
   age: null,
-  
+
+  // Step 3 - One-time Payment
+  oneTimePaymentAmount: 0,
+
   // Legacy fields (keeping for compatibility)
   currentPayment: 6500,
   yearsRemaining: 20,
@@ -132,7 +135,7 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const getTrackSpecificValidation = (field: string): any => {
     const config = getTrackConfig();
-    
+
     switch (field) {
       case 'paymentRange':
         return {
@@ -152,7 +155,7 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const getTrackSpecificStyling = (component: string): string => {
     const config = getTrackConfig();
     const primaryColor = config.ui.primaryColor;
-    
+
     switch (component) {
       case 'primary':
         return `text-${primaryColor}-900 bg-${primaryColor}-50 border-${primaryColor}-200`;
@@ -171,7 +174,7 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const config = getTrackConfig();
     const multiplier = config.validation.paymentRangeMultiplier;
     const minIncrease = config.validation.minPaymentIncrease;
-    
+
     if (formData.track === TrackType.MONTHLY_REDUCTION) {
       // For payment reduction, allow range below current payment
       return {
@@ -185,7 +188,7 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         max: baseValue * (1 + multiplier)
       };
     }
-    
+
     // Default range
     return {
       min: baseValue * 0.7,
@@ -196,21 +199,21 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const calculateWithTrackPriority = (data: Partial<FormData>) => {
     const fullData = { ...formData, ...data };
     // Import the calculation function dynamically to avoid circular dependencies
-    return import('../utils/calculator').then(({ calculateWithTrackPriority }) => 
+    return import('../utils/calculator').then(({ calculateWithTrackPriority }) =>
       calculateWithTrackPriority(fullData)
     );
   };
 
   return (
-    <FormContext.Provider value={{ 
-      step, 
-      setStep, 
-      formData, 
-      updateFormData, 
-      resetForm, 
-      nextStep, 
-      prevStep, 
-      sessionId, 
+    <FormContext.Provider value={{
+      step,
+      setStep,
+      formData,
+      updateFormData,
+      resetForm,
+      nextStep,
+      prevStep,
+      sessionId,
       logEvents,
       getTrackConfig,
       isTrack,
