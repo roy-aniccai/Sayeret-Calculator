@@ -22,6 +22,13 @@ export interface NavigationState {
  * Step-to-previous-step mapping for navigation flow
  * Based on the logical flow of the mortgage calculator
  */
+import { TrackType } from '../types';
+import { TRACK_CONFIGS } from './trackConfig';
+
+/**
+ * Step-to-previous-step mapping for navigation flow
+ * Based on the logical flow of the mortgage calculator
+ */
 export const stepToPreviousStepMapping: Record<number, number> = {
   1: 0, // Home step - no previous step
   2: 1, // Debts -> Goal selection
@@ -46,10 +53,12 @@ export const stepToNextStepMapping: Record<number, number> = {
 /**
  * Get step name for display purposes
  * @param stepNumber - The step number (1-6)
+ * @param track - Optional track type for specific naming
  * @returns Human-readable step name
  */
-export const getStepName = (stepNumber: number): string => {
-  const stepNames: Record<number, string> = {
+export const getStepName = (stepNumber: number, track?: TrackType | null): string => {
+  // Base names
+  const baseStepNames: Record<number, string> = {
     1: 'בחירת מטרה',
     2: 'מצב חובות',
     3: 'החזרים',
@@ -57,30 +66,41 @@ export const getStepName = (stepNumber: number): string => {
     5: 'פרטי קשר',
     6: 'סימולציה'
   };
-  
-  return stepNames[stepNumber] || 'שלב לא ידוע';
+
+  // If track is provided, check if config overrides exist
+  if (track && TRACK_CONFIGS[track]) {
+    const config = TRACK_CONFIGS[track];
+    // Map internal step number to config key if necessary
+    // Assuming 1-based step numbers in config match
+    if (config.ui.stepTitles[stepNumber]) {
+      return config.ui.stepTitles[stepNumber];
+    }
+  }
+
+  return baseStepNames[stepNumber] || 'שלב לא ידוע';
 };
 
 /**
  * Generate contextual back navigation text for a specific step
  * @param stepNumber - The current step number (1-6)
+ * @param track - Optional track type for specific naming
  * @returns Contextual back navigation text
  */
-export const generateContextualBackText = (stepNumber: number): string => {
+export const generateContextualBackText = (stepNumber: number, track?: TrackType | null): string => {
   const config = getStepHeaderConfig(stepNumber);
-  
+
   // Use the pre-configured back navigation text from step header config
   if (config.backNavigationText) {
     return config.backNavigationText;
   }
-  
+
   // Fallback generation if not configured
   const previousStep = stepToPreviousStepMapping[stepNumber];
   if (previousStep === 0) {
     return ''; // No back navigation for first step
   }
-  
-  const previousStepName = getStepName(previousStep);
+
+  const previousStepName = getStepName(previousStep, track);
   return `חזור ל${previousStepName}`;
 };
 
@@ -92,14 +112,14 @@ export const generateContextualBackText = (stepNumber: number): string => {
 export const createNavigationState = (currentStep: number): NavigationState => {
   const backDestination = stepToPreviousStepMapping[currentStep] || 0;
   const forwardDestination = stepToNextStepMapping[currentStep] || currentStep;
-  
+
   const canGoBack = backDestination > 0;
   const canGoForward = forwardDestination > currentStep;
-  
+
   const contextualBackText = generateContextualBackText(currentStep);
   const previousStepName = canGoBack ? getStepName(backDestination) : '';
   const nextStepName = canGoForward ? getStepName(forwardDestination) : '';
-  
+
   return {
     currentStep,
     canGoBack,

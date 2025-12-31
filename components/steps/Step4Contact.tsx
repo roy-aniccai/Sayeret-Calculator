@@ -28,7 +28,7 @@ const InputWithTooltip: React.FC<{
       <label className="block text-lg font-semibold text-gray-900">
         {label}
       </label>
-      <Tooltip 
+      <Tooltip
         content={tooltip}
         position="auto"
         fontSize="base"
@@ -44,7 +44,9 @@ const InputWithTooltip: React.FC<{
 
 export const Step4Contact: React.FC = () => {
   // cast useForm to any to access sessionId if strictly typed interface doesn't have it yet
-  const { formData, updateFormData, nextStep, prevStep, sessionId } = useForm() as any;
+  const { formData, updateFormData, nextStep, prevStep, sessionId, getTrackConfig } = useForm() as any;
+  const config = getTrackConfig();
+  const primaryColor = config.ui.primaryColor;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -144,17 +146,17 @@ export const Step4Contact: React.FC = () => {
         </div>
 
         {/* Main CTA with actionable content */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+        <div className={`bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-xl p-4 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-rocket text-blue-600 text-lg"></i>
+            <i className={`fa-solid fa-rocket text-${primaryColor}-600 text-xl`}></i>
             <div>
-              <p className="text-blue-700 text-base font-medium">קבל סימולטור אינטראקטיבי</p>
-              <p className="text-blue-600 text-sm">שחק עם המספרים וראה את החיסכון</p>
+              <p className={`text-${primaryColor}-700 text-lg font-medium`}>קבל סימולטור אינטראקטיבי</p>
+              <p className={`text-${primaryColor}-600 text-base`}>שחק עם המספרים וראה את החיסכון</p>
             </div>
           </div>
-          <Button 
-            onClick={handleNext} 
-            className="px-4 py-2 text-base bg-blue-600 hover:bg-blue-700"
+          <Button
+            onClick={handleNext}
+            className={`px-4 py-2 text-lg bg-${primaryColor}-600 hover:bg-${primaryColor}-700`}
             disabled={isSubmitting}
           >
             {isSubmitting ? (

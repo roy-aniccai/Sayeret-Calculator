@@ -14,7 +14,7 @@ export interface TrackConfig {
     stepTitles: Record<number, string>;
     stepDescriptions: Record<number, string>;
   };
-  
+
   // Validation Configuration
   validation: {
     paymentRangeMultiplier: number;
@@ -22,7 +22,7 @@ export interface TrackConfig {
     minPaymentIncrease: number;
     ageWeightFactor: number;
   };
-  
+
   // Calculation Configuration
   calculation: {
     optimizationPriority: 'payment' | 'term' | 'balance';
@@ -32,7 +32,7 @@ export interface TrackConfig {
       focusMetric: string;
     };
   };
-  
+
   // Messaging Configuration
   messaging: {
     tooltips: Record<string, string>;
@@ -98,22 +98,22 @@ export const TRACK_CONFIGS: Record<TrackType, TrackConfig> = {
       }
     }
   },
-  
+
   [TrackType.SHORTEN_TERM]: {
     ui: {
       primaryColor: 'green',
       secondaryColor: 'green-50',
       iconClass: 'fa-piggy-bank',
       stepTitles: {
-        2: 'מצב חובות לאיחוד',
-        3: 'יכולת תשלום מוגברת',
-        4: 'שווי הנכס',
+        2: 'פרטי הנכס והמשכנתא',
+        3: 'הכנסות ויכולת החזר',
+        4: 'סילוק מוקדם',
         6: 'סימולטור קיצור תקופה'
       },
       stepDescriptions: {
-        2: 'נאחד את כל החובות למשכנתא אחת',
-        3: 'כמה אתה יכול לשלם בחודש?',
-        4: 'שווי הנכס לחישוב המיחזור',
+        2: 'פרטים על המשכנתא הקיימת והנכס',
+        3: 'בדיקת יכולת להגדיל את ההחזר החודשי',
+        4: 'האם יש סכומים חד פעמיים לשימוש?',
         6: 'בדוק אפשרויות לקיצור שנים'
       }
     },
@@ -171,59 +171,59 @@ export const validateTrackConfig = (config: TrackConfig, track: TrackType): void
   if (!config.ui) {
     throw new TrackConfigError(`Missing UI configuration for track ${track}`, track, 'ui');
   }
-  
+
   if (!config.ui.primaryColor || !config.ui.secondaryColor || !config.ui.iconClass) {
     throw new TrackConfigError(`Incomplete UI configuration for track ${track}`, track, 'ui');
   }
-  
+
   // Validate validation configuration
   if (!config.validation) {
     throw new TrackConfigError(`Missing validation configuration for track ${track}`, track, 'validation');
   }
-  
+
   if (config.validation.paymentRangeMultiplier <= 0 || config.validation.paymentRangeMultiplier > 1) {
     throw new TrackConfigError(`Invalid paymentRangeMultiplier for track ${track}: must be between 0 and 1`, track, 'validation.paymentRangeMultiplier');
   }
-  
+
   if (config.validation.maxTermYears <= 0 || config.validation.maxTermYears > 50) {
     throw new TrackConfigError(`Invalid maxTermYears for track ${track}: must be between 1 and 50`, track, 'validation.maxTermYears');
   }
-  
+
   if (config.validation.minPaymentIncrease < 0) {
     throw new TrackConfigError(`Invalid minPaymentIncrease for track ${track}: cannot be negative`, track, 'validation.minPaymentIncrease');
   }
-  
+
   if (config.validation.ageWeightFactor <= 0) {
     throw new TrackConfigError(`Invalid ageWeightFactor for track ${track}: must be positive`, track, 'validation.ageWeightFactor');
   }
-  
+
   // Validate calculation configuration
   if (!config.calculation) {
     throw new TrackConfigError(`Missing calculation configuration for track ${track}`, track, 'calculation');
   }
-  
+
   const validPriorities = ['payment', 'term', 'balance'];
   if (!validPriorities.includes(config.calculation.optimizationPriority)) {
     throw new TrackConfigError(`Invalid optimizationPriority for track ${track}: must be one of ${validPriorities.join(', ')}`, track, 'calculation.optimizationPriority');
   }
-  
+
   if (!config.calculation.simulatorDefaults) {
     throw new TrackConfigError(`Missing simulatorDefaults for track ${track}`, track, 'calculation.simulatorDefaults');
   }
-  
+
   if (config.calculation.simulatorDefaults.paymentStep <= 0) {
     throw new TrackConfigError(`Invalid paymentStep for track ${track}: must be positive`, track, 'calculation.simulatorDefaults.paymentStep');
   }
-  
+
   if (config.calculation.simulatorDefaults.termStep <= 0) {
     throw new TrackConfigError(`Invalid termStep for track ${track}: must be positive`, track, 'calculation.simulatorDefaults.termStep');
   }
-  
+
   // Validate messaging configuration
   if (!config.messaging) {
     throw new TrackConfigError(`Missing messaging configuration for track ${track}`, track, 'messaging');
   }
-  
+
   const requiredMessageSections = ['tooltips', 'successMessages', 'warningMessages', 'ctaTexts'];
   for (const section of requiredMessageSections) {
     if (!config.messaging[section as keyof typeof config.messaging]) {
@@ -237,11 +237,11 @@ export const validateTrackConfig = (config: TrackConfig, track: TrackType): void
  */
 export const getTrackConfig = (track: TrackType): TrackConfig => {
   const config = TRACK_CONFIGS[track];
-  
+
   if (!config) {
     throw new TrackConfigError(`No configuration found for track: ${track}`, track);
   }
-  
+
   try {
     validateTrackConfig(config, track);
     return config;
@@ -260,7 +260,7 @@ export const getTrackConfigSafe = (track: TrackType | null): TrackConfig => {
   if (!track) {
     return getTrackConfig(TrackType.MONTHLY_REDUCTION); // Default fallback
   }
-  
+
   try {
     return getTrackConfig(track);
   } catch (error) {
@@ -275,7 +275,7 @@ export const getTrackConfigSafe = (track: TrackType | null): TrackConfig => {
 export const validateAllTrackConfigs = (): void => {
   const tracks = Object.values(TrackType);
   const errors: TrackConfigError[] = [];
-  
+
   for (const track of tracks) {
     try {
       validateTrackConfig(TRACK_CONFIGS[track], track);
@@ -287,7 +287,7 @@ export const validateAllTrackConfigs = (): void => {
       }
     }
   }
-  
+
   if (errors.length > 0) {
     const errorMessages = errors.map(e => `${e.track}: ${e.message}`).join('\n');
     throw new TrackConfigError(`Track configuration validation failed:\n${errorMessages}`);

@@ -425,22 +425,25 @@ export const Step5Simulator: React.FC = () => {
         {/* Call to Action */}
         <div className="mt-4 space-y-3">
           {/* Primary CTA */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-green-200">
-                <i className="fa-solid fa-shield-heart text-sm"></i>
+          {/* Primary CTA */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 flex flex-col gap-6 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="bg-green-600 text-white w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-green-200 animate-pulse">
+                <i className="fa-solid fa-shield-heart text-xl"></i>
               </div>
               <div>
-                <h4 className="font-bold text-gray-900 text-lg">חיסכון נוסף בביטוח המשכנתא</h4>
-                <p className="text-gray-600 text-lg">ניתן לחסוך כ-<span className="font-bold text-green-600">50,000 ש"ח</span> בביטוח המשכנתא</p>
+                <h4 className="font-bold text-gray-900 text-xl">חיסכון נוסף בביטוח המשכנתא</h4>
+                <p className="text-gray-700 text-lg">ניתן לחסוך כ-<span className="font-bold text-green-700">50,000 ש"ח</span> בביטוח המשכנתא</p>
               </div>
             </div>
             <Button
               onClick={() => setShowDialog(true)}
-              className="px-4 py-2 text-lg bg-green-600 hover:bg-green-700"
+              className="w-full py-4 text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30 transform transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              <i className="fa-solid fa-phone mr-1"></i>
-              לשיחה עם המומחים
+              <span className="flex items-center justify-center gap-2">
+                <i className="fa-solid fa-phone-volume animate-bounce"></i>
+                לשיחה עם המומחים
+              </span>
             </Button>
           </div>
 

@@ -211,24 +211,27 @@ export const Step1Debts: React.FC = () => {
           />
 
           {/* Track-specific Integrated CTA */}
-          <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between mt-6`}>
+          <div className={`${primaryStyling} rounded-xl p-4 flex items-center justify-between mt-6`}>
             <div className="flex items-center gap-3">
-              <i className={`fa-solid fa-lightbulb ${accentStyling.split(' ')[0]} text-lg`}></i>
-              <p className={`${accentStyling.split(' ')[0]} text-sm font-medium`}>
+              <i className={`fa-solid fa-lightbulb ${accentStyling.split(' ')[0]} text-xl`}></i>
+              <p className={`${accentStyling.split(' ')[0]} text-base font-medium`}>
                 {trackContent.ctaMessage}
               </p>
             </div>
             <Button
               onClick={handleNext}
-              className={`px-4 py-2 text-sm ${buttonStyling}`}
+              className={`px-4 py-2 text-lg ${buttonStyling}`}
             >
               {trackContent.ctaText}
             </Button>
           </div>
 
           {/* Secondary CTA for going back */}
-          <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-            {generateContextualBackText(2)}
+          <button
+            onClick={prevStep}
+            className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors"
+          >
+            {generateContextualBackText(2, formData.track)}
           </button>
         </div>
       </div>
@@ -366,16 +369,16 @@ export const Step1Debts: React.FC = () => {
         </div>
 
         {/* Track-specific Integrated CTA */}
-        <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between`}>
+        <div className={`${primaryStyling} rounded-xl p-4 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
-            <i className={`fa-solid fa-lightbulb ${accentStyling.split(' ')[0]} text-lg`}></i>
-            <p className={`${accentStyling.split(' ')[0]} text-sm font-medium`}>
+            <i className={`fa-solid fa-lightbulb ${accentStyling.split(' ')[0]} text-xl`}></i>
+            <p className={`${accentStyling.split(' ')[0]} text-base font-medium`}>
               {trackContent.ctaMessage}
             </p>
           </div>
           <Button
             onClick={handleNext}
-            className={`px-4 py-2 text-sm ${buttonStyling}`}
+            className={`px-4 py-2 text-lg ${buttonStyling}`}
           >
             {trackContent.ctaText}
           </Button>
@@ -383,7 +386,7 @@ export const Step1Debts: React.FC = () => {
 
         {/* Secondary CTA for going back */}
         <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-          {generateContextualBackText(2)}
+          {generateContextualBackText(2, formData.track)}
         </button>
       </div>
     </div>

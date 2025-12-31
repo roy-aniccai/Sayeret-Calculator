@@ -366,7 +366,7 @@ export const Step2Payments: React.FC = () => {
 
           {/* Secondary CTA for going back */}
           <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-            {generateContextualBackText(3)}
+            {generateContextualBackText(3, formData.track)}
           </button>
         </div>
 
@@ -518,16 +518,16 @@ export const Step2Payments: React.FC = () => {
         </div>
 
         {/* Track-specific Integrated CTA */}
-        <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between`}>
+        <div className={`${primaryStyling} rounded-xl p-4 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
-            <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-lg`}></i>
-            <p className={`${accentStyling.split(' ')[0]} text-base font-medium`}>
+            <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-xl`}></i>
+            <p className={`${accentStyling.split(' ')[0]} text-lg font-medium`}>
               {trackContent.ctaMessage}
             </p>
           </div>
           <Button
             onClick={handleNext}
-            className={`px-4 py-2 text-base ${buttonStyling}`}
+            className={`px-4 py-2 text-lg ${buttonStyling}`}
           >
             {trackContent.ctaText}
           </Button>
@@ -535,7 +535,7 @@ export const Step2Payments: React.FC = () => {
 
         {/* Secondary CTA for going back */}
         <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-          {generateContextualBackText(3)}
+          {generateContextualBackText(3, formData.track)}
         </button>
       </div>
 

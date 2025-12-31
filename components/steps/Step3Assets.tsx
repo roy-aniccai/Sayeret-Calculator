@@ -147,29 +147,29 @@ export const Step3Assets: React.FC = () => {
           )}
 
           {/* Integrated CTA */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between mt-6">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between mt-6">
             <div className="flex items-center gap-3">
-              <i className="fa-solid fa-check-circle text-green-600 text-lg"></i>
+              <i className="fa-solid fa-check-circle text-green-600 text-xl"></i>
               <div>
-                <p className="text-green-700 text-base font-medium">
+                <p className="text-green-700 text-lg font-medium">
                   מוכנים לסימולציה!
                 </p>
-                <p className="text-green-600 text-sm">
+                <p className="text-green-600 text-base">
                   נראה כמה שנים אפשר לחסוך
                 </p>
               </div>
             </div>
             <Button
               onClick={handleNext}
-              className="px-4 py-2 text-base bg-green-600 hover:bg-green-700"
+              className="px-4 py-2 text-lg bg-green-600 hover:bg-green-700"
             >
-              הצג תוצאות
+              המשך לחישוב
             </Button>
           </div>
 
           {/* Secondary CTA for going back */}
           <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-            {generateContextualBackText(4)}
+            {generateContextualBackText(4, formData.track)}
           </button>
         </div>
       </div>
@@ -236,21 +236,21 @@ export const Step3Assets: React.FC = () => {
         )}
 
         {/* Integrated CTA with actionable content */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-chart-line text-blue-600 text-lg"></i>
+            <i className="fa-solid fa-chart-line text-blue-600 text-xl"></i>
             <div>
-              <p className="text-blue-700 text-base font-medium">
+              <p className="text-blue-700 text-lg font-medium">
                 יחס מימון נמוך = תנאים טובים יותר
               </p>
-              <p className="text-blue-600 text-sm">
+              <p className="text-blue-600 text-base">
                 ככל שהיחס נמוך יותר, החיסכון גדול יותר
               </p>
             </div>
           </div>
           <Button
             onClick={handleNext}
-            className="px-4 py-2 text-base bg-blue-600 hover:bg-blue-700"
+            className="px-4 py-2 text-lg bg-blue-600 hover:bg-blue-700"
           >
             המשך לחישוב
           </Button>
@@ -258,7 +258,7 @@ export const Step3Assets: React.FC = () => {
 
         {/* Secondary CTA for going back */}
         <button onClick={prevStep} className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors">
-          {generateContextualBackText(4)}
+          {generateContextualBackText(4, formData.track)}
         </button>
       </div>
     </div>
