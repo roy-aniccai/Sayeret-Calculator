@@ -42,7 +42,7 @@ const AppContent: React.FC = () => {
   const headerTitle = getMainHeaderTitle(step);
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 relative">
+    <div className="flex items-center justify-center min-h-screen p-0 sm:p-4 relative bg-gray-100">
       <div className={`fixed inset-0 z-50 ${showAdmin ? 'block' : 'hidden'}`}>
         <React.Suspense fallback={<div className="fixed inset-0 flex items-center justify-center bg-white z-50">Loading Admin Panel...</div>}>
           {showAdmin && React.createElement(React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard }))), {
@@ -54,7 +54,7 @@ const AppContent: React.FC = () => {
         </React.Suspense>
       </div>
 
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden relative min-h-[600px] flex flex-col">
+      <div className="w-full sm:max-w-lg bg-white sm:rounded-2xl shadow-xl overflow-hidden relative h-[100dvh] sm:h-auto sm:min-h-[600px] flex flex-col">
 
         {/* Compact Header */}
         <div className="bg-blue-600 px-4 py-3 text-white relative">
@@ -85,7 +85,7 @@ const AppContent: React.FC = () => {
         </div>
 
         {/* Content Area */}
-        <div className="p-6 flex-grow relative">
+        <div className="p-6 flex-grow relative overflow-y-auto">
           {renderStep()}
         </div>
 
