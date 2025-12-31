@@ -63,3 +63,27 @@ export interface CalculationResult {
   icon: string;
 }
 
+
+export interface Submission {
+  id: number;
+  createdAt?: string; // New API
+  created_at?: string; // Legacy/SQLite raw
+  leadName?: string; // New API
+  lead_name?: string; // Legacy
+  leadPhone?: string; // New API
+  lead_phone?: string; // Legacy
+  leadEmail?: string; // New API
+  lead_email?: string; // Legacy
+  full_data_json: any;
+}
+
+export interface EventLog {
+  id: number;
+  createdAt?: string;
+  created_at?: string;
+  sessionId?: string;
+  session_id?: string;
+  eventType?: string;
+  event_type?: string;
+  event_data_json: any;
+}
