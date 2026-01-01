@@ -121,44 +121,113 @@ export const Step5Simulator: React.FC = () => {
 
   const maxAllowedYears = validation.maxAllowedTerm || currentMortgageParams.regulations.maxLoanTermYears;
 
-  // Calculate valid years range based on mathematical constraints
-  const calculateValidYearsRange = () => {
-    if (!formData.age) return { min: 10, max: 30 };
+  // Calculate valid years range based on mathematical constraints AND Track Type
+  const calculateValidYearsRange = useCallback(() => {
+    // Basic Regulatory Constraints
+    const minRegYears = 5; // Minimum 5 years by regulation/logic
+    const maxRegYears = 30; // Standard max years
 
-    const maxYearsByAge = currentMortgageParams.regulations.maxBorrowerAge - formData.age;
-    const maxYears = Math.min(maxYearsByAge, currentMortgageParams.regulations.maxLoanTermYears);
+    // 1. Age Constraint
+    let maxYearsByAge = 35; // Default if no age
+    if (formData.age) {
+      maxYearsByAge = currentMortgageParams.regulations.maxBorrowerAge - formData.age;
+    }
+    const absMaxYears = Math.min(maxYearsByAge, currentMortgageParams.regulations.maxLoanTermYears);
 
-    // Minimum years - ensure payment doesn't exceed reasonable limits
+    // 2. Financial Constraints (Min Years) - Standard Min Payment Logic
     const mortgageAmount = formData.mortgageBalance;
     const otherLoansAmount = formData.otherLoansBalance + Math.abs(formData.bankAccountBalance);
     const oneTimePayment = formData.oneTimePaymentAmount || 0;
     const totalAmount = Math.max(0, mortgageAmount + otherLoansAmount - oneTimePayment);
-    const maxReasonablePayment = currentPayment * 2; // Don't allow more than double current payment
+    const maxReasonablePayment = currentPayment * 2.5; // Allow a bit more flexibility
 
-    // Use the same weighted rate calculation
+    // Calculate weighted rate
     const mortgageRate = calculateWeightedMortgageRate();
     const otherLoansRate = calculateWeightedOtherLoansRate();
     const weightedRate = totalAmount > 0 ?
       (mortgageAmount * mortgageRate + otherLoansAmount * otherLoansRate) / totalAmount :
       mortgageRate;
-
     const monthlyRate = weightedRate / 12;
 
-    let minYears = 5;
+    // Calculate absolute minimum years to fit maxReasonablePayment
+    let minYearsFinancial = 5;
     if (monthlyRate > 0 && totalAmount > 0) {
-      // Calculate minimum years needed to keep payment under maxReasonablePayment
       const minPayments = Math.log(1 + (totalAmount * monthlyRate) / maxReasonablePayment) /
         Math.log(1 + monthlyRate);
-      minYears = Math.max(Math.ceil(minPayments / 12), 5);
+      minYearsFinancial = Math.max(Math.ceil(minPayments / 12), 5);
     }
 
-    return {
-      min: Math.max(minYears, 5),
-      max: Math.min(maxYears, 35)
-    };
-  };
+    // --- TRACK SPECIFIC LOGIC ---
+    let minYears = minYearsFinancial;
+    let maxYears = absMaxYears;
 
-  const { min: minYears, max: maxYears } = calculateValidYearsRange();
+    // TRACK: Monthly Payment Reduction
+    // Goal: Only show years where NewPayment < CurrentPayment
+    // Strategy: Find the minimum year `y` where `Payment(y) < CurrentPayment`
+    if (formData.track === TrackType.MONTHLY_REDUCTION && currentPayment > 0) {
+      // We want to force the user to see results better than today.
+      // So valid range starts from the year that gives a lower payment.
+      // Payment decreases as years increase.
+      // So we need to find the SMALLEST year that satisfies Payment < CurrentPayment
+
+      let firstValidYear = -1;
+      // Scan from min possible to max possible
+      for (let y = minYearsFinancial; y <= maxYears; y++) {
+        const p = calculateMonthlyPayment(totalAmount, weightedRate, y);
+        if (p < currentPayment) {
+          firstValidYear = y;
+          break;
+        }
+      }
+
+      if (firstValidYear !== -1) {
+        minYears = firstValidYear;
+      } else {
+        // No solution found where payment is lower
+        return { min: 0, max: 0, noSolution: true };
+      }
+    }
+
+    // TRACK: Shorten Term
+    // Goal: Only show years where Term <= CurrentTerm (and ideally Payment is manageable)
+    // Constraint: MaxYears must effectively be <= CurrentYearsRemaining
+    if (formData.track === TrackType.SHORTEN_TERM && formData.yearsRemaining) {
+      // The user wants to SHORTEN the term. Showing 30 years when they have 15 left is irrelevant.
+      // We might allow a small buffer (e.g. +1 year) just in case, but strictly "Shorten" means <= Current.
+      // Let's stick to strict <= Current to be helpful.
+
+      const currentRemaining = formData.yearsRemaining;
+      maxYears = Math.min(maxYears, currentRemaining);
+
+      // Note: If the new amount is much larger (consolidated loans), 
+      // keeping the same years might result in huge payments. 
+      // But the user selected "Shorten Term", so we assume they want this constraint.
+
+      if (maxYears < minYears) {
+        // Impossible to shorten term with reasonable payments (violates financial min)
+        return { min: 0, max: 0, noSolution: true };
+      }
+    }
+
+    // Final Sanity Check
+    minYears = Math.max(minYears, minRegYears);
+    maxYears = Math.max(maxYears, minYears); // Ensure max >= min
+
+    if (maxYears < minYears) return { min: 0, max: 0, noSolution: true };
+
+    return { min: minYears, max: maxYears, noSolution: false };
+  }, [formData.age, formData.track, formData.yearsRemaining, formData.mortgageBalance, formData.otherLoansBalance, formData.bankAccountBalance, formData.oneTimePaymentAmount, currentPayment]);
+
+  const { min: minYears, max: maxYears, noSolution } = calculateValidYearsRange();
+
+  // Reset/Adjust years if they fall out of range
+  React.useEffect(() => {
+    if (noSolution) return;
+
+    if (simulatorYears < minYears) setSimulatorYears(minYears);
+    else if (simulatorYears > maxYears) setSimulatorYears(maxYears);
+
+  }, [minYears, maxYears, noSolution, simulatorYears]);
 
   const handleYearsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!formData.age) return;
@@ -173,14 +242,8 @@ export const Step5Simulator: React.FC = () => {
   const handleAgeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const age = parseInt(e.target.value) || null;
     updateFormData({ age });
-
-    // Reset years to a safe middle value when age changes
-    if (age) {
-      const newRange = calculateValidYearsRange();
-      const safeYears = Math.min(Math.max(simulatorYears, newRange.min), newRange.max);
-      setSimulatorYears(safeYears);
-    }
-  }, [updateFormData, simulatorYears]);
+    // Years will self-correct via the useEffect above
+  }, [updateFormData]);
 
   // Determine colors based on payment comparison
   const paymentDiff = newPayment - currentPayment;
@@ -418,6 +481,30 @@ export const Step5Simulator: React.FC = () => {
                   </div>
                 </div>
               </div>
+            ) : noSolution ? (
+              /* No Solution Message */
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 text-center animate-fade-in">
+                <div className="mb-3">
+                  <i className="fa-solid fa-triangle-exclamation text-orange-500 text-3xl"></i>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  {formData.track === TrackType.MONTHLY_REDUCTION
+                    ? 'לא נמצאו אפשרויות להפחתת ההחזר'
+                    : 'לא ניתן לקצר את תקופת המשכנתא'}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  {formData.track === TrackType.MONTHLY_REDUCTION
+                    ? 'בנתונים שהוזנו, לא ניתן להגיע להחזר חודשי נמוך מהנוכחי, גם בפריסה ל-30 שנה. מומלץ להתייעץ עם מומחה.'
+                    : 'בנתונים שהוזנו, קיצור התקופה מעבר למצב הנוכחי יחייב החזר חודשי גבוה מאוד שאינו עומד בכללי הרגולציה.'}
+                </p>
+                <Button
+                  onClick={() => setShowDialog(true)}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md"
+                >
+                  <i className="fa-solid fa-comments mr-2"></i>
+                  דבר עם יועץ לבדיקה ידנית
+                </Button>
+              </div>
             ) : (
               /* Active Slider */
               <>
@@ -448,8 +535,6 @@ export const Step5Simulator: React.FC = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Advanced Info Removed - Moved to Header */}
               </>
             )}
           </div>
@@ -591,6 +676,6 @@ export const Step5Simulator: React.FC = () => {
           border: none;
         }
       `}</style>
-    </div>
+    </div >
   );
 };
