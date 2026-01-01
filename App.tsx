@@ -11,7 +11,7 @@ import { getMainHeaderTitle } from './utils/stepHeaderConfig';
 
 
 const AppContent: React.FC = () => {
-  const { step, resetForm } = useForm();
+  const { step, resetForm, prevStep } = useForm();
 
   const renderStep = () => {
     switch (step) {
@@ -60,7 +60,17 @@ const AppContent: React.FC = () => {
         <div className="bg-blue-600 px-4 py-3 text-white relative">
           <div className="flex items-center justify-between">
             {/* Admin button removed - access via /admin */}
-            <div className="w-4"></div>
+            {step > 1 ? (
+              <button
+                onClick={prevStep}
+                className="text-blue-200 hover:text-white transition-colors"
+                title="חזור"
+              >
+                <i className="fa-solid fa-arrow-right text-lg"></i>
+              </button>
+            ) : (
+              <div className="w-4"></div>
+            )}
 
             <div className="text-center flex-1">
               <h1 className="text-lg font-bold">{headerTitle}</h1>

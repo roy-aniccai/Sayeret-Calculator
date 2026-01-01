@@ -197,14 +197,7 @@ export const Step3Assets: React.FC = () => {
   return (
     <div className="animate-fade-in-up">
       {/* Promoted Subtitle as Primary Step Title */}
-      <div className="relative text-center mb-6">
-        <button
-          onClick={prevStep}
-          className="absolute top-1/2 -translate-y-1/2 right-0 text-gray-400 hover:text-gray-600 p-2 transition-colors"
-          aria-label="חזור"
-        >
-          <i className="fa-solid fa-arrow-right text-xl"></i>
-        </button>
+      <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">נבדוק את שווי הנכסים</h2>
       </div>
 
