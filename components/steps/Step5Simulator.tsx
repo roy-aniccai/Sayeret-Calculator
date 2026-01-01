@@ -199,7 +199,7 @@ export const Step5Simulator: React.FC = () => {
         {/* Age Input Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3 w-full justify-end">
+            <div className="flex items-center gap-3 w-full justify-start">
               <span className="text-lg font-bold text-gray-900">גיל:</span>
               <div className="relative">
                 <input
@@ -217,6 +217,21 @@ export const Step5Simulator: React.FC = () => {
                 <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-sm text-gray-500">
                   שנים
                 </div>
+              </div>
+
+              {/* Status Message */}
+              <div className="mr-2 animate-fade-in">
+                {formData.age ? (
+                  <div className="flex items-center text-green-700 text-xs font-medium bg-green-50 px-2 py-1 rounded-lg border border-green-100 whitespace-nowrap">
+                    <i className="fa-solid fa-check-circle ml-1.5"></i>
+                    סימולטור פעיל - מקסימום: {maxAllowedYears} שנים (עד גיל {currentMortgageParams.regulations.maxBorrowerAge})
+                  </div>
+                ) : (
+                  <div className={`flex items-center text-gray-500 text-sm font-medium animate-pulse`}>
+                    <i className="fa-solid fa-circle-info ml-1.5 text-blue-400"></i>
+                    הזן גיל לפתיחת הסימולטור
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -412,6 +427,7 @@ export const Step5Simulator: React.FC = () => {
                     value={simulatorYears}
                     onChange={handleYearsChange}
                     inputMode="none"
+                    onFocus={(e) => e.target.blur()} // Prevent keyboard on mobile
                     className="w-full h-4 bg-gradient-to-r from-green-300 via-blue-300 to-purple-300 rounded-lg appearance-none slider-enhanced cursor-pointer"
                   />
                 </div>
@@ -431,16 +447,7 @@ export const Step5Simulator: React.FC = () => {
                   </div>
                 )}
 
-                {/* Advanced Info */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-lg text-green-700">
-                    <i className="fa-solid fa-check-circle"></i>
-                    <span>
-                      <span className="font-medium">סימולטור מתקדם פעיל</span> -
-                      מקסימום שנים מותר: {maxAllowedYears} שנים (עד גיל {currentMortgageParams.regulations.maxBorrowerAge})
-                    </span>
-                  </div>
-                </div>
+                {/* Advanced Info Removed - Moved to Header */}
               </>
             )}
           </div>
