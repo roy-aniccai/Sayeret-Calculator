@@ -42,7 +42,7 @@ const AppContent: React.FC = () => {
   const headerTitle = getMainHeaderTitle(step);
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-0 sm:p-4 relative bg-gray-100">
+    <div className="flex sm:items-center sm:justify-center min-h-screen p-0 sm:p-4 relative bg-gray-100">
       <div className={`fixed inset-0 z-50 ${showAdmin ? 'block' : 'hidden'}`}>
         <React.Suspense fallback={<div className="fixed inset-0 flex items-center justify-center bg-white z-50">Loading Admin Panel...</div>}>
           {showAdmin && React.createElement(React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard }))), {
