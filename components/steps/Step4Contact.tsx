@@ -108,7 +108,7 @@ export const Step4Contact: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">נשלח לך את התוצאות</h2>
       </div>
 
-      <div className="space-y-4 pb-72 md:pb-0">
+      <div className="space-y-4 pb-96 md:pb-0">
         <Input
           label="שם מלא"
           name="leadName"
@@ -135,7 +135,16 @@ export const Step4Contact: React.FC = () => {
           maxLength={11}
         />
 
-        {/* Privacy assurance integrated with CTA */}
+
+
+      </div>
+
+
+
+      {/* Submit Actions */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-8 space-y-3">
+
+        {/* Privacy assurance - Moved to footer */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <i className="fa-solid fa-shield-check text-green-600 text-lg"></i>
@@ -145,13 +154,6 @@ export const Step4Contact: React.FC = () => {
             </div>
           </div>
         </div>
-
-      </div>
-
-
-
-      {/* Submit Actions */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-8 space-y-3">
 
         {/* Main CTA Banner - Moved to footer */}
         <div className={`bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-xl p-3 flex items-center justify-between`}>
