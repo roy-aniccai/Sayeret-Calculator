@@ -239,8 +239,8 @@ export const Step5Simulator: React.FC = () => {
           </div>
         </div>
 
-        {/* Always show calculator */}
-        <div className="space-y-5">
+        {/* Always show calculator - Add extra padding for the large CTA footer */}
+        <div className="space-y-5 pb-48 md:pb-4">
           {/* Visual Comparison with Payment Info */}
           <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
             {/* Summary Header */}
@@ -456,22 +456,22 @@ export const Step5Simulator: React.FC = () => {
         </div>
 
         {/* Call to Action */}
-        <div className="mt-4 space-y-3">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-4 space-y-3">
           {/* Primary CTA */}
           {/* Primary CTA */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 flex flex-col gap-6 shadow-sm">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 md:p-6 flex flex-col gap-4 md:gap-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <div className="bg-green-600 text-white w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-green-200 animate-pulse">
-                <i className="fa-solid fa-shield-heart text-xl"></i>
+              <div className="bg-green-600 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-green-200 animate-pulse">
+                <i className="fa-solid fa-shield-heart text-lg md:text-xl"></i>
               </div>
               <div>
-                <h4 className="font-bold text-gray-900 text-xl">חיסכון נוסף בביטוח המשכנתא</h4>
-                <p className="text-gray-700 text-lg">ניתן לחסוך כ-<span className="font-bold text-green-700">50,000 ש"ח</span> בביטוח המשכנתא</p>
+                <h4 className="font-bold text-gray-900 text-lg md:text-xl">חיסכון נוסף בביטוח המשכנתא</h4>
+                <p className="text-gray-700 text-base md:text-lg">ניתן לחסוך כ-<span className="font-bold text-green-700">50,000 ש"ח</span> בביטוח</p>
               </div>
             </div>
             <Button
               onClick={() => setShowDialog(true)}
-              className="w-full py-4 text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30 transform transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full py-3 md:py-4 text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30 transform transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <span className="flex items-center justify-center gap-2">
                 <i className="fa-solid fa-phone-volume animate-bounce"></i>
@@ -481,10 +481,15 @@ export const Step5Simulator: React.FC = () => {
           </div>
 
           {/* Secondary CTA */}
-          <button onClick={resetForm} className={`w-full text-${primaryColor}-600 font-medium text-lg hover:underline`}>
+          <button onClick={resetForm} className={`w-full text-${primaryColor}-600 font-medium text-base md:text-lg hover:underline hidden md:block`}>
             בדוק תרחיש אחר
           </button>
         </div>
+
+        {/* Mobile-only secondary CTA outside the sticky footer so it scrolls */}
+        <button onClick={resetForm} className={`w-full text-${primaryColor}-600 font-medium text-base mt-2 hover:underline md:hidden pb-4`}>
+          בדוק תרחיש אחר
+        </button>
 
         <Dialog
           isOpen={showDialog}

@@ -201,7 +201,7 @@ export const Step3Assets: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">נבדוק את שווי הנכסים</h2>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 pb-32 md:pb-0">
         <InputWithTooltip
           label="שווי נכס מוערך היום"
           tooltip="קובע את אחוז המימון ותנאי ההלוואה החדשה"
@@ -236,24 +236,26 @@ export const Step3Assets: React.FC = () => {
         )}
 
         {/* Integrated CTA with actionable content */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <i className="fa-solid fa-chart-line text-blue-600 text-xl"></i>
-            <div>
-              <p className="text-blue-700 text-lg font-medium">
-                יחס מימון נמוך = תנאים טובים יותר
-              </p>
-              <p className="text-blue-600 text-base">
-                ככל שהיחס נמוך יותר, החיסכון גדול יותר
-              </p>
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-0">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <i className="fa-solid fa-chart-line text-blue-600 text-xl"></i>
+              <div>
+                <p className="text-blue-700 text-lg font-medium">
+                  יחס מימון נמוך = תנאים טובים יותר
+                </p>
+                <p className="text-blue-600 text-base">
+                  ככל שהיחס נמוך יותר, החיסכון גדול יותר
+                </p>
+              </div>
             </div>
+            <Button
+              onClick={handleNext}
+              className="px-4 py-2 text-lg bg-blue-600 hover:bg-blue-700"
+            >
+              המשך לחישוב
+            </Button>
           </div>
-          <Button
-            onClick={handleNext}
-            className="px-4 py-2 text-lg bg-blue-600 hover:bg-blue-700"
-          >
-            המשך לחישוב
-          </Button>
         </div>
 
         {/* Secondary CTA for going back */}

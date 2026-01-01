@@ -248,7 +248,7 @@ export const Step2Payments: React.FC = () => {
           </h2>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 pb-32 md:pb-0">
           {/* Current Mortgage Payment */}
           <InputWithTooltip
             label="החזר משכנתא חודשי נוכחי"
@@ -349,19 +349,21 @@ export const Step2Payments: React.FC = () => {
           </div>
 
           {/* Track-specific Integrated CTA */}
-          <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between`}>
-            <div className="flex items-center gap-3">
-              <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-lg`}></i>
-              <p className={`${accentStyling.split(' ')[0]} text-base font-medium`}>
-                {trackContent.ctaMessage}
-              </p>
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-0">
+            <div className={`${primaryStyling} rounded-lg p-3 flex items-center justify-between`}>
+              <div className="flex items-center gap-3">
+                <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-lg`}></i>
+                <p className={`${accentStyling.split(' ')[0]} text-base font-medium`}>
+                  {trackContent.ctaMessage}
+                </p>
+              </div>
+              <Button
+                onClick={handleNext}
+                className={`px-4 py-2 text-base ${buttonStyling}`}
+              >
+                {trackContent.ctaText}
+              </Button>
             </div>
-            <Button
-              onClick={handleNext}
-              className={`px-4 py-2 text-base ${buttonStyling}`}
-            >
-              {trackContent.ctaText}
-            </Button>
           </div>
 
           {/* Secondary CTA for going back */}
@@ -406,7 +408,7 @@ export const Step2Payments: React.FC = () => {
         </h2>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 pb-32 md:pb-0">
         <InputWithTooltip
           label="החזר משכנתא חודשי נוכחי"
           tooltip={trackContent.mortgageTooltip}
@@ -519,19 +521,21 @@ export const Step2Payments: React.FC = () => {
         </div>
 
         {/* Track-specific Integrated CTA */}
-        <div className={`${primaryStyling} rounded-xl p-4 flex items-center justify-between`}>
-          <div className="flex items-center gap-3">
-            <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-xl`}></i>
-            <p className={`${accentStyling.split(' ')[0]} text-lg font-medium`}>
-              {trackContent.ctaMessage}
-            </p>
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-0">
+          <div className={`${primaryStyling} rounded-xl p-4 flex items-center justify-between`}>
+            <div className="flex items-center gap-3">
+              <i className={`fa-solid fa-calculator ${accentStyling.split(' ')[0]} text-xl`}></i>
+              <p className={`${accentStyling.split(' ')[0]} text-lg font-medium`}>
+                {trackContent.ctaMessage}
+              </p>
+            </div>
+            <Button
+              onClick={handleNext}
+              className={`px-4 py-2 text-lg ${buttonStyling}`}
+            >
+              {trackContent.ctaText}
+            </Button>
           </div>
-          <Button
-            onClick={handleNext}
-            className={`px-4 py-2 text-lg ${buttonStyling}`}
-          >
-            {trackContent.ctaText}
-          </Button>
         </div>
 
         {/* Secondary CTA for going back */}

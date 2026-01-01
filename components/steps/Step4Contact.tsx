@@ -107,7 +107,7 @@ export const Step4Contact: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">נשלח לך את התוצאות</h2>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 pb-32 md:pb-0">
         <Input
           label="שם מלא"
           name="leadName"
@@ -154,23 +154,31 @@ export const Step4Contact: React.FC = () => {
               <p className={`text-${primaryColor}-600 text-base`}>שחק עם המספרים וראה את החיסכון</p>
             </div>
           </div>
+        </div>
+
+        {/* Submit Actions */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-8">
           <Button
             onClick={handleNext}
-            className={`px-4 py-2 text-lg bg-${primaryColor}-600 hover:bg-${primaryColor}-700`}
+            className={`w-full text-xl py-4 shadow-xl hover:shadow-2xl transition-all bg-${primaryColor}-600 hover:bg-${primaryColor}-700 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-[1.02]'
+              }`}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center justify-center gap-2">
                 <i className="fa-solid fa-circle-notch fa-spin"></i>
-                מעבד...
+                מעבד נתונים...
               </span>
             ) : (
-              'בואו נראה!'
+              <span className="flex items-center justify-center gap-2">
+                בואו נראה!
+                <i className="fa-solid fa-arrow-left mr-2"></i>
+              </span>
             )}
           </Button>
         </div>
 
-        {/* Secondary CTA for going back */}
+        {/* Previous button remains outside */}
         <button
           onClick={prevStep}
           className="w-full text-gray-400 text-base mt-4 font-medium hover:text-gray-600 transition-colors"
