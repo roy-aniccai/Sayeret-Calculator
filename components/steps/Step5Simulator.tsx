@@ -21,6 +21,33 @@ export const Step5Simulator: React.FC = () => {
 
   const [simulatorYears, setSimulatorYears] = useState(20); // Start with 20 years
   const [showDialog, setShowDialog] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const handleShare = async () => {
+    const shareData = {
+      title: 'סיירת המשכנתא',
+      text: 'בואו לבדוק כמה אפשר לחסוך במשכנתא עם המחשבון של סיירת המשכנתא!',
+      url: window.location.href
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User cancelled or share failed, fallback to copy
+        console.log('Share failed:', err);
+      }
+    } else {
+      // Fallback
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 3000);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+      }
+    }
+  };
 
   // Calculate what payment would be needed for the selected years
   const calculatePaymentForYears = (years: number) => {
@@ -468,6 +495,26 @@ export const Step5Simulator: React.FC = () => {
             <br />
             שיהיה יום נפלא!
           </p>
+
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <p className="text-gray-600 mb-4 font-medium">אהבת? שתף עם חברים:</p>
+            <div className="flex flex-col items-center gap-3">
+              <Button
+                variant="secondary"
+                onClick={handleShare}
+                className={`w-full !bg-white !border-2 !border-${primaryColor}-200 hover:!bg-${primaryColor}-50 !text-${primaryColor}-700 gap-2 !rounded-xl !py-3`}
+              >
+                <i className={`fa-solid ${copySuccess ? 'fa-check' : 'fa-share-nodes'}`}></i>
+                {copySuccess ? 'הקישור הועתק!' : 'שתף את המחשבון'}
+              </Button>
+
+              {copySuccess && (
+                <span className="text-green-600 text-sm animate-fade-in font-medium">
+                  הקישור הועתק ללוח בהצלחה
+                </span>
+              )}
+            </div>
+          </div>
         </Dialog>
       </div>
 
