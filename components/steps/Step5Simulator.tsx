@@ -222,9 +222,11 @@ export const Step5Simulator: React.FC = () => {
               {/* Status Message */}
               <div className="mr-2 animate-fade-in">
                 {formData.age ? (
-                  <div className="flex items-center text-green-700 text-xs font-medium bg-green-50 px-2 py-1 rounded-lg border border-green-100 whitespace-nowrap">
-                    <i className="fa-solid fa-check-circle ml-1.5"></i>
-                    סימולטור פעיל - מקסימום: {maxAllowedYears} שנים (עד גיל {currentMortgageParams.regulations.maxBorrowerAge})
+                  <div className="flex items-start text-green-800 text-sm font-bold bg-green-100 px-3 py-2 rounded-xl border-2 border-green-200 shadow-sm max-w-[200px] leading-tight">
+                    <i className="fa-solid fa-check-circle ml-2 mt-0.5 text-green-600 text-lg"></i>
+                    <span>
+                      סימולטור פעיל - מקסימום: {maxAllowedYears} שנים (עד גיל {currentMortgageParams.regulations.maxBorrowerAge})
+                    </span>
                   </div>
                 ) : (
                   <div className={`flex items-center text-gray-500 text-sm font-medium animate-pulse`}>
