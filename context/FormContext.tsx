@@ -61,6 +61,7 @@ const initialFormData: FormData = {
   urgency: null,
   leadEmail: '',
   termsAccepted: true,
+  interestedInInsurance: true,
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);

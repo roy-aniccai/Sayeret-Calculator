@@ -47,6 +47,7 @@ export interface FormData {
   urgency: UrgencyLevel | null;
   leadEmail: string;
   termsAccepted: boolean;
+  interestedInInsurance: boolean;
 }
 
 export interface CalculationResult {

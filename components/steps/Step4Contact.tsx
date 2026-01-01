@@ -3,6 +3,7 @@ import { useForm } from '../../context/FormContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
+import { Checkbox } from '../ui/Checkbox';
 import { submitData } from '../../utils/api';
 import { generateContextualBackText } from '../../utils/navigationContext';
 
@@ -145,39 +146,51 @@ export const Step4Contact: React.FC = () => {
           </div>
         </div>
 
-        {/* Main CTA with actionable content */}
-        <div className={`bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-xl p-4 flex items-center justify-between`}>
-          <div className="flex items-center gap-3">
-            <i className={`fa-solid fa-rocket text-${primaryColor}-600 text-xl`}></i>
-            <div>
-              <p className={`text-${primaryColor}-700 text-lg font-medium`}>קבל סימולטור אינטראקטיבי</p>
-              <p className={`text-${primaryColor}-600 text-base`}>שחק עם המספרים וראה את החיסכון</p>
-            </div>
+      </div>
+
+      {/* Insurance Opt-in Checkbox */}
+      <div className="px-1 mb-4">
+        <Checkbox
+          label="מעוניין לשמוע גם על חיסכון בביטוח המשכנתא"
+          name="interestedInInsurance"
+          checked={formData.interestedInInsurance}
+          onChange={handleChange}
+        />
+      </div>
+
+      {/* Main CTA with actionable content */}
+      <div className={`bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-xl p-4 flex items-center justify-between`}>
+        <div className="flex items-center gap-3">
+          <i className={`fa-solid fa-rocket text-${primaryColor}-600 text-xl`}></i>
+          <div>
+            <p className={`text-${primaryColor}-700 text-lg font-medium`}>קבל סימולטור אינטראקטיבי</p>
+            <p className={`text-${primaryColor}-600 text-base`}>שחק עם המספרים וראה את החיסכון</p>
           </div>
         </div>
+      </div>
 
-        {/* Submit Actions */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-8">
-          <Button
-            onClick={handleNext}
-            className={`w-full text-xl py-4 shadow-xl hover:shadow-2xl transition-all bg-${primaryColor}-600 hover:bg-${primaryColor}-700 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-[1.02]'
-              }`}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <i className="fa-solid fa-circle-notch fa-spin"></i>
-                מעבד נתונים...
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                בואו נראה!
-                <i className="fa-solid fa-arrow-left mr-2"></i>
-              </span>
-            )}
-          </Button>
-        </div>
+      {/* Submit Actions */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-8">
+        <Button
+          onClick={handleNext}
+          className={`w-full text-xl py-4 shadow-xl hover:shadow-2xl transition-all bg-${primaryColor}-600 hover:bg-${primaryColor}-700 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-[1.02]'
+            }`}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <i className="fa-solid fa-circle-notch fa-spin"></i>
+              מעבד נתונים...
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              בואו נראה!
+              <i className="fa-solid fa-arrow-left mr-2"></i>
+            </span>
+          )}
+        </Button>
       </div>
     </div>
+
   );
 };
