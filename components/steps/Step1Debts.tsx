@@ -159,7 +159,14 @@ export const Step1Debts: React.FC = () => {
     return (
       <div className={`animate-fade-in-up track-${formData.track || 'default'}`}>
         {/* Promoted Subtitle as Primary Step Title */}
-        <div className="text-center mb-6">
+        <div className="relative text-center mb-6">
+          <button
+            onClick={prevStep}
+            className="absolute top-1/2 -translate-y-1/2 right-0 text-gray-400 hover:text-gray-600 p-2 transition-colors"
+            aria-label="חזור"
+          >
+            <i className="fa-solid fa-arrow-right text-xl"></i>
+          </button>
           <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
             {trackContent.stepDescription}
           </h2>
@@ -239,10 +246,7 @@ export const Step1Debts: React.FC = () => {
           </Button>
         </div>
 
-        {/* Previous Step Link - Outside sticky footer for mobile, so it scrolls */}
-        <button onClick={prevStep} className="w-full text-gray-400 text-base mt-2 md:mt-4 font-medium hover:text-gray-600 transition-colors pb-4 md:pb-0">
-          {generateContextualBackText(2, formData.track)}
-        </button>
+
       </div>
     );
   }
@@ -250,7 +254,14 @@ export const Step1Debts: React.FC = () => {
   return (
     <div className={`animate-fade-in-up track-${formData.track || 'default'}`}>
       {/* Promoted Subtitle as Primary Step Title */}
-      <div className="text-center mb-6">
+      <div className="relative text-center mb-6">
+        <button
+          onClick={prevStep}
+          className="absolute top-1/2 -translate-y-1/2 right-0 text-gray-400 hover:text-gray-600 p-2 transition-colors"
+          aria-label="חזור"
+        >
+          <i className="fa-solid fa-arrow-right text-xl"></i>
+        </button>
         <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
           {trackContent.stepDescription}
         </h2>
@@ -404,10 +415,7 @@ export const Step1Debts: React.FC = () => {
         </Button>
       </div>
 
-      {/* Previous Step Link - Outside sticky footer for mobile, so it scrolls */}
-      <button onClick={prevStep} className="w-full text-gray-400 text-base mt-2 md:mt-4 font-medium hover:text-gray-600 transition-colors pb-4 md:pb-0">
-        {generateContextualBackText(2, formData.track)}
-      </button>
+
     </div>
   );
 };
