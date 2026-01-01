@@ -14,7 +14,7 @@ const InputWithTooltip: React.FC<{
   label: string;
   tooltip: string;
   name: string;
-  inputMode?: string;
+  inputMode?: "search" | "email" | "tel" | "text" | "url" | "none" | "numeric" | "decimal";
   suffix?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -469,6 +469,7 @@ export const Step2Payments: React.FC = () => {
                 max={maxTarget}
                 value={formData.targetTotalPayment}
                 onChange={handleSliderChange}
+                inputMode="none"
                 className="w-full h-3 rounded-lg appearance-none cursor-pointer slider"
                 style={sliderStyling}
               />

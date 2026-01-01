@@ -199,11 +199,7 @@ export const Step5Simulator: React.FC = () => {
         {/* Age Input Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <i className={`fa-solid fa-calculator text-${primaryColor}-600 text-lg`}></i>
-              <h3 className="text-lg font-bold text-gray-900">מחשבון מיחזור משכנתא</h3>
-            </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full justify-end">
               <span className="text-lg font-bold text-gray-900">גיל:</span>
               <div className="relative">
                 <input
@@ -415,6 +411,7 @@ export const Step5Simulator: React.FC = () => {
                     max={maxYears}
                     value={simulatorYears}
                     onChange={handleYearsChange}
+                    inputMode="none"
                     className="w-full h-4 bg-gradient-to-r from-green-300 via-blue-300 to-purple-300 rounded-lg appearance-none slider-enhanced cursor-pointer"
                   />
                 </div>
