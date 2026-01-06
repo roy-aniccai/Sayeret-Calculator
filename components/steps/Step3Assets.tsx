@@ -94,31 +94,43 @@ export const Step3Assets: React.FC = () => {
         </div>
 
         <div className="space-y-4 pb-32 md:pb-0">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">האם יש לך סכומים עתידיים?</h3>
-            <p className="text-sm text-gray-700 mb-3">
-              קרנות השתלמות, ירושות או כל סכום שצפוי להשתחרר ויכול לשמש לצמצום הקרן.
-            </p>
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="block text-lg font-semibold text-gray-900">
+                האם יש לך סכומים עתידיים?
+              </label>
+              <Tooltip
+                content="קרנות השתלמות, ירושות או כל סכום שצפוי להשתחרר ויכול לשמש לצמצום הקרן"
+                position="auto"
+                fontSize="base"
+                allowWrap={true}
+                maxWidth={280}
+              >
+                <i className={`fa-solid fa-info-circle text-${formData.track === TrackType.SHORTEN_TERM ? 'green' : 'blue'}-400 hover:text-${formData.track === TrackType.SHORTEN_TERM ? 'green' : 'blue'}-600 cursor-help text-sm`}></i>
+              </Tooltip>
+            </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 h-12">
               <button
                 type="button"
                 onClick={() => handleFutureFundsToggle(true)}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${hasFutureFunds
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-green-50'
+                className={`flex-1 rounded-xl font-bold text-lg transition-all shadow-sm flex items-center justify-center gap-2 ${hasFutureFunds
+                  ? 'bg-green-600 text-white shadow-green-200'
+                  : 'bg-white text-gray-600 border-2 border-gray-200 hover:border-green-300 hover:bg-green-50'
                   }`}
               >
+                {hasFutureFunds && <i className="fa-solid fa-check"></i>}
                 כן
               </button>
               <button
                 type="button"
                 onClick={() => handleFutureFundsToggle(false)}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${!hasFutureFunds
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-green-50'
+                className={`flex-1 rounded-xl font-bold text-lg transition-all shadow-sm flex items-center justify-center gap-2 ${!hasFutureFunds
+                  ? 'bg-gray-800 text-white shadow-gray-300'
+                  : 'bg-white text-gray-600 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
               >
+                {!hasFutureFunds && <i className="fa-solid fa-check"></i>}
                 לא
               </button>
             </div>
@@ -149,21 +161,23 @@ export const Step3Assets: React.FC = () => {
 
           {/* Integrated CTA */}
           <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-6">
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <i className="fa-solid fa-check-circle text-green-600 text-xl"></i>
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col gap-4">
+              <div className="flex items-center gap-3 w-full">
+                <div className="bg-green-100 rounded-full p-2 shrink-0">
+                  <i className="fa-solid fa-check-circle text-green-600 text-xl"></i>
+                </div>
                 <div>
-                  <p className="text-green-700 text-lg font-medium">
+                  <p className="text-green-800 text-lg font-bold leading-tight">
                     מוכנים לסימולציה!
                   </p>
-                  <p className="text-green-600 text-base">
+                  <p className="text-green-700 text-sm">
                     נראה כמה שנים אפשר לחסוך
                   </p>
                 </div>
               </div>
               <Button
                 onClick={handleNext}
-                className="px-4 py-2 text-lg bg-green-600 hover:bg-green-700"
+                className="w-full py-3 text-xl font-bold bg-green-600 hover:bg-green-700 shadow-lg"
               >
                 המשך לחישוב
               </Button>
@@ -235,21 +249,23 @@ export const Step3Assets: React.FC = () => {
 
         {/* Integrated CTA with actionable content */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-0">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <i className="fa-solid fa-chart-line text-blue-600 text-xl"></i>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col gap-4">
+            <div className="flex items-center gap-3 w-full">
+              <div className="bg-blue-100 rounded-full p-2 shrink-0">
+                <i className="fa-solid fa-chart-line text-blue-600 text-xl"></i>
+              </div>
               <div>
-                <p className="text-blue-700 text-lg font-medium">
+                <p className="text-blue-800 text-lg font-bold leading-tight">
                   יחס מימון נמוך = תנאים טובים יותר
                 </p>
-                <p className="text-blue-600 text-base">
+                <p className="text-blue-700 text-sm">
                   ככל שהיחס נמוך יותר, החיסכון גדול יותר
                 </p>
               </div>
             </div>
             <Button
               onClick={handleNext}
-              className="px-4 py-2 text-lg bg-blue-600 hover:bg-blue-700"
+              className="w-full py-3 text-xl font-bold bg-blue-600 hover:bg-blue-700 shadow-lg"
             >
               המשך לחישוב
             </Button>

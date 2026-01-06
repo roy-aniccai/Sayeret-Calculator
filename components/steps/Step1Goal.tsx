@@ -28,7 +28,7 @@ export const Step1Goal: React.FC = () => {
                 ההחזר כבד? נבדוק פריסה נוחה יותר.
               </p>
               <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-base font-medium">
-                מיקוד: הפחתת תשלום
+                מיקוד: הפחתת תשלומים
               </span>
             </div>
           </div>
@@ -43,12 +43,12 @@ export const Step1Goal: React.FC = () => {
               <i className="fa-solid fa-piggy-bank"></i>
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-gray-900 text-3xl mb-2">קיצור תקופת המשכנתא</h3>
+              <h3 className="font-bold text-gray-900 text-3xl mb-2">הוזלת המשכנתא</h3>
               <p className="text-xl text-gray-600 leading-snug mb-3">
-                רוצה לסיים מוקדם? נראה אם אפשר לקצר ולשלם פחות ריביות לבנק.
+                הגדלת ההחזר החודשי מקצרת את התקופה וחוסכת לך המון כסף.
               </p>
               <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-600 text-base font-medium">
-                מיקוד: קיצור שנים
+                מיקוד: חיסכון
               </span>
             </div>
           </div>

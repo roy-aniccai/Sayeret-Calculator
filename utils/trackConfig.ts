@@ -108,13 +108,13 @@ export const TRACK_CONFIGS: Record<TrackType, TrackConfig> = {
         2: 'פרטי הנכס והמשכנתא',
         3: 'הכנסות ויכולת החזר',
         4: 'סילוק מוקדם',
-        6: 'סימולטור קיצור תקופה'
+        6: 'סימולטור הוזלת משכנתא'
       },
       stepDescriptions: {
         2: 'פרטים על המשכנתא הקיימת והנכס',
         3: 'בדיקת יכולת החזר חודשי',
         4: 'האם יש סכומים חד פעמיים לשימוש?',
-        6: 'בדוק אפשרויות לקיצור שנים'
+        6: 'בדוק אפשרויות להוזלת המשכנתא'
       }
     },
     validation: {
@@ -133,20 +133,20 @@ export const TRACK_CONFIGS: Record<TrackType, TrackConfig> = {
     },
     messaging: {
       tooltips: {
-        mortgagePayment: 'ההחזר הנוכחי - נוסיף עליו לקיצור שנים',
-        targetPayment: 'כמה אתה מוכן לשלם כדי לקצר שנים?',
+        mortgagePayment: 'ההחזר הנוכחי - נוסיף עליו להוזלת המשכנתא',
+        targetPayment: 'כמה אתה מוכן לשלם כדי להוזיל את המשכנתא?',
         simulator: 'שחק עם הסליידר לראות כמה שנים תחסוך'
       },
       successMessages: {
-        calculation: 'מצאנו דרך לקצר את תקופת המשכנתא!',
+        calculation: 'מצאנו דרך להוזיל את המשכנתא!',
         simulation: 'חיסכון מרשים בשנים ובריבית'
       },
       warningMessages: {
-        paymentIncrease: 'קיצור שנים דורש העלאת התשלום החודשי',
+        paymentIncrease: 'הוזלת המשכנתא דורשת העלאת התשלום החודשי',
         ageLimit: 'תקופת המשכנתא מוגבלת לפי הגיל'
       },
       ctaTexts: {
-        primary: 'בדוק קיצור שנים',
+        primary: 'בדוק הוזלת משכנתא',
         secondary: 'חזור לבחירת מטרה'
       }
     }
@@ -310,7 +310,7 @@ export const getTrackDisplayName = (track: TrackType): string => {
     case TrackType.MONTHLY_REDUCTION:
       return 'הפחתת תשלום חודשי';
     case TrackType.SHORTEN_TERM:
-      return 'קיצור תקופת המשכנתא';
+      return 'הוזלת המשכנתא';
     default:
       return 'מסלול לא מוכר';
   }

@@ -193,18 +193,46 @@ export const Step5Simulator: React.FC = () => {
     // Constraint: MaxYears must effectively be <= CurrentYearsRemaining
     if (formData.track === TrackType.SHORTEN_TERM && formData.yearsRemaining) {
       // The user wants to SHORTEN the term. Showing 30 years when they have 15 left is irrelevant.
-      // We might allow a small buffer (e.g. +1 year) just in case, but strictly "Shorten" means <= Current.
-      // Let's stick to strict <= Current to be helpful.
-
       const currentRemaining = formData.yearsRemaining;
-      maxYears = Math.min(maxYears, currentRemaining);
 
-      // Note: If the new amount is much larger (consolidated loans), 
-      // keeping the same years might result in huge payments. 
-      // But the user selected "Shorten Term", so we assume they want this constraint.
+      // Calculate Total Cost of Current Situation
+      const currentTotalCost = currentPayment * currentRemaining * 12;
+
+      // Filter years where Total Cost >= Current Total Cost (Negative Savings)
+      // We iterate from max possible down to min to find the valid range
+      let calculatedMaxYears = Math.min(maxYears, currentRemaining);
+      let calculatedMinYears = -1;
+
+      // Find valid Max (should be current remaining, but let's check)
+      // Actually, we need to scan the range [minYearsFinancial, currentRemaining]
+      // And find the subset where NewTotalCost < CurrentTotalCost
+
+      // Optimization: usually shorter years = lower interest = lower total cost.
+      // But if monthly payment implies a HUGE rate, maybe not.
+      // We will check validity for each year. 
+      // User says: "If paying more monthly AND paying more total -> invalid".
+      // Usually "paying more monthly" is the definition of Shorten Term. 
+      // So the constraint is essentially: MUST PAY LESS TOTAL.
+
+      let validYears: number[] = [];
+      for (let y = minYearsFinancial; y <= calculatedMaxYears; y++) {
+        const p = calculateMonthlyPayment(totalAmount, weightedRate, y);
+        const newTotalCost = p * y * 12;
+
+        // Allow a small buffer for calculation rounding, but generally must save money
+        if (newTotalCost < currentTotalCost) {
+          validYears.push(y);
+        }
+      }
+
+      if (validYears.length === 0) {
+        return { min: 0, max: 0, noSolution: true };
+      }
+
+      minYears = validYears[0];
+      maxYears = validYears[validYears.length - 1];
 
       if (maxYears < minYears) {
-        // Impossible to shorten term with reasonable payments (violates financial min)
         return { min: 0, max: 0, noSolution: true };
       }
     }
@@ -249,6 +277,16 @@ export const Step5Simulator: React.FC = () => {
   const paymentDiff = newPayment - currentPayment;
   const isReduction = paymentDiff < 0;
   const gradientColor = isReduction ? 'from-green-400 to-green-600' : 'from-blue-400 to-blue-600'; // Use blue instead of amber
+
+  // Calculate Total Savings for Mortgage Reduction track
+  const calculateTotalSavings = () => {
+    if (!formData.yearsRemaining) return 0;
+    const currentTotalCost = currentPayment * formData.yearsRemaining * 12;
+    const newTotalCost = newPayment * simulatorYears * 12;
+    return currentTotalCost - newTotalCost;
+  };
+
+  const totalSavings = calculateTotalSavings();
 
   return (
     <div className="animate-fade-in-up">
@@ -308,45 +346,61 @@ export const Step5Simulator: React.FC = () => {
           <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
             {/* Summary Header */}
             <div className="text-center mb-4">
-              {(() => {
-                if (paymentDiff < -100) {
-                  return (
-                    <div className="bg-green-100 border border-green-300 rounded-lg p-3">
-                      <h4 className="text-xl font-bold text-green-700 mb-1">
-                        הפחתה של כ-{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ש"ח בחודש!
-                      </h4>
-                    </div>
-                  );
-                } else if (paymentDiff < 0) {
-                  return (
-                    <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                      <h4 className="text-xl font-bold text-blue-700 mb-1">
-                        הפחתה של כ-{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ש"ח בחודש
-                      </h4>
-                    </div>
-                  );
-                } else if (Math.abs(paymentDiff) <= 100) {
-                  return (
-                    <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                      <h4 className="text-xl font-bold text-blue-700 mb-1">
-                        החזר דומה לנוכחי
-                      </h4>
-                    </div>
-                  );
-                } else {
-                  return (
-                    <div className={`bg-${primaryColor}-100 border border-${primaryColor}-300 rounded-lg p-3`}>
-                      <h4 className={`text-xl font-bold text-${primaryColor}-700 mb-1`}>
-                        תוספת של כ-{formatNumberWithCommas(Math.round(paymentDiff))} ש"ח בחודש
-                      </h4>
-                    </div>
-                  );
-                }
-              })()}
+              {formData.track === TrackType.SHORTEN_TERM ? (
+                // Mortgage Reduction - Show Total Savings
+                <div className="bg-green-100 border border-green-300 rounded-lg p-4 shadow-sm">
+                  <h4 className="text-lg text-green-800 font-bold mb-1">
+                    חיסכון כולל צפוי בהלוואה:
+                  </h4>
+                  <div className="text-3xl font-extrabold text-green-700">
+                    ₪{formatNumberWithCommas(Math.round(totalSavings))}
+                  </div>
+                  <p className="text-sm text-green-600 mt-1">
+                    (בקיצור התקופה ל-{simulatorYears} שנים)
+                  </p>
+                </div>
+              ) : (
+                // Monthly Reduction - Show Monthly Difference (Existing Logic)
+                (() => {
+                  if (paymentDiff < -100) {
+                    return (
+                      <div className="bg-green-100 border border-green-300 rounded-lg p-3">
+                        <h4 className="text-xl font-bold text-green-700 mb-1">
+                          הפחתה של כ-{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ש"ח בחודש!
+                        </h4>
+                      </div>
+                    );
+                  } else if (paymentDiff < 0) {
+                    return (
+                      <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
+                        <h4 className="text-xl font-bold text-blue-700 mb-1">
+                          הפחתה של כ-{formatNumberWithCommas(Math.round(Math.abs(paymentDiff)))} ש"ח בחודש
+                        </h4>
+                      </div>
+                    );
+                  } else if (Math.abs(paymentDiff) <= 100) {
+                    return (
+                      <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
+                        <h4 className="text-xl font-bold text-blue-700 mb-1">
+                          החזר דומה לנוכחי
+                        </h4>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className={`bg-${primaryColor}-100 border border-${primaryColor}-300 rounded-lg p-3`}>
+                        <h4 className={`text-xl font-bold text-${primaryColor}-700 mb-1`}>
+                          תוספת של כ-{formatNumberWithCommas(Math.round(paymentDiff))} ש"ח בחודש
+                        </h4>
+                      </div>
+                    );
+                  }
+                })()
+              )}
             </div>
 
             {/* Bar Chart - Single Bar with Current Payment Line */}
-            <div className="mb-6">
+            <div className="mb-2">
               <div className="px-4">
                 <div className="w-full">
                   {/* Single Payment Bar */}
@@ -375,42 +429,46 @@ export const Step5Simulator: React.FC = () => {
 
                         return (
                           <>
-                            {/* New Payment Bar */}
+                            {/* New Payment Bar (Background Layer z-10) */}
                             <div
-                              className={`absolute right-0 top-0 h-full bg-gradient-to-l ${gradientColor} rounded-lg shadow-sm transition-all duration-700 ease-out`}
+                              className={`absolute right-0 top-0 h-full bg-gradient-to-l ${gradientColor} rounded-lg shadow-sm transition-all duration-700 ease-out z-10`}
                               style={{
                                 width: `${visualWidth}%`
                               }}
-                            >
-                              {/* New Payment Amount Inside Bar - only if bar is wide enough */}
-                              {visualWidth >= 30 && (
-                                <div className="flex items-center justify-center h-full">
-                                  <span className="text-white font-bold text-lg">
+                            />
+
+                            {/* New Payment Label Overlay (Foreground Layer z-30) - Always on top of everything */}
+                            <div className="absolute inset-0 z-30 pointer-events-none">
+                              {/* If bar is wide enough, center text in the bar area */}
+                              {visualWidth >= 30 ? (
+                                <div
+                                  className="absolute right-0 top-0 h-full flex items-center justify-center"
+                                  style={{ width: `${visualWidth}%` }}
+                                >
+                                  <span className="text-white font-bold text-lg whitespace-nowrap px-1">
                                     {formatNumberWithCommas(Math.round(newPayment))} ש"ח
                                   </span>
                                 </div>
+                              ) : (
+                                /* If bar is too narrow, position text to the left of the bar */
+                                <div
+                                  className="absolute top-1/2 transform -translate-y-1/2 text-gray-800 font-bold text-lg bg-white px-3 py-2 rounded-lg shadow-sm border"
+                                  style={{
+                                    right: `${visualWidth}%`,
+                                    marginRight: '12px'
+                                  }}
+                                >
+                                  {formatNumberWithCommas(Math.round(newPayment))} ש"ח
+                                </div>
                               )}
                             </div>
-
-                            {/* New Payment Amount Outside Bar - when bar is too narrow */}
-                            {visualWidth < 30 && (
-                              <div
-                                className="absolute top-1/2 transform -translate-y-1/2 text-gray-800 font-bold text-lg bg-white px-3 py-2 rounded-lg shadow-sm border"
-                                style={{
-                                  right: `${visualWidth}%`,
-                                  marginRight: '12px'
-                                }}
-                              >
-                                {formatNumberWithCommas(Math.round(newPayment))} ש"ח
-                              </div>
-                            )}
                           </>
                         );
                       })()}
                     </div>
 
                     {/* Current Payment Indicator - Below the bar */}
-                    <div className="relative mt-2">
+                    <div className="relative mt-0">
                       <div
                         className="absolute top-0 transform translate-x-1/2"
                         style={{
@@ -431,10 +489,26 @@ export const Step5Simulator: React.FC = () => {
                           })()}%`
                         }}
                       >
-                        <div className="flex flex-col items-center">
-                          <div className="w-0.5 h-3 bg-gray-600"></div>
-                          <div className="bg-gray-600 text-white text-base px-3 py-2 rounded-lg mt-1 whitespace-nowrap font-bold">
-                            נוכחי: {formatNumberWithCommas(Math.round(currentPayment))} ש"ח
+                        <div className="flex flex-col items-center group cursor-help">
+                          {/* Tick mark container with absolute positioning for label */}
+                          <div className="relative flex items-center">
+                            {/* Tick mark - extending up through the bar (h-12 bar + extra) */}
+                            <div className="w-1 h-[70px] bg-gray-600 -mt-12 shadow-sm z-10 relative rounded-full"></div>
+
+                            {/* Label Container - Conditional Positioning based on Track to prevent overflow */}
+                            <div className={`absolute ${formData.track === TrackType.SHORTEN_TERM ? 'right-0 pr-2' : 'left-0 pl-2'} top-1 whitespace-nowrap`}>
+                              <div className="flex items-center bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded border border-gray-100 shadow-sm">
+                                <span className="text-gray-900 text-lg font-bold leading-none ml-1">
+                                  {formatNumberWithCommas(Math.round(currentPayment))}
+                                </span>
+                                <span className="text-gray-900 text-lg font-bold leading-none">
+                                  ש"ח
+                                </span>
+                                <span className="text-gray-500 text-xs font-semibold mx-1">
+                                  (נוכחי)
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -446,8 +520,8 @@ export const Step5Simulator: React.FC = () => {
           </div>
 
           {/* Years Slider */}
-          <div className="bg-white rounded-xl p-4 border border-gray-200">
-            <label className="flex items-center justify-between text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl p-3 border border-gray-200">
+            <label className="flex items-center justify-between text-base font-semibold text-gray-900 mb-2">
               <div className="flex items-center">
                 <i className={`fa-solid fa-sliders mr-2 text-${primaryColor}-600`}></i>
                 {formData.age ? `המשכנתא החדשה תיפרס על פני ${simulatorYears} שנים` : 'תקופת המשכנתא החדשה (שנים)'}
@@ -457,7 +531,7 @@ export const Step5Simulator: React.FC = () => {
             {!formData.age ? (
               /* Locked Slider */
               <div className="relative">
-                <div className="relative mb-6">
+                <div className="relative mb-3">
                   <input
                     type="range"
                     min={10}
@@ -468,7 +542,7 @@ export const Step5Simulator: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex justify-between text-lg text-gray-400 mb-4">
+                <div className="flex justify-between text-sm text-gray-400 mb-1">
                   <span>10 שנים</span>
                   <span>30 שנים</span>
                 </div>
@@ -508,7 +582,7 @@ export const Step5Simulator: React.FC = () => {
             ) : (
               /* Active Slider */
               <>
-                <div className="relative mb-6">
+                <div className="relative mb-3">
                   <input
                     type="range"
                     min={minYears}
@@ -521,7 +595,7 @@ export const Step5Simulator: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex justify-between text-lg text-gray-500 mb-4">
+                <div className="flex justify-between text-sm text-gray-500 mb-1">
                   <span>{minYears} שנים</span>
                   <span>{maxYears} שנים</span>
                 </div>
@@ -543,38 +617,21 @@ export const Step5Simulator: React.FC = () => {
         {/* Call to Action */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-4 space-y-3">
           {/* Primary CTA */}
-          {/* Primary CTA */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 md:p-6 flex flex-col gap-4 md:gap-6 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="bg-green-600 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-green-200 animate-pulse">
-                <i className="fa-solid fa-shield-heart text-lg md:text-xl"></i>
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-900 text-lg md:text-xl">חיסכון נוסף בביטוח המשכנתא</h4>
-                <p className="text-gray-700 text-base md:text-lg">ניתן לחסוך כ-<span className="font-bold text-green-700">50,000 ש"ח</span> בביטוח</p>
-              </div>
-            </div>
-            <Button
-              onClick={() => setShowDialog(true)}
-              className="w-full py-3 md:py-4 text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30 transform transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <i className="fa-solid fa-phone-volume animate-bounce"></i>
-                לשיחה עם המומחים
-              </span>
-            </Button>
-          </div>
+          <Button
+            onClick={() => setShowDialog(true)}
+            className="w-full py-3 md:py-4 text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30 transform transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span className="flex items-center justify-center gap-2">
+              <i className="fa-solid fa-phone-volume animate-bounce"></i>
+              לשיחה עם המומחים
+            </span>
+          </Button>
 
           {/* Secondary CTA */}
-          <button onClick={resetForm} className={`w-full text-${primaryColor}-600 font-medium text-base md:text-lg hover:underline hidden md:block`}>
+          <button onClick={resetForm} className={`w-full text-${primaryColor}-600 font-medium text-base md:text-lg hover:underline`}>
             בדוק תרחיש אחר
           </button>
         </div>
-
-        {/* Mobile-only secondary CTA outside the sticky footer so it scrolls */}
-        <button onClick={resetForm} className={`w-full text-${primaryColor}-600 font-medium text-base mt-2 hover:underline md:hidden pb-4`}>
-          בדוק תרחיש אחר
-        </button>
 
         <Dialog
           isOpen={showDialog}

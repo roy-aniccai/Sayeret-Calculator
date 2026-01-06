@@ -52,12 +52,14 @@ export const Step4Contact: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    const finalValue = type === 'checkbox' ? checked : value;
+
     // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-    updateFormData({ [name]: value });
+    updateFormData({ [name]: finalValue });
   }, [errors, updateFormData]);
 
   const validatePhone = (phone: string) => {
@@ -156,12 +158,15 @@ export const Step4Contact: React.FC = () => {
         </div>
 
         {/* Main CTA Banner - Moved to footer */}
-        <div className={`bg-${primaryColor}-50 border border-${primaryColor}-200 rounded-xl p-3 flex items-center justify-between`}>
-          <div className="flex items-center gap-3">
-            <i className={`fa-solid fa-rocket text-${primaryColor}-600 text-xl`}></i>
+        {/* Insurance Savings Banner (Moved from Simulator) */}
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex items-center justify-between mb-2 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md animate-pulse">
+              <i className="fa-solid fa-shield-heart text-lg"></i>
+            </div>
             <div>
-              <p className={`text-${primaryColor}-700 text-base font-medium`}>קבל סימולטור אינטראקטיבי</p>
-              <p className={`text-${primaryColor}-600 text-sm`}>שחק עם המספרים וראה את החיסכון</p>
+              <p className="text-gray-900 text-lg font-bold">חיסכון נוסף בביטוח המשכנתא</p>
+              <p className="text-gray-700 text-sm">ניתן לחסוך כ-<span className="font-bold text-green-700 text-base">50,000 ש"ח</span> בביטוח</p>
             </div>
           </div>
         </div>
