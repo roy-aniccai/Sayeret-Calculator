@@ -1,7 +1,10 @@
 /// <reference types="vite/client" />
 import { auth } from '../src/firebase';
-const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3005/api';
-const ADMIN_API_BASE_URL = import.meta.env.PROD ? '/admin-api' : 'http://localhost:3005/admin-api';
+
+// Use environment variable with fallback for Jest compatibility
+const isProduction = process.env.NODE_ENV === 'production';
+const API_BASE_URL = isProduction ? '/api' : 'http://localhost:3005/api';
+const ADMIN_API_BASE_URL = isProduction ? '/admin-api' : 'http://localhost:3005/admin-api';
 
 export const submitData = async (data: any) => {
     try {

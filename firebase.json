@@ -16,6 +16,10 @@
                 "function": "adminApi"
             },
             {
+                "source": "/reduce-payments**",
+                "destination": "/reduce-payments.html"
+            },
+            {
                 "source": "**",
                 "destination": "/index.html"
             }

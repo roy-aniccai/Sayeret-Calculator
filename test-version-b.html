@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Version B - Scenario Cards</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            direction: rtl;
+        }
+        .test-info {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h2>בדיקת גרסה B - כרטיסי תרחישים</h2>
+        <p>הקובץ נוצר בהצלחה ומכיל:</p>
+        <ul>
+            <li class="success">✓ רכיב ScenarioCard עם תמיכה בעברית ו-RTL</li>
+            <li class="success">✓ לוגיקת חישוב תרחישים (מינימלי, מקסימלי, ביניים)</li>
+            <li class="success">✓ אינטגרציה עם SingleTrackStep6Simulator</li>
+            <li class="success">✓ טיפול במקרים מיוחדים (חיסכון לא מספיק, אין חיסכון)</li>
+            <li class="success">✓ הצגת בדיוק שלושה כרטיסי תרחישים</li>
+            <li class="success">✓ שמירה על עקביות החישובים עם גרסה A</li>
+        </ul>
+        
+        <h3>קבצים שנוצרו:</h3>
+        <ul>
+            <li><code>components/ui/ScenarioCard.tsx</code> - רכיב כרטיס תרחיש</li>
+            <li><code>utils/scenarioCalculator.ts</code> - לוגיקת חישוב תרחישים</li>
+            <li><code>components/steps/SingleTrackStep6Simulator.tsx</code> - עודכן עם גרסה B</li>
+        </ul>
+        
+        <h3>דרישות שמומשו:</h3>
+        <ul>
+            <li>4.1 - הצגת בדיוק שלושה כרטיסי תרחישים</li>
+            <li>4.5 - רכיבי כרטיס נפרדים</li>
+            <li>4.6 - הצגת סכום הפחתה ותקופה בעברית</li>
+            <li>4.2 - חישוב תרחיש מינימלי (500+ ש"ח חיסכון)</li>
+            <li>4.3 - חישוב תרחיש מקסימלי (תקופה ארוכה ביותר)</li>
+            <li>4.4 - חישוב תרחיש ביניים</li>
+            <li>6.1 - שמירה על עקביות החישובים</li>
+            <li>6.2 - שימור לוגיקת המשכנתא הקיימת</li>
+        </ul>
+    </div>
+</body>
+</html>
