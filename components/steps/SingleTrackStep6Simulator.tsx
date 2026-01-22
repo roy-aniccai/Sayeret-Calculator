@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
@@ -15,6 +15,7 @@ import { getTrackConfigSafe } from '../../utils/trackConfig';
 import { SimulatorVersion } from '../../utils/abTestingUtils';
 import { ScenarioCard } from '../ui/ScenarioCard';
 import { calculateScenarios, ScenarioInput } from '../../utils/scenarioCalculator';
+import { validateCalculationConsistency } from '../../utils/calculationConsistency';
 
 /**
  * SingleTrackStep6Simulator - Monthly payment reduction simulator for single-track calculator
@@ -328,6 +329,21 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
 
   const scenarios = useMemo(() => calculateScenarios(scenarioInput), [scenarioInput]);
 
+  // Validate calculation consistency between versions (development mode)
+  const consistencyCheck = useMemo(() => {
+    if (process.env.NODE_ENV === 'development') {
+      return validateCalculationConsistency(scenarioInput);
+    }
+    return null;
+  }, [scenarioInput]);
+
+  // Log consistency warnings in development
+  useEffect(() => {
+    if (consistencyCheck && !consistencyCheck.isConsistent) {
+      console.warn('Calculation consistency issues detected:', consistencyCheck.differences);
+    }
+  }, [consistencyCheck]);
+
   // State for selected scenario in Version B
   const [selectedScenario, setSelectedScenario] = useState<'minimum' | 'maximum' | 'middle' | null>(null);
 
@@ -376,8 +392,16 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <h4 className="font-semibold text-blue-800 mb-2">חיסכון בביטוח משכנתא</h4>
-                <p className="text-blue-700">עד 50,000 ש"ח חיסכון בביטוח משכנתא</p>
+                <p className="text-blue-700 mb-2">עד 50,000 ש"ח חיסכון בביטוח משכנתא</p>
+                <p className="text-blue-600 text-sm">בדיקה חינמית של הפוליסה הקיימת שלך</p>
               </div>
+              <Button
+                onClick={handleContactExpert}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+              >
+                <i className="fa-solid fa-phone mr-2"></i>
+                אשמח שנציג יחזור אלי
+              </Button>
             </div>
           )}
 
@@ -390,17 +414,32 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
                 חיסכון מוגבל
               </h3>
               <p className="text-gray-600 mb-4">
-                החיסכון האפשרי נמוך מ-1000 ש"ח בחודש. נציג יכול לבדוק אפשרויות נוספות.
+                החיסכון האפשרי נמוך מ-1,000 ש"ח בחודש. נציג יכול לבדוק אפשרויות נוספות.
               </p>
               {scenarios.maximumScenario && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                   <h4 className="font-semibold text-gray-800 mb-2">האפשרות הטובה ביותר</h4>
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 mb-2">
                     חיסכון של {Math.round(scenarios.maximumScenario.monthlyReduction)} ש"ח בחודש
                     על פני {scenarios.maximumScenario.years} שנים
                   </p>
+                  <p className="text-gray-600 text-sm">
+                    סה"כ חיסכון: {formatNumberWithCommas(Math.round(scenarios.maximumScenario.totalSavings))} ש"ח
+                  </p>
                 </div>
               )}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold text-green-800 mb-2">חיסכון נוסף בביטוח משכנתא</h4>
+                <p className="text-green-700 mb-1">עד 50,000 ש"ח חיסכון נוסף</p>
+                <p className="text-green-600 text-sm">בדיקה חינמית של הפוליסה הקיימת</p>
+              </div>
+              <Button
+                onClick={handleContactExpert}
+                className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md"
+              >
+                <i className="fa-solid fa-phone mr-2"></i>
+                אשמח שנציג יחזור אלי
+              </Button>
             </div>
           )}
 

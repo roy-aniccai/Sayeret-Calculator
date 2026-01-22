@@ -12,6 +12,7 @@ import {
   getDefaultSingleTrackExperience,
   type CampaignData 
 } from '../utils/campaignUrlParser';
+import { getSimulatorVersionFromUrl, type SimulatorVersion } from '../utils/abTestingUtils';
 
 // Props interface for the SingleTrackApp component
 interface SingleTrackAppProps {
@@ -33,12 +34,17 @@ interface SingleTrackAppProps {
 const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }) => {
   const [campaignData, setCampaignData] = useState<CampaignData>(() => getDefaultSingleTrackExperience());
   const [isLoading, setIsLoading] = useState(true);
+  const [simulatorVersion, setSimulatorVersion] = useState<SimulatorVersion>('A');
 
-  // Parse campaign parameters from URL on component mount with comprehensive error handling
+  // Parse campaign parameters and simulator version from URL on component mount
   useEffect(() => {
     const initializeCampaignData = async () => {
       try {
         setIsLoading(true);
+        
+        // Get simulator version from URL parameter
+        const urlVersion = getSimulatorVersionFromUrl();
+        setSimulatorVersion(urlVersion);
         
         let parsedCampaignData: CampaignData;
         
@@ -118,16 +124,19 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
 
   return (
     <SingleTrackFormProvider initialCampaignData={initialCampaignData}>
-      <SingleTrackAppContent campaignData={campaignData} />
+      <SingleTrackAppContent campaignData={campaignData} simulatorVersion={simulatorVersion} />
     </SingleTrackFormProvider>
   );
 };
 
 /**
  * SingleTrackAppContent - The main content component that uses the form context
- * Enhanced with error handling for campaign data issues
+ * Enhanced with error handling for campaign data issues and A/B testing support
  */
-const SingleTrackAppContent: React.FC<{ campaignData: CampaignData }> = ({ campaignData }) => {
+const SingleTrackAppContent: React.FC<{ 
+  campaignData: CampaignData; 
+  simulatorVersion: SimulatorVersion;
+}> = ({ campaignData, simulatorVersion }) => {
   const { step, prevStep, resetForm, nextStep } = useSingleTrackForm();
 
   // Show error notification if there are campaign data issues (non-blocking)
@@ -148,7 +157,7 @@ const SingleTrackAppContent: React.FC<{ campaignData: CampaignData }> = ({ campa
         case 5:
           return <SingleTrackStep5Contact />;
         case 6:
-          return <SingleTrackStep6Simulator />;
+          return <SingleTrackStep6Simulator version={simulatorVersion} />;
         default:
           // Fallback for invalid step numbers
           console.error(`Invalid step number: ${step}, resetting to step 1`);

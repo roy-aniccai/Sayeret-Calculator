@@ -85,8 +85,8 @@ This implementation plan converts the approved design into discrete coding tasks
     - **Property 4: Scenario Cards Structure and Display**
     - **Validates: Requirements 4.1, 4.5, 4.6**
 
-- [ ] 6. Implement Special Case Handling
-  - [ ] 6.1 Add insufficient savings handling
+- [x] 6. Implement Special Case Handling
+  - [x] 6.1 Add insufficient savings handling
     - Display single option when reduction is less than 1000 NIS
     - Show "אין אפשרות לחסוך" message for no mortgage savings
     - Offer insurance savings option up to 50,000 NIS
@@ -97,8 +97,8 @@ This implementation plan converts the approved design into discrete coding tasks
     - **Property 6: Special Case Handling**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
-- [ ] 7. Ensure Calculation Consistency
-  - [ ] 7.1 Validate calculation consistency across versions
+- [x] 7. Ensure Calculation Consistency
+  - [x] 7.1 Validate calculation consistency across versions
     - Ensure identical results for same input data across versions A and B
     - Preserve all existing mortgage calculation algorithms
     - Maintain consistency when switching between versions
@@ -108,8 +108,8 @@ This implementation plan converts the approved design into discrete coding tasks
     - **Property 7: Calculation Consistency Across Versions**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
 
-- [ ] 8. Hebrew Text and RTL Support
-  - [ ] 8.1 Implement proper Hebrew text display
+- [x] 8. Hebrew Text and RTL Support
+  - [x] 8.1 Implement proper Hebrew text display
     - Ensure all new text elements use proper RTL direction
     - Validate Hebrew grammar in scenario messages
     - Align buttons properly for Hebrew layout
@@ -120,14 +120,14 @@ This implementation plan converts the approved design into discrete coding tasks
     - **Property 8: Hebrew Text Display and RTL Support**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
 
-- [ ] 9. Integration and Wiring
-  - [ ] 9.1 Wire A/B testing into SingleTrackApp
+- [x] 9. Integration and Wiring
+  - [x] 9.1 Wire A/B testing into SingleTrackApp
     - Integrate URL parameter detection into main app
     - Pass version prop to simulator step
     - Ensure proper fallback behavior
     - _Requirements: 3.1, 3.4_
 
-  - [ ] 9.2 Update parent components for new contact step
+  - [x] 9.2 Update parent components for new contact step
     - Ensure contact step changes integrate properly
     - Verify form data flow remains intact
     - Test navigation between steps
@@ -138,7 +138,7 @@ This implementation plan converts the approved design into discrete coding tasks
     - Verify contact step to simulator step transition
     - Test URL parameter switching functionality
 
-- [ ] 10. Final checkpoint - Ensure all tests pass
+- [x] 10. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

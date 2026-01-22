@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatNumberWithCommas } from '../../utils/helpers';
+import { formatHebrewCurrency, formatHebrewTimePeriod, ensureRTLDirection } from '../../utils/hebrewTextValidator';
 
 export interface ScenarioCardProps {
   type: 'minimum' | 'maximum' | 'middle';
@@ -33,29 +34,21 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
   
   // Hebrew text for scenario types with proper RTL formatting
   const getScenarioTitle = (type: string): string => {
-    switch (type) {
-      case 'minimum':
-        return 'תרחיש מינימלי';
-      case 'maximum':
-        return 'תרחיש מקסימלי';
-      case 'middle':
-        return 'תרחיש ביניים';
-      default:
-        return 'תרחיש';
-    }
+    const titles = {
+      minimum: 'תרחיש מינימלי',
+      maximum: 'תרחיש מקסימלי',
+      middle: 'תרחיש ביניים'
+    };
+    return ensureRTLDirection(titles[type as keyof typeof titles] || 'תרחיש');
   };
 
   const getScenarioDescription = (type: string): string => {
-    switch (type) {
-      case 'minimum':
-        return 'התקופה הקצרה ביותר עם חיסכון של 500+ ש"ח';
-      case 'maximum':
-        return 'התקופה הארוכה ביותר עם החיסכון המקסימלי';
-      case 'middle':
-        return 'תקופה בינונית עם איזון בין חיסכון ותקופה';
-      default:
-        return 'תרחיש תשלום';
-    }
+    const descriptions = {
+      minimum: 'התקופה הקצרה ביותר עם חיסכון של 500+ ש"ח',
+      maximum: 'התקופה הארוכה ביותר עם החיסכון המקסימלי',
+      middle: 'תקופה בינונית עם איזון בין חיסכון ותקופה'
+    };
+    return ensureRTLDirection(descriptions[type as keyof typeof descriptions] || 'תרחיש תשלום');
   };
 
   // Color scheme based on scenario type
@@ -144,10 +137,10 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
       <div className="mb-4">
         <div className={`${colors.accent} rounded-lg p-4 text-center`}>
           <div className={`text-2xl font-bold ${colors.text} mb-1`}>
-            חיסכון של {formatNumberWithCommas(Math.round(monthlyReduction))} ש"ח
+            {ensureRTLDirection(`חיסכון של ${formatHebrewCurrency(Math.round(monthlyReduction))}`)}
           </div>
           <div className="text-gray-600 text-sm">
-            בחודש
+            {ensureRTLDirection('בחודש')}
           </div>
         </div>
       </div>
@@ -155,21 +148,21 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
       {/* Payment details */}
       <div className="space-y-3 mb-4">
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">תשלום נוכחי:</span>
+          <span className="text-gray-600">{ensureRTLDirection('תשלום נוכחי:')}</span>
           <span className="font-semibold text-gray-900">
-            {formatNumberWithCommas(Math.round(currentPayment))} ש"ח
+            {formatHebrewCurrency(Math.round(currentPayment))}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">תשלום חדש:</span>
+          <span className="text-gray-600">{ensureRTLDirection('תשלום חדש:')}</span>
           <span className={`font-bold text-lg ${colors.text}`}>
-            {formatNumberWithCommas(Math.round(newPayment))} ש"ח
+            {formatHebrewCurrency(Math.round(newPayment))}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">תקופה:</span>
+          <span className="text-gray-600">{ensureRTLDirection('תקופה:')}</span>
           <span className="font-semibold text-gray-900">
-            {years} שנים
+            {ensureRTLDirection(formatHebrewTimePeriod(years))}
           </span>
         </div>
       </div>
@@ -184,7 +177,7 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="flex items-center justify-center gap-2 text-green-600 font-medium">
             <i className="fa-solid fa-check-circle"></i>
-            <span>תרחיש נבחר</span>
+            <span>{ensureRTLDirection('תרחיש נבחר')}</span>
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ensureRTLDirection } from '../../utils/hebrewTextValidator';
 
 export interface MarketingMessageProps {
   message: string;
@@ -49,14 +50,14 @@ export const MarketingMessage: React.FC<MarketingMessageProps> = ({
     >
       {getIcon()}
       <p className="text-gray-700 text-sm font-medium leading-relaxed">
-        {message}
+        {ensureRTLDirection(message)}
       </p>
     </div>
   );
 };
 
-// Predefined marketing messages in Hebrew
+// Predefined marketing messages in Hebrew with proper RTL formatting
 export const MARKETING_MESSAGES = {
-  whatsappReport: 'מספר הטלפון ישמש אותנו לשלוח אליך את הדוח המלא בוואטסאפ',
-  smartBot: 'לשימוש בבוט החכם בוואטסאפ אנא הזינו מספר טלפון ישראלי תקין'
+  whatsappReport: ensureRTLDirection('מספר הטלפון ישמש אותנו לשלוח אליך את הדוח המלא בוואטסאפ'),
+  smartBot: ensureRTLDirection('לשימוש בבוט החכם בוואטסאפ אנא הזינו מספר טלפון ישראלי תקין')
 } as const;

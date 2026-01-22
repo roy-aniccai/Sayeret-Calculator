@@ -178,6 +178,22 @@ export function getVersionFromLocation(
 }
 
 /**
+ * Get simulator version from current browser URL
+ * Convenience function that returns just the version string
+ * 
+ * @param paramName - Parameter name to look for (default: 'simulatorVersion')
+ * @param defaultVersion - Fallback version (default: 'A')
+ * @returns Simulator version ('A' or 'B')
+ */
+export function getSimulatorVersionFromUrl(
+  paramName: string = 'simulatorVersion',
+  defaultVersion: SimulatorVersion = 'A'
+): SimulatorVersion {
+  const config = getVersionFromLocation(paramName, defaultVersion);
+  return config.version;
+}
+
+/**
  * Simple utility to get just the version string from URL
  * Convenience function for components that only need the version
  * 

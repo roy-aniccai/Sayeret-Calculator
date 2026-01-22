@@ -4,7 +4,7 @@ import { auth } from '../src/firebase';
 // Use environment variable with fallback for Jest compatibility
 const isProduction = process.env.NODE_ENV === 'production';
 const API_BASE_URL = isProduction ? '/api' : 'http://localhost:3005/api';
-const ADMIN_API_BASE_URL = isProduction ? '/admin-api' : 'http://localhost:3005/admin-api';
+const ADMIN_API_BASE_URL = isProduction ? '/api/admin' : 'http://localhost:3005/api/admin';
 
 export const submitData = async (data: any) => {
     try {
