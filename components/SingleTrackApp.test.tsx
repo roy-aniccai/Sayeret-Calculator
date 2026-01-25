@@ -158,9 +158,13 @@ describe('SingleTrackApp', () => {
     fireEvent.click(screen.getByText('המשך לחישוב'));
     expect(screen.getByText('כמה אתה משלם היום?')).toBeInTheDocument();
     
-    // Step 3 -> 4 (click the "המשך לחישוב" button)
-    fireEvent.click(screen.getByText('המשך לחישוב'));
-    expect(screen.getByText('נבדוק את שווי הנכסים')).toBeInTheDocument();
+    // Step 3 -> 4 (click the "המשך לחישוב מדויק" button)
+    fireEvent.click(screen.getByText('המשך לחישוב מדויק'));
+    expect(screen.getByText('פרטים נוספים')).toBeInTheDocument();
+    
+    // Fill in required age field for step 4
+    const ageInput = screen.getByPlaceholderText('35');
+    fireEvent.change(ageInput, { target: { value: '35' } });
     
     // Step 4 -> 5 (click the "המשך לחישוב" button)
     fireEvent.click(screen.getByText('המשך לחישוב'));
@@ -190,7 +194,12 @@ describe('SingleTrackApp', () => {
     // Navigate to step 6
     fireEvent.click(screen.getByText('בואו נתחיל לחסוך')); // Step 1 -> 2
     fireEvent.click(screen.getByText('המשך לחישוב')); // Step 2 -> 3
-    fireEvent.click(screen.getByText('המשך לחישוב')); // Step 3 -> 4
+    fireEvent.click(screen.getByText('המשך לחישוב מדויק')); // Step 3 -> 4
+    
+    // Fill in required age field for step 4
+    const ageInput = screen.getByPlaceholderText('35');
+    fireEvent.change(ageInput, { target: { value: '35' } });
+    
     fireEvent.click(screen.getByText('המשך לחישוב')); // Step 4 -> 5
     
     // Fill in required form fields for step 5

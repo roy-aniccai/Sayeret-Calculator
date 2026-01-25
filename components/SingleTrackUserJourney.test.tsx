@@ -122,7 +122,7 @@ describe('Single Track Calculator - Complete User Journey', () => {
       await user.type(mortgageInput, '1500000');
       
       // Continue to next step
-      const continueFromDebts = screen.getByText('המשך לחישוב');
+      const continueFromDebts = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromDebts);
 
       // Step 3: Monthly Payments
@@ -146,12 +146,12 @@ describe('Single Track Calculator - Complete User Journey', () => {
       await user.type(targetPaymentInput, '6000');
       
       // Continue to next step
-      const continueFromPayments = screen.getByText('המשך לחישוב');
+      const continueFromPayments = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromPayments);
 
       // Step 4: Assets
       await waitFor(() => {
-        expect(screen.getByText('שווי נכסים')).toBeInTheDocument();
+        expect(screen.getByText('פרטים למיחזור')).toBeInTheDocument();
       });
       
       // Fill property value
@@ -160,7 +160,7 @@ describe('Single Track Calculator - Complete User Journey', () => {
       await user.type(propertyValueInput, '2800000');
       
       // Continue to next step
-      const continueFromAssets = screen.getByText('המשך לחישוב');
+      const continueFromAssets = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromAssets);
 
       // Step 5: Contact Information
@@ -229,7 +229,7 @@ describe('Single Track Calculator - Complete User Journey', () => {
       await user.clear(mortgageInput);
       await user.type(mortgageInput, '1200000');
       
-      const continueFromDebts = screen.getByText('המשך לחישוב');
+      const continueFromDebts = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromDebts);
       
       // Step 2 -> 3
@@ -237,15 +237,15 @@ describe('Single Track Calculator - Complete User Journey', () => {
         expect(screen.getByText('החזרים חודשיים נוכחיים')).toBeInTheDocument();
       });
       
-      const continueFromPayments = screen.getByText('המשך לחישוב');
+      const continueFromPayments = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromPayments);
       
       // Step 3 -> 4
       await waitFor(() => {
-        expect(screen.getByText('שווי נכסים')).toBeInTheDocument();
+        expect(screen.getByText('פרטים למיחזור')).toBeInTheDocument();
       });
       
-      const continueFromAssets = screen.getByText('המשך לחישוב');
+      const continueFromAssets = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromAssets);
       
       // Step 4 -> 5
@@ -307,7 +307,7 @@ describe('Single Track Calculator - Complete User Journey', () => {
       await user.clear(mortgageInput);
       await user.type(mortgageInput, '1300000');
       
-      const continueFromDebts = screen.getByText('המשך לחישוב');
+      const continueFromDebts = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromDebts);
       
       await waitFor(() => {
@@ -355,7 +355,7 @@ describe('Single Track Calculator - Complete User Journey', () => {
       await user.clear(mortgageInput);
       await user.type(mortgageInput, '1400000');
       
-      const continueFromDebts = screen.getByText('המשך לחישוב');
+      const continueFromDebts = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromDebts);
       
       // Step 3: Fill payments
@@ -367,12 +367,12 @@ describe('Single Track Calculator - Complete User Journey', () => {
       await user.clear(mortgagePaymentInput);
       await user.type(mortgagePaymentInput, '6800');
       
-      const continueFromPayments = screen.getByText('המשך לחישוב');
+      const continueFromPayments = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromPayments);
       
       // Step 4: Fill assets
       await waitFor(() => {
-        expect(screen.getByText('שווי נכסים')).toBeInTheDocument();
+        expect(screen.getByText('פרטים למיחזור')).toBeInTheDocument();
       });
       
       const propertyValueInput = screen.getByPlaceholderText('2,500,000');
@@ -405,18 +405,18 @@ describe('Single Track Calculator - Complete User Journey', () => {
       expect(preservedMortgageInput).toHaveValue('1,400,000');
       
       // Navigate forward again to step 4
-      const continueAgain = screen.getByText('המשך לחישוב');
+      const continueAgain = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueAgain);
       
       await waitFor(() => {
         expect(screen.getByText('החזרים חודשיים נוכחיים')).toBeInTheDocument();
       });
       
-      const continueFromPaymentsAgain = screen.getByText('המשך לחישוב');
+      const continueFromPaymentsAgain = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromPaymentsAgain);
       
       await waitFor(() => {
-        expect(screen.getByText('שווי נכסים')).toBeInTheDocument();
+        expect(screen.getByText('פרטים למיחזור')).toBeInTheDocument();
       });
       
       // Verify assets data is still preserved
@@ -458,7 +458,7 @@ describe('Single Track Calculator - Complete User Journey', () => {
       await user.clear(mortgageInput);
       await user.type(mortgageInput, '1200000');
       
-      const continueFromDebts = screen.getByText('המשך לחישוב');
+      const continueFromDebts = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromDebts);
       
       // Step 3 -> 4
@@ -466,15 +466,15 @@ describe('Single Track Calculator - Complete User Journey', () => {
         expect(screen.getByText('החזרים חודשיים נוכחיים')).toBeInTheDocument();
       });
       
-      const continueFromPayments = screen.getByText('המשך לחישוב');
+      const continueFromPayments = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromPayments);
       
       // Step 4 -> 5
       await waitFor(() => {
-        expect(screen.getByText('שווי נכסים')).toBeInTheDocument();
+        expect(screen.getByText('פרטים למיחזור')).toBeInTheDocument();
       });
       
-      const continueFromAssets = screen.getByText('המשך לחישוב');
+      const continueFromAssets = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueFromAssets);
       
       // Step 5 -> 6 (This should trigger conversion tracking)
@@ -517,7 +517,9 @@ describe('Single Track Calculator - Complete User Journey', () => {
 
       // Should show default single-track experience
       expect(screen.getAllByText('הקטן תשלום חודשי')[0]).toBeInTheDocument();
-      expect(screen.getByText('מחשבון מיחזור משכנתא מתקדם')).toBeInTheDocument();
+      expect(screen.getByText((content, element) => {
+        return element?.tagName.toLowerCase() === 'h1' && content.includes('הקטן את התשלום החודשי');
+      })).toBeInTheDocument();
       
       // Should be able to proceed normally
       const startButton = screen.getByText('בואו נתחיל לחסוך');
@@ -592,7 +594,7 @@ describe('Single Track Calculator - Complete User Journey', () => {
       const mortgageInput = screen.getByPlaceholderText('1,200,000');
       await user.clear(mortgageInput);
       
-      const continueButton = screen.getByText('המשך לחישוב');
+      const continueButton = screen.getByText('המשך לחישוב מדויק');
       await user.click(continueButton);
       
       // Should show validation error and stay on same step

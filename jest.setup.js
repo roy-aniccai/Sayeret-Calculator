@@ -17,3 +17,16 @@ jest.mock('./utils/api', () => ({
   getSubmissions: jest.fn().mockResolvedValue([]),
   getEvents: jest.fn().mockResolvedValue([]),
 }));
+
+// Mock ResizeObserver for scroll lock functionality
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
+
+// Mock MutationObserver for scroll lock functionality
+global.MutationObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  disconnect: jest.fn(),
+}));

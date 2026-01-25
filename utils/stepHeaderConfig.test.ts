@@ -223,15 +223,15 @@ describe('Step Header Configuration', () => {
       },
       {
         step: 4,
-        expectedMainHeader: "שווי נכסים",
-        expectedStepTitle: "נבדוק את שווי הנכסים",
+        expectedMainHeader: "פרטים למיחזור",
+        expectedStepTitle: "פרטים למיחזור",
         expectedBackText: "חזור להחזרים"
       },
       {
         step: 5,
         expectedMainHeader: "פרטי קשר",
         expectedStepTitle: "נשלח לך את התוצאות",
-        expectedBackText: "חזור לשווי נכסים"
+        expectedBackText: "חזור לפרטים למיחזור"
       },
       {
         step: 6,

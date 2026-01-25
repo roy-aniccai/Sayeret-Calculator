@@ -13,6 +13,7 @@ import {
   type CampaignData 
 } from '../utils/campaignUrlParser';
 import { getSimulatorVersionFromUrl, type SimulatorVersion } from '../utils/abTestingUtils';
+import { useScrollLock } from '../utils/useScrollLock';
 
 // Props interface for the SingleTrackApp component
 interface SingleTrackAppProps {
@@ -137,7 +138,8 @@ const SingleTrackAppContent: React.FC<{
   campaignData: CampaignData; 
   simulatorVersion: SimulatorVersion;
 }> = ({ campaignData, simulatorVersion }) => {
-  const { step, prevStep, resetForm, nextStep } = useSingleTrackForm();
+  const { step, prevStep, resetForm } = useSingleTrackForm();
+  const { containerRef, scrollClassName } = useScrollLock();
 
   // Show error notification if there are campaign data issues (non-blocking)
   const showCampaignWarning = campaignData.errors.length > 0 && !campaignData.isValid;
@@ -193,7 +195,7 @@ const SingleTrackAppContent: React.FC<{
         case 1: return "הקטן תשלום חודשי";
         case 2: return "מצב חובות נוכחי";
         case 3: return "החזרים חודשיים נוכחיים";
-        case 4: return "שווי נכסים";
+        case 4: return "פרטים למיחזור";
         case 5: return "פרטי קשר";
         case 6: return "סימולטור משכנתא";
         default: return "הקטן תשלום חודשי";
@@ -286,7 +288,10 @@ const SingleTrackAppContent: React.FC<{
         </div>
 
         {/* Content area */}
-        <div className="p-6 flex-grow relative overflow-y-auto">
+        <div 
+          ref={containerRef}
+          className={`p-6 flex-grow relative ${scrollClassName}`}
+        >
           {renderStep()}
         </div>
       </div>

@@ -62,7 +62,7 @@ export const getStepName = (stepNumber: number, track?: TrackType | null): strin
     1: 'בחירת מטרה',
     2: 'מצב חובות',
     3: 'החזרים',
-    4: 'שווי נכסים',
+    4: 'פרטים למיחזור',
     5: 'פרטי קשר',
     6: 'סימולציה'
   };

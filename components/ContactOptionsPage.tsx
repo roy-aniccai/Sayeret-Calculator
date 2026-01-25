@@ -32,7 +32,7 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
   const [callbackForm, setCallbackForm] = useState({
     name: formData.leadName || '',
     phone: formData.leadPhone || '',
-    interestedInInsurance: formData.interestedInInsurance || false,
+    interestedInInsurance: formData.interestedInInsurance ?? true, // Default to checked
     notes: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);

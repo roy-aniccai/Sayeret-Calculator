@@ -41,15 +41,15 @@ export const stepHeaderConfig: StepHeaderConfig = {
   },
   4: {
     stepNumber: 4,
-    mainHeaderTitle: "פרטים נוספים",
-    stepTitle: "פרטים נוספים",
+    mainHeaderTitle: "פרטים למיחזור",
+    stepTitle: "פרטים למיחזור",
     backNavigationText: "חזור להחזרים"
   },
   5: {
     stepNumber: 5,
     mainHeaderTitle: "פרטי קשר",
     stepTitle: "נשלח לך את התוצאות",
-    backNavigationText: "חזור לפרטים נוספים"
+    backNavigationText: "חזור לפרטים למיחזור"
   },
   6: {
     stepNumber: 6,

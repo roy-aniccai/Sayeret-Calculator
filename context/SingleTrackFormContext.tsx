@@ -97,7 +97,7 @@ const initialSingleTrackFormData: SingleTrackFormData = {
   // Step 5 - Contact
   leadName: '',
   leadPhone: '',
-  interestedInInsurance: false,
+  interestedInInsurance: true, // Default to checked
   
   // Step 6 - Simulator
   age: null,
