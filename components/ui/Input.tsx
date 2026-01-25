@@ -21,9 +21,13 @@ export const Input: React.FC<InputProps> = ({
   className = '',
   onChange,
   maxLength,
+  id,
   ...props
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Generate a unique ID if not provided
+  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
 
   // Determine padding: If icon/suffix exists on the left, add extra padding-left (pl-16)
   // Otherwise keep balanced padding (px-6)
@@ -87,7 +91,7 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <div className="mb-4 md:mb-6">
-      {label && <label className="block text-xl font-bold text-gray-800 mb-2 md:mb-3">{label}</label>}
+      {label && <label htmlFor={inputId} className="block text-xl font-bold text-gray-800 mb-2 md:mb-3">{label}</label>}
       <div className="relative">
         {/* Suffix/Icon: Positioned on the LEFT (left-6) for RTL alignment */}
         {suffix && <span className="absolute top-6 left-6 text-gray-500 font-bold text-xl pointer-events-none">{suffix}</span>}
@@ -96,6 +100,7 @@ export const Input: React.FC<InputProps> = ({
 
         <input
           ref={inputRef}
+          id={inputId}
           className={`w-full border-2 rounded-xl py-3 md:py-5 ${paddingClass} text-2xl font-medium outline-none focus:ring-4 transition-all ${error
             ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
             : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'

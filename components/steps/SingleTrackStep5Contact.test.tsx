@@ -43,7 +43,8 @@ describe('SingleTrackStep5Contact', () => {
     test('renders marketing message for phone number', () => {
       renderWithProvider();
       
-      expect(screen.getByText('מספר הטלפון ישמש אותנו לשלוח אליך את הדוח המלא בוואטסאפ')).toBeInTheDocument();
+      // The text is processed through ensureRTLDirection which adds RTL markers
+      expect(screen.getByText(/מספר הטלפון ישמש אותנו לשלוח אליך את הדוח המלא בוואטסאפ/)).toBeInTheDocument();
     });
 
     test('renders privacy assurance section', () => {

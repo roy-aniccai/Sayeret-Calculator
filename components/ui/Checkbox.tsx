@@ -1,28 +1,40 @@
 import React from 'react';
 
 interface CheckboxProps {
+    id?: string;
     label: string;
-    name: string;
+    name?: string;
     checked: boolean;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange: (checked: boolean) => void;
     disabled?: boolean;
+    description?: string;
 }
 
 export const Checkbox: React.FC<CheckboxProps> = ({
+    id,
     label,
     name,
     checked,
     onChange,
     disabled = false,
+    description
 }) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e.target.checked);
+    };
+
     return (
-        <label className={`flex items-start gap-3 p-1 cursor-pointer select-none group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+        <label 
+            htmlFor={id}
+            className={`flex items-start gap-3 p-1 cursor-pointer select-none group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
             <div className="relative flex items-center mt-0.5">
                 <input
+                    id={id}
                     type="checkbox"
                     name={name}
                     checked={checked}
-                    onChange={onChange}
+                    onChange={handleChange}
                     disabled={disabled}
                     className="peer sr-only"
                 />
@@ -38,9 +50,16 @@ export const Checkbox: React.FC<CheckboxProps> = ({
                     )}
                 </div>
             </div>
-            <span className={`text-base ${checked ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
-                {label}
-            </span>
+            <div className="flex-1">
+                <span className={`text-base block ${checked ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+                    {label}
+                </span>
+                {description && (
+                    <span className="text-sm text-gray-500 mt-1 block">
+                        {description}
+                    </span>
+                )}
+            </div>
         </label>
     );
 };

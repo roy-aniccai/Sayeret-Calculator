@@ -58,7 +58,6 @@ describe('Single Track Conversion Tracking', () => {
           conversionType: 'lead_submission',
           track: TrackType.MONTHLY_REDUCTION,
           step: 5,
-          hasInsuranceInterest: false,
         })
       );
     });

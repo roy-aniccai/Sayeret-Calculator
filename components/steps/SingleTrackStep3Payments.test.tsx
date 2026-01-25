@@ -185,10 +185,30 @@ describe('SingleTrackStep3Payments', () => {
     });
   });
 
-  it('displays the CTA message for monthly reduction', () => {
-    renderWithProvider();
-    
-    expect(screen.getByText('מעולה! יש פוטנציאל לחיסכון - בואו נמשיך לחישוב מדויק')).toBeInTheDocument();
+  it('displays the correct CTA message based on savings potential', () => {
+    // Test case with savings potential
+    const formDataWithSavings = {
+      mortgageBalance: 800000,
+      otherLoansBalance: 100000,
+      mortgagePayment: 5000,
+      otherLoansPayment: 1000
+    };
+
+    renderWithProvider(formDataWithSavings);
+    expect(screen.getByText('מעולה! יש פוטנציאל לחיסכון')).toBeInTheDocument();
+  });
+
+  it('displays alternative message when no significant savings potential', () => {
+    // Test case with minimal savings potential
+    const formDataWithoutSavings = {
+      mortgageBalance: 100000,
+      otherLoansBalance: 0,
+      mortgagePayment: 1000,
+      otherLoansPayment: 0
+    };
+
+    renderWithProvider(formDataWithoutSavings);
+    expect(screen.getByText('בואו נבדוק את האפשרויות שלך')).toBeInTheDocument();
   });
 
   it('displays continue button', () => {

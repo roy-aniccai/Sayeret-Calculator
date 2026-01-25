@@ -95,33 +95,47 @@ export const calculateScenarios = (input: ScenarioInput): ScenarioCalculationRes
     }
   }
 
-  // If no valid minimum scenario found, check for special cases
-  if (minValidYears === null) {
-    // Check if any payment reduction is possible at maximum years
-    const maxYearsPayment = calculateMonthlyPayment(totalAmount, weightedRate, absoluteMaxYears);
-    const maxYearsReduction = currentPayment - maxYearsPayment;
+  // Check if maximum possible reduction is less than 1000 NIS
+  const maxYearsPayment = calculateMonthlyPayment(totalAmount, weightedRate, absoluteMaxYears);
+  const maxYearsReduction = currentPayment - maxYearsPayment;
 
-    if (maxYearsReduction < 1000) {
-      // Less than 1000 NIS reduction - insufficient savings case
-      return {
-        minimumScenario: null,
-        maximumScenario: null,
-        middleScenario: null,
-        hasValidScenarios: false,
-        specialCase: 'insufficient-savings',
-        currentPayment
-      };
-    } else if (maxYearsReduction <= 0) {
-      // No mortgage savings possible
-      return {
-        minimumScenario: null,
-        maximumScenario: null,
-        middleScenario: null,
-        hasValidScenarios: false,
-        specialCase: 'no-mortgage-savings',
-        currentPayment
-      };
-    }
+  if (maxYearsReduction <= 0) {
+    // No mortgage savings possible
+    return {
+      minimumScenario: null,
+      maximumScenario: null,
+      middleScenario: null,
+      hasValidScenarios: false,
+      specialCase: 'no-mortgage-savings',
+      currentPayment
+    };
+  }
+
+  if (maxYearsReduction < 1000) {
+    // Less than 1000 NIS reduction - show only maximum scenario
+    const maximumScenario = {
+      type: 'maximum' as const,
+      years: absoluteMaxYears,
+      monthlyPayment: maxYearsPayment,
+      monthlyReduction: maxYearsReduction,
+      totalSavings: maxYearsReduction * absoluteMaxYears * 12,
+      isValid: true
+    };
+
+    return {
+      minimumScenario: null,
+      maximumScenario,
+      middleScenario: null,
+      hasValidScenarios: false, // Set to false to show special case UI
+      specialCase: 'insufficient-savings',
+      currentPayment
+    };
+  }
+
+  // If no valid minimum scenario found (no 500+ NIS savings), but max reduction >= 1000
+  if (minValidYears === null) {
+    // Set minimum years to regulatory minimum since we have sufficient max savings
+    minValidYears = minRegYears;
   }
 
   // Calculate scenarios if valid range exists

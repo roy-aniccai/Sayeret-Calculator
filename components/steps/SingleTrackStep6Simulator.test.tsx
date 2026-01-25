@@ -149,32 +149,38 @@ describe('SingleTrackStep6Simulator', () => {
     expect(screen.getByText('בדוק תרחיש אחר')).toBeInTheDocument();
   });
 
-  it('opens dialog when contact expert is clicked', async () => {
+  it('opens contact options when contact expert is clicked', async () => {
     renderWithProvider();
     
     const contactButton = screen.getByText('לשיחה עם המומחים');
     fireEvent.click(contactButton);
     
     await waitFor(() => {
-      expect(screen.getByText('סיירת המשכנתא')).toBeInTheDocument();
-      expect(screen.getByText(/תודה שבחרת בנו!/)).toBeInTheDocument();
+      expect(screen.getByText('איך תרצה להמשיך?')).toBeInTheDocument();
+      expect(screen.getByText('תיאום פגישה')).toBeInTheDocument();
+      expect(screen.getByText('אשמח שיחזרו אלי')).toBeInTheDocument();
     });
   });
 
-  it('handles share functionality', async () => {
+  it('handles contact options selection', async () => {
     renderWithProvider();
     
-    // Open dialog first
+    // Open contact options first
     const contactButton = screen.getByText('לשיחה עם המומחים');
     fireEvent.click(contactButton);
     
     await waitFor(() => {
-      const shareButton = screen.getByText('שתף את המחשבון');
-      fireEvent.click(shareButton);
+      expect(screen.getByText('תיאום פגישה')).toBeInTheDocument();
+      expect(screen.getByText('אשמח שיחזרו אלי')).toBeInTheDocument();
     });
     
-    // Should attempt to use navigator.share or clipboard
-    expect(navigator.share || navigator.clipboard.writeText).toHaveBeenCalled();
+    // Test callback option
+    const callbackButton = screen.getByText('מלא פרטים');
+    fireEvent.click(callbackButton);
+    
+    await waitFor(() => {
+      expect(screen.getByText('סיכום החישוב שלך')).toBeInTheDocument();
+    });
   });
 
   it('shows monthly reduction focused messaging', () => {

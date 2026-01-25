@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
 import { Button } from '../ui/Button';
-import { Dialog } from '../ui/Dialog';
+import { ContactOptionsPage } from '../ContactOptionsPage';
 import { formatNumberWithCommas } from '../../utils/helpers';
 import {
   validateLoanParams,
@@ -47,7 +47,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
   const config = getTrackConfigSafe(TrackType.MONTHLY_REDUCTION);
   const primaryColor = config.ui.primaryColor;
 
-  const [showDialog, setShowDialog] = useState(false);
+  const [showContactOptions, setShowContactOptions] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
   const handleShare = async () => {
@@ -299,7 +299,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
       version
     });
     
-    setShowDialog(true);
+    setShowContactOptions(true);
   };
 
   const handleTryAnother = () => {
@@ -505,43 +505,19 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
           </div>
         </div>
 
-        {/* Dialog remains the same for both versions */}
-        <Dialog
-          isOpen={showDialog}
-          onClose={() => setShowDialog(false)}
-          title="סיירת המשכנתא"
-          confirmText="תודה, מעולה!"
-        >
-          <p>
-            תודה שבחרת בנו!
-            <br />
-            קיבלנו את הפנייה שלך, ויועץ מומחה מסיירת המשכנתא כבר עובר על הנתונים.
-            <br />
-            נחזור אליך בהקדם עם ניתוח מלא והצעה שתחסוך לך כסף.
-            <br />
-            שיהיה יום נפלא!
-          </p>
-
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-gray-600 mb-4 font-medium">אהבת? שתף עם חברים:</p>
-            <div className="flex flex-col items-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={handleShare}
-                className={`w-full !bg-white !border-2 !border-${primaryColor}-200 hover:!bg-${primaryColor}-50 !text-${primaryColor}-700 gap-2 !rounded-xl !py-3`}
-              >
-                <i className={`fa-solid ${copySuccess ? 'fa-check' : 'fa-share-nodes'}`}></i>
-                {copySuccess ? 'הקישור הועתק!' : 'שתף את המחשבון'}
-              </Button>
-
-              {copySuccess && (
-                <span className="text-green-600 text-sm animate-fade-in font-medium">
-                  הקישור הועתק ללוח בהצלחה
-                </span>
-              )}
-            </div>
-          </div>
-        </Dialog>
+        {/* Contact Options Page */}
+        {showContactOptions && (
+          <ContactOptionsPage
+            onClose={() => setShowContactOptions(false)}
+            calculationSummary={{
+              currentPayment,
+              newPayment: Math.round(newPayment),
+              monthlySavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0,
+              totalSavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) * simulatorYears * 12 : 0,
+              years: simulatorYears
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -805,42 +781,19 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
           </button>
         </div>
 
-        <Dialog
-          isOpen={showDialog}
-          onClose={() => setShowDialog(false)}
-          title="סיירת המשכנתא"
-          confirmText="תודה, מעולה!"
-        >
-          <p>
-            תודה שבחרת בנו!
-            <br />
-            קיבלנו את הפנייה שלך, ויועץ מומחה מסיירת המשכנתא כבר עובר על הנתונים.
-            <br />
-            נחזור אליך בהקדם עם ניתוח מלא והצעה שתחסוך לך כסף.
-            <br />
-            שיהיה יום נפלא!
-          </p>
-
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-gray-600 mb-4 font-medium">אהבת? שתף עם חברים:</p>
-            <div className="flex flex-col items-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={handleShare}
-                className={`w-full !bg-white !border-2 !border-${primaryColor}-200 hover:!bg-${primaryColor}-50 !text-${primaryColor}-700 gap-2 !rounded-xl !py-3`}
-              >
-                <i className={`fa-solid ${copySuccess ? 'fa-check' : 'fa-share-nodes'}`}></i>
-                {copySuccess ? 'הקישור הועתק!' : 'שתף את המחשבון'}
-              </Button>
-
-              {copySuccess && (
-                <span className="text-green-600 text-sm animate-fade-in font-medium">
-                  הקישור הועתק ללוח בהצלחה
-                </span>
-              )}
-            </div>
-          </div>
-        </Dialog>
+        {/* Contact Options Page */}
+        {showContactOptions && (
+          <ContactOptionsPage
+            onClose={() => setShowContactOptions(false)}
+            calculationSummary={{
+              currentPayment,
+              newPayment: Math.round(newPayment),
+              monthlySavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0,
+              totalSavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) * simulatorYears * 12 : 0,
+              years: simulatorYears
+            }}
+          />
+        )}
       </div>
 
       <style>{`

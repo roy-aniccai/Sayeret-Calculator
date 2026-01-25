@@ -128,8 +128,8 @@ export const SingleTrackStep3Payments: React.FC = () => {
     mortgageTooltip: 'בסיס לחישוב הערכת החיסכון',
     ctaText: 'המשך לחישוב מדויק',
     ctaMessage: savingsEstimate.canSave 
-      ? 'מעולה! יש פוטנציאל לחיסכון - בואו נמשיך לחישוב מדויק'
-      : 'בואו נבדוק יחד את כל האפשרויות הזמינות'
+      ? 'מעולה! יש פוטנציאל לחיסכון' 
+      : 'בואו נבדוק את האפשרויות שלך'
   };
 
   // Set target payment based on estimated savings - use useEffect with stable dependencies
@@ -246,37 +246,7 @@ export const SingleTrackStep3Payments: React.FC = () => {
                 </div>
               </div>
             </div>
-          ) : (
-            /* Show No Savings Available Message */
-            <div className={`bg-orange-50 border-2 border-orange-200 rounded-xl p-4`}>
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <i className="fa-solid fa-info-circle text-orange-600 text-xl"></i>
-                  <h3 className="text-lg font-bold text-gray-900">מצב השוק הנוכחי</h3>
-                </div>
-                
-                <div className="bg-white rounded-lg p-4 border border-orange-200">
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-orange-700 mb-2">
-                      כרגע לא ניתן להקטין את ההחזר החודשי
-                    </div>
-                    <div className="text-sm text-gray-600 mb-3">
-                      בהתבסס על ריביות השוק הנוכחיות והנתונים שהוזנו, 
-                      מיחזור המשכנתא לא יביא לחיסכון משמעותי בתשלום החודשי.
-                    </div>
-                    
-                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                      <div className="text-sm text-blue-800">
-                        <i className="fa-solid fa-lightbulb mr-2"></i>
-                        <strong>המלצה:</strong> המשך בתהליך לקבלת ייעוץ מקצועי. 
-                        ייתכן שיש אפשרויות אחרות לחיסכון או שהמצב ישתנה בעתיד.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Integrated CTA */}
@@ -284,7 +254,7 @@ export const SingleTrackStep3Payments: React.FC = () => {
           <div className={`${savingsEstimate.canSave ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} rounded-xl p-4 flex flex-col gap-4 border-2`}>
             <div className="flex items-center gap-3 w-full">
               <div className={`${savingsEstimate.canSave ? 'bg-green-100' : 'bg-blue-100'} rounded-full p-2 shrink-0 border ${savingsEstimate.canSave ? 'border-green-200' : 'border-blue-200'}`}>
-                <i className={`fa-solid ${savingsEstimate.canSave ? 'fa-chart-line-down text-green-600' : 'fa-calculator text-blue-600'} text-xl`}></i>
+                <i className={`fa-solid fa-calculator ${savingsEstimate.canSave ? 'text-green-600' : 'text-blue-600'} text-xl`}></i>
               </div>
               <p className={`${savingsEstimate.canSave ? 'text-green-800' : 'text-blue-800'} text-lg font-bold leading-tight`}>
                 {stepContent.ctaMessage}
