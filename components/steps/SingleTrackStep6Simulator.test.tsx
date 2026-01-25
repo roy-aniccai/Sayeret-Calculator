@@ -179,7 +179,7 @@ describe('SingleTrackStep6Simulator', () => {
     fireEvent.click(callbackButton);
     
     await waitFor(() => {
-      expect(screen.getByText('סיכום החישוב שלך')).toBeInTheDocument();
+      expect(screen.getByText('השאר פרטים')).toBeInTheDocument();
     });
   });
 

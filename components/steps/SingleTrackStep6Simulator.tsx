@@ -407,31 +407,44 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
 
           {scenarios.specialCase === 'insufficient-savings' && (
             <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm text-center">
-              <div className="mb-4">
-                <i className="fa-solid fa-info-circle text-4xl text-blue-500 mb-3"></i>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                חיסכון מוגבל
-              </h3>
-              <p className="text-gray-600 mb-4">
-                החיסכון האפשרי נמוך מ-1,000 ש"ח בחודש. נציג יכול לבדוק אפשרויות נוספות.
-              </p>
               {scenarios.maximumScenario && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                  <h4 className="font-semibold text-gray-800 mb-2">האפשרות הטובה ביותר</h4>
-                  <p className="text-gray-700 mb-2">
-                    חיסכון של {Math.round(scenarios.maximumScenario.monthlyReduction)} ש"ח בחודש
-                    על פני {scenarios.maximumScenario.years} שנים
-                  </p>
-                  <p className="text-gray-600 text-sm">
-                    סה"כ חיסכון: {formatNumberWithCommas(Math.round(scenarios.maximumScenario.totalSavings))} ש"ח
-                  </p>
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6 bg-gradient-to-br from-blue-50 to-green-50">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <i className="fa-solid fa-star text-blue-600 text-xl"></i>
+                    <h4 className="text-lg font-bold text-gray-900">האפשרות הטובה ביותר עבורך</h4>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600 mb-1">
+                        {Math.round(scenarios.maximumScenario.monthlyReduction)} ש"ח
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">חיסכון בחודש</div>
+                      <div className="flex justify-between items-center text-sm bg-blue-50 rounded-lg p-2">
+                        <span className="text-gray-600">תקופה:</span>
+                        <span className="font-semibold">{scenarios.maximumScenario.years} שנים</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm bg-green-50 rounded-lg p-2 mt-1">
+                        <span className="text-green-700">סה"כ חיסכון:</span>
+                        <span className="font-semibold text-green-700">{formatNumberWithCommas(Math.round(scenarios.maximumScenario.totalSavings))} ש"ח</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold text-green-800 mb-2">חיסכון נוסף בביטוח משכנתא</h4>
-                <p className="text-green-700 mb-1">עד 50,000 ש"ח חיסכון נוסף</p>
-                <p className="text-green-600 text-sm">בדיקה חינמית של הפוליסה הקיימת</p>
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <i className="fa-solid fa-shield-check text-green-600 text-xl"></i>
+                  <h4 className="text-lg font-bold text-green-800">חיסכון נוסף בביטוח משכנתא</h4>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-green-600 mb-1">עד 50,000 ש"ח</div>
+                  <p className="text-green-700 text-sm">בדיקה חינמית של הפוליסה הקיימת</p>
+                </div>
+              </div>
+              <div className="mb-4">
+                <p className="text-gray-600 text-center">
+                  נציג מומחה יכול לבדוק אפשרויות נוספות ולמצוא את הפתרון המתאים ביותר עבורך
+                </p>
               </div>
               <Button
                 onClick={handleContactExpert}
