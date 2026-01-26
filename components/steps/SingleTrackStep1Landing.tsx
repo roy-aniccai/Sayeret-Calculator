@@ -85,8 +85,8 @@ const SingleTrackStep1Landing: React.FC = () => {
         </div>
       </div>
 
-      {/* Call to Action */}
-      <div className="space-y-4">
+      {/* Call to Action - Mobile Fixed Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-8 space-y-3">
         <button
           onClick={handleProceedToDebtCollection}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
@@ -97,7 +97,7 @@ const SingleTrackStep1Landing: React.FC = () => {
           </span>
         </button>
 
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 text-center">
           החישוב לקח 2-3 דקות • ללא התחייבות • חינם לחלוטין
         </p>
       </div>
