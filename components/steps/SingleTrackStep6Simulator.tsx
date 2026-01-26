@@ -498,24 +498,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
           )}
 
           {/* Call to Action for Version B */}
-          <div className="mt-6 space-y-3">
-            <Button
-              onClick={handleContactExpert}
-              className="w-full py-3 md:py-4 text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30 transform transition-all hover:scale-[1.02]"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <i className="fa-solid fa-phone-volume animate-bounce"></i>
-                לשיחה עם המומחים
-              </span>
-            </Button>
 
-            <button 
-              onClick={handleTryAnother} 
-              className={`w-full text-${primaryColor}-600 font-medium text-base md:text-lg hover:underline`}
-            >
-              בדוק תרחיש אחר
-            </button>
-          </div>
         </div>
 
         {/* Contact Options Page */}
@@ -729,13 +712,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
                 <p className="text-gray-600 mb-4">
                   בנתונים שהוזנו, לא ניתן להגיע להחזר חודשי נמוך מהנוכחי, גם בפריסה ל-30 שנה. מומלץ להתייעץ עם מומחה.
                 </p>
-                <Button
-                  onClick={handleContactExpert}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md"
-                >
-                  <i className="fa-solid fa-comments mr-2"></i>
-                  דבר עם יועץ לבדיקה ידנית
-                </Button>
+
               </div>
             ) : (
               /* Active Slider */
