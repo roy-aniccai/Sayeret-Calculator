@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { SingleTrackFormProvider, useSingleTrackForm } from '../context/SingleTrackFormContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import SingleTrackStep1Landing from './steps/SingleTrackStep1Landing';
 import { SingleTrackStep2Debts } from './steps/SingleTrackStep2Debts';
 import { SingleTrackStep3Payments } from './steps/SingleTrackStep3Payments';
@@ -124,9 +125,11 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
   };
 
   return (
-    <SingleTrackFormProvider initialCampaignData={initialCampaignData}>
-      <SingleTrackAppContent campaignData={campaignData} simulatorVersion={simulatorVersion} />
-    </SingleTrackFormProvider>
+    <NotificationProvider>
+      <SingleTrackFormProvider initialCampaignData={initialCampaignData}>
+        <SingleTrackAppContent campaignData={campaignData} simulatorVersion={simulatorVersion} />
+      </SingleTrackFormProvider>
+    </NotificationProvider>
   );
 };
 
@@ -263,8 +266,13 @@ const SingleTrackAppContent: React.FC<{
               <div className="w-4"></div>
             )}
 
-            {/* Header title */}
-            <div className="text-center flex-1">
+            {/* Header title with logo */}
+            <div className="text-center flex-1 flex items-center justify-center gap-2">
+              <img 
+                src="/logo.svg" 
+                alt="סיירת המשכנתא" 
+                className="w-6 h-6 flex-shrink-0"
+              />
               <h1 className="text-lg font-bold">{getHeaderTitle(step)}</h1>
             </div>
 

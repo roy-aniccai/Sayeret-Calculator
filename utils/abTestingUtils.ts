@@ -20,7 +20,7 @@ export interface ABTestConfig {
  * Default A/B test configuration
  */
 const DEFAULT_AB_CONFIG: ABTestConfig = {
-  version: 'A',
+  version: 'B',
   source: 'default',
   isValid: true,
   errors: [],
@@ -88,13 +88,13 @@ export function detectVersionFromUrl(search?: string, paramName: string = 'simul
  * 
  * @param search - URL search string
  * @param propVersion - Version passed as component prop
- * @param defaultVersion - Fallback version (default: 'A')
+ * @param defaultVersion - Fallback version (default: 'B')
  * @returns Complete A/B test configuration
  */
 export function createABTestConfig(
   search?: string,
   propVersion?: SimulatorVersion,
-  defaultVersion: SimulatorVersion = 'A'
+  defaultVersion: SimulatorVersion = 'B'
 ): ABTestConfig {
   const errors: string[] = [];
   
@@ -124,8 +124,8 @@ export function createABTestConfig(
     
     // Third priority: Default version
     if (defaultVersion !== 'A' && defaultVersion !== 'B') {
-      errors.push(`Invalid default version "${defaultVersion}", using 'A'`);
-      defaultVersion = 'A';
+      errors.push(`Invalid default version "${defaultVersion}", using 'B'`);
+      defaultVersion = 'B';
     }
     
     return {
@@ -149,12 +149,12 @@ export function createABTestConfig(
  * Safe to use in browser environments with comprehensive error handling
  * 
  * @param paramName - Parameter name to look for (default: 'simulatorVersion')
- * @param defaultVersion - Fallback version (default: 'A')
+ * @param defaultVersion - Fallback version (default: 'B')
  * @returns Simulator version configuration
  */
 export function getVersionFromLocation(
   paramName: string = 'simulatorVersion',
-  defaultVersion: SimulatorVersion = 'A'
+  defaultVersion: SimulatorVersion = 'B'
 ): ABTestConfig {
   try {
     if (typeof window === 'undefined' || !window.location) {
@@ -182,12 +182,12 @@ export function getVersionFromLocation(
  * Convenience function that returns just the version string
  * 
  * @param paramName - Parameter name to look for (default: 'simulatorVersion')
- * @param defaultVersion - Fallback version (default: 'A')
+ * @param defaultVersion - Fallback version (default: 'B')
  * @returns Simulator version ('A' or 'B')
  */
 export function getSimulatorVersionFromUrl(
   paramName: string = 'simulatorVersion',
-  defaultVersion: SimulatorVersion = 'A'
+  defaultVersion: SimulatorVersion = 'B'
 ): SimulatorVersion {
   const config = getVersionFromLocation(paramName, defaultVersion);
   return config.version;
@@ -198,10 +198,10 @@ export function getSimulatorVersionFromUrl(
  * Convenience function for components that only need the version
  * 
  * @param search - URL search string
- * @param defaultVersion - Fallback version (default: 'A')
+ * @param defaultVersion - Fallback version (default: 'B')
  * @returns Simulator version ('A' or 'B')
  */
-export function getSimulatorVersion(search?: string, defaultVersion: SimulatorVersion = 'A'): SimulatorVersion {
+export function getSimulatorVersion(search?: string, defaultVersion: SimulatorVersion = 'B'): SimulatorVersion {
   const config = createABTestConfig(search, undefined, defaultVersion);
   return config.version;
 }

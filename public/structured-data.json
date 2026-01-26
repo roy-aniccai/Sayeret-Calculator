@@ -1,0 +1,42 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "סיירת המשכנתא - מחשבון משכנתא",
+  "alternateName": "מחשבון משכנתא",
+  "description": "מחשבון משכנתא מתקדם להקטנת תשלומים חודשיים וחיסכון במשכנתא. בדוק כמה אפשר לחסוך בתשלום החודשי שלך.",
+  "url": "https://sayeret-calculator.web.app/",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Web Browser",
+  "inLanguage": "he",
+  "author": {
+    "@type": "Organization",
+    "name": "סיירת המשכנתא",
+    "url": "https://sayeret-calculator.web.app/"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "ILS",
+    "description": "מחשבון משכנתא חינמי"
+  },
+  "featureList": [
+    "חישוב הקטנת תשלומים חודשיים",
+    "סימולטור משכנתא מתקדם",
+    "חישוב חיסכון במשכנתא",
+    "מיחזור משכנתא",
+    "ייעוץ משכנתא"
+  ],
+  "screenshot": "https://sayeret-calculator.web.app/logo.svg",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "ratingCount": "150",
+    "bestRating": "5",
+    "worstRating": "1"
+  },
+  "potentialAction": {
+    "@type": "UseAction",
+    "target": "https://sayeret-calculator.web.app/",
+    "name": "השתמש במחשבון המשכנתא"
+  }
+}

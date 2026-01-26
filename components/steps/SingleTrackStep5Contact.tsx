@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Checkbox } from '../ui/Checkbox';
 import { MarketingMessage, MARKETING_MESSAGES } from '../ui/MarketingMessage';
+import { useNotification } from '../../context/NotificationContext';
 import { submitData } from '../../utils/api';
 import { generateContextualBackText } from '../../utils/navigationContext';
 import { TrackType } from '../../types';
@@ -71,6 +72,7 @@ export const SingleTrackStep5Contact: React.FC = () => {
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showErrorAlert } = useNotification();
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -159,7 +161,10 @@ export const SingleTrackStep5Contact: React.FC = () => {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       
-      alert('אירעה שגיאה בשליחת הנתונים. אנא נסה שנית.');
+      showErrorAlert(
+        'שגיאה בשליחת הנתונים',
+        'אירעה שגיאה בשליחת הנתונים. אנא בדוק את החיבור לאינטרנט ונסה שנית.'
+      );
     } finally {
       setIsSubmitting(false);
     }

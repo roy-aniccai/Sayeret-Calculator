@@ -59,10 +59,10 @@ Object.defineProperty(navigator, 'share', {
   value: jest.fn(() => Promise.resolve())
 });
 
-const renderWithProvider = (initialFormData = {}) => {
+const renderWithProvider = (version?: 'A' | 'B') => {
   return render(
     <SingleTrackFormProvider>
-      <SingleTrackStep6Simulator />
+      <SingleTrackStep6Simulator version={version} />
     </SingleTrackFormProvider>
   );
 };
@@ -86,9 +86,8 @@ describe('SingleTrackStep6Simulator', () => {
   it('shows active simulator by default', () => {
     renderWithProvider();
     
-    // Should show active simulator (no longer locked by age)
-    const slider = screen.getByRole('slider');
-    expect(slider).toBeInTheDocument();
+    // Should show active simulator with scenario cards (version B default)
+    expect(screen.getByText('בחר את התרחיש המתאים לך')).toBeInTheDocument();
     expect(screen.queryByText('הזן גיל למעלה לפתיחת הסימולטור')).not.toBeInTheDocument();
   });
 
@@ -120,28 +119,29 @@ describe('SingleTrackStep6Simulator', () => {
     expect(paymentElements.length).toBeGreaterThan(0);
   });
 
-  it('shows years slider by default', () => {
+  it('shows scenario cards by default', () => {
     renderWithProvider();
     
-    // Should show active slider (no longer dependent on age input)
-    const slider = screen.getByRole('slider');
-    expect(slider).toBeInTheDocument();
+    // Should show scenario cards interface (version B default)
+    expect(screen.getByText('בחר את התרחיש המתאים לך')).toBeInTheDocument();
+    // Should not show slider interface
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
   });
 
-  it('handles years slider change', () => {
+  it('handles scenario selection', () => {
     renderWithProvider();
     
-    // Should show active slider by default
-    const slider = screen.getByRole('slider');
-    fireEvent.change(slider, { target: { value: '25' } });
-    
-    // Verify slider interaction works (value may not change due to validation logic)
-    expect(slider).toBeInTheDocument();
+    // Should show scenario cards interface by default
+    expect(screen.getByText('בחר את התרחיש המתאים לך')).toBeInTheDocument();
+    // Should not show slider interface
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
   });
 
   it('displays contact expert button', () => {
     renderWithProvider();
-    expect(screen.getByText('לשיחה עם המומחים')).toBeInTheDocument();
+    // Should have at least one contact expert button
+    const contactButtons = screen.getAllByText('לשיחה עם המומחים');
+    expect(contactButtons.length).toBeGreaterThanOrEqual(1);
   });
 
   it('displays try another scenario button', () => {
@@ -152,8 +152,11 @@ describe('SingleTrackStep6Simulator', () => {
   it('opens contact options when contact expert is clicked', async () => {
     renderWithProvider();
     
-    const contactButton = screen.getByText('לשיחה עם המומחים');
-    fireEvent.click(contactButton);
+    // Should have at least one contact expert button
+    const contactButtons = screen.getAllByText('לשיחה עם המומחים');
+    expect(contactButtons.length).toBeGreaterThanOrEqual(1);
+    
+    fireEvent.click(contactButtons[0]);
     
     await waitFor(() => {
       expect(screen.getByText('איך תרצה להמשיך?')).toBeInTheDocument();
@@ -165,9 +168,11 @@ describe('SingleTrackStep6Simulator', () => {
   it('handles contact options selection', async () => {
     renderWithProvider();
     
-    // Open contact options first
-    const contactButton = screen.getByText('לשיחה עם המומחים');
-    fireEvent.click(contactButton);
+    // Open contact options first - should have at least one contact expert button
+    const contactButtons = screen.getAllByText('לשיחה עם המומחים');
+    expect(contactButtons.length).toBeGreaterThanOrEqual(1);
+    
+    fireEvent.click(contactButtons[0]);
     
     await waitFor(() => {
       expect(screen.getByText('תיאום פגישה')).toBeInTheDocument();
@@ -235,5 +240,24 @@ describe('SingleTrackStep6Simulator', () => {
     
     // Should trigger form reset (tested via context behavior)
     expect(tryAnotherButton).toBeInTheDocument();
+  });
+
+  it('shows slider interface when version A is explicitly requested', () => {
+    renderWithProvider('A');
+    
+    // Should show slider interface when version A is requested
+    const slider = screen.getByRole('slider');
+    expect(slider).toBeInTheDocument();
+    // Should not show scenario cards subtitle
+    expect(screen.queryByText('בחר את התרחיש המתאים לך')).not.toBeInTheDocument();
+  });
+
+  it('shows scenario cards interface when version B is explicitly requested', () => {
+    renderWithProvider('B');
+    
+    // Should show scenario cards interface when version B is requested
+    expect(screen.getByText('בחר את התרחיש המתאים לך')).toBeInTheDocument();
+    // Should not show slider interface
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
   });
 });

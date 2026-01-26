@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Shield background -->
+  <path d="M50 10 C30 10, 15 20, 15 35 C15 60, 30 85, 50 90 C70 85, 85 60, 85 35 C85 20, 70 10, 50 10 Z" fill="#5a6b7d" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Inner shield -->
+  <path d="M50 15 C33 15, 20 23, 20 36 C20 58, 33 78, 50 82 C67 78, 80 58, 80 36 C80 23, 67 15, 50 15 Z" fill="#e5e7eb" stroke="#ffffff" stroke-width="1.5"/>
+  
+  <!-- House roof -->
+  <path d="M35 35 L50 25 L65 35 L62 35 L62 38 L38 38 L38 35 Z" fill="#5a6b7d"/>
+  
+  <!-- House chimney -->
+  <rect x="58" y="28" width="2.5" height="5" fill="#5a6b7d"/>
+  
+  <!-- Calculator body -->
+  <rect x="40" y="38" width="20" height="18" rx="2" fill="#5a6b7d"/>
+  
+  <!-- Calculator screen -->
+  <rect x="42" y="40" width="16" height="4" rx="0.8" fill="#ffffff"/>
+  
+  <!-- Calculator buttons (4 circular buttons) -->
+  <circle cx="44" cy="48" r="1.8" fill="#ffffff"/>
+  <circle cx="48" cy="48" r="1.8" fill="#ffffff"/>
+  <circle cx="44" cy="52" r="1.8" fill="#ffffff"/>
+  <circle cx="48" cy="52" r="1.8" fill="#ffffff"/>
+  
+  <!-- Percentage symbol -->
+  <text x="54" y="50" font-family="Arial, sans-serif" font-size="3.2" font-weight="bold" fill="#ffffff">%</text>
+  <text x="56" y="52" font-family="Arial, sans-serif" font-size="2.4" font-weight="bold" fill="#ffffff">%</text>
+</svg>

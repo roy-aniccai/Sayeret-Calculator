@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SingleTrackStep5Contact } from './SingleTrackStep5Contact';
 import { SingleTrackFormProvider } from '../../context/SingleTrackFormContext';
+import { NotificationProvider } from '../../context/NotificationContext';
 import { submitData } from '../../utils/api';
 
 // Mock the API
@@ -19,9 +20,11 @@ const mockSubmitData = submitData as jest.MockedFunction<typeof submitData>;
 
 const renderWithProvider = (initialData = {}) => {
   return render(
-    <SingleTrackFormProvider>
-      <SingleTrackStep5Contact />
-    </SingleTrackFormProvider>
+    <NotificationProvider>
+      <SingleTrackFormProvider>
+        <SingleTrackStep5Contact />
+      </SingleTrackFormProvider>
+    </NotificationProvider>
   );
 };
 

@@ -1,0 +1,22 @@
+{
+  "name": "סיירת המשכנתא - מחשבון משכנתא",
+  "short_name": "סיירת המשכנתא",
+  "description": "מחשבון משכנתא מתקדם להקטנת תשלומים חודשיים וחיסכון במשכנתא",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#5a6b7d",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

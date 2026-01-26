@@ -1,5 +1,6 @@
 import React from 'react';
 import { FormProvider, useForm } from './context/FormContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { Step1Goal } from './components/steps/Step1Goal';
 import { Step1Debts } from './components/steps/Step1Debts';
 import { Step2Payments } from './components/steps/Step2Payments';
@@ -72,7 +73,12 @@ const AppContent: React.FC = () => {
               <div className="w-4"></div>
             )}
 
-            <div className="text-center flex-1">
+            <div className="text-center flex-1 flex items-center justify-center gap-2">
+              <img 
+                src="/logo.svg" 
+                alt="סיירת המשכנתא" 
+                className="w-6 h-6 flex-shrink-0"
+              />
               <h1 className="text-lg font-bold">{headerTitle}</h1>
             </div>
 
@@ -117,9 +123,11 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <FormProvider>
-      <AppContent />
-    </FormProvider>
+    <NotificationProvider>
+      <FormProvider>
+        <AppContent />
+      </FormProvider>
+    </NotificationProvider>
   );
 };
 

@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://sayeret-calculator.web.app/sitemap.xml
+
+# Block admin and internal paths
+Disallow: /admin
+Disallow: /scripts/
+Disallow: /analytics/
+Disallow: /.kiro/
+
+# Allow important pages
+Allow: /
+Allow: /reduce-payments.html
+Allow: /home.html
