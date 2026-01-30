@@ -144,6 +144,17 @@ const SingleTrackAppContent: React.FC<{
   const { step, prevStep, resetForm } = useSingleTrackForm();
   const { containerRef, scrollClassName } = useScrollLock();
 
+  // In the reduce-payments single-track flow, we treat:
+  // - Step 1 as Landing (no counter)
+  // - Steps 2-5 as the 4 "real" steps
+  // - Step 6 as Results (no counter)
+  const FLOW_TOTAL_STEPS = 4;
+  const getFlowStepIndex = (currentStep: number): number | null => {
+    if (currentStep >= 2 && currentStep <= 5) return currentStep - 1; // 1..4
+    return null;
+  };
+  const flowStepIndex = getFlowStepIndex(step);
+
   // Show error notification if there are campaign data issues (non-blocking)
   const showCampaignWarning = campaignData.errors.length > 0 && !campaignData.isValid;
 
@@ -188,13 +199,11 @@ const SingleTrackAppContent: React.FC<{
     }
   };
 
-  // Calculate progress percentage with bounds checking
-  const progressPercentage = Math.min(Math.max((step / 6) * 100, 0), 100);
-
   // Get step-specific header title with fallback
   const getHeaderTitle = (currentStep: number): string => {
     try {
-      switch (currentStep) {
+      const baseTitle = (() => {
+        switch (currentStep) {
         case 1: return "הקטן תשלום חודשי";
         case 2: return "מצב חובות נוכחי";
         case 3: return "החזרים חודשיים נוכחיים";
@@ -202,12 +211,28 @@ const SingleTrackAppContent: React.FC<{
         case 5: return "פרטי קשר";
         case 6: return "סימולטור משכנתא";
         default: return "הקטן תשלום חודשי";
+        }
+      })();
+
+      const currentFlowIndex = getFlowStepIndex(currentStep);
+      if (currentFlowIndex) {
+        return `${baseTitle} (שלב ${currentFlowIndex} מתוך ${FLOW_TOTAL_STEPS})`;
       }
+
+      return baseTitle;
     } catch (error) {
       console.error('Error getting header title:', error);
       return "הקטן תשלום חודשי";
     }
   };
+
+  // Calculate progress percentage for the 4-step flow.
+  // Landing (step 1) shows 0%, results (step 6) shows 100%.
+  const progressPercentage = (() => {
+    if (flowStepIndex) return (flowStepIndex / FLOW_TOTAL_STEPS) * 100;
+    if (step === 6) return 100;
+    return 0;
+  })();
 
   // Safe navigation handlers with error handling
   const handlePrevStep = () => {

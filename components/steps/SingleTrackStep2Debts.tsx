@@ -56,7 +56,7 @@ const InputWithTooltip: React.FC<{
 export const SingleTrackStep2Debts: React.FC = () => {
   const { formData, updateFormData, nextStep, prevStep } = useSingleTrackForm();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [hasOtherLoans, setHasOtherLoans] = useState(formData.otherLoansBalance > 0);
+  const [hasOtherLoans, setHasOtherLoans] = useState(formData.hasOtherLoans ?? formData.otherLoansBalance > 0);
 
   // Fixed styling for single-track (monthly reduction focused)
   const primaryStyling = 'bg-blue-50 border border-blue-200';
@@ -97,8 +97,11 @@ export const SingleTrackStep2Debts: React.FC = () => {
 
   const handleOtherLoansToggle = useCallback((hasLoans: boolean) => {
     setHasOtherLoans(hasLoans);
-    // Don't reset data when toggling - keep it persistent
-  }, []);
+    updateFormData({
+      hasOtherLoans: hasLoans,
+      ...(hasLoans ? {} : { otherLoansBalance: 0, otherLoansPayment: 0 }),
+    });
+  }, [updateFormData]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};

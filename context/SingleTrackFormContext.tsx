@@ -14,6 +14,7 @@ interface SingleTrackFormData {
   // Step 2 - Debts (excludes bank overdraft for single-track)
   mortgageBalance: number;
   otherLoansBalance: number;
+  hasOtherLoans?: boolean; // true = user chose "כן" for הלוואות נוספות
   
   // Step 3 - Monthly Payments (same as original)
   mortgagePayment: number;
@@ -85,6 +86,7 @@ const initialSingleTrackFormData: SingleTrackFormData = {
   // Step 2 - Debts (excludes bank overdraft)
   mortgageBalance: 1200000,
   otherLoansBalance: 0,
+  hasOtherLoans: false,
   
   // Step 3 - Monthly Payments
   mortgagePayment: 6500,

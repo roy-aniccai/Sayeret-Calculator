@@ -66,7 +66,8 @@ export const SingleTrackStep3Payments: React.FC = () => {
   const buttonStyling = 'bg-blue-600 hover:bg-blue-700 text-white';
   const accentStyling = 'text-blue-600';
 
-  // Calculate current total
+  const showOtherLoansPayment = formData.hasOtherLoans === true;
+  // Calculate current total (otherLoansPayment is 0 when user has no other loans)
   const currentTotal = formData.mortgagePayment + formData.otherLoansPayment;
 
   // Calculate potential savings with maximum term (30 years) - memoized to prevent recalculation
@@ -188,28 +189,32 @@ export const SingleTrackStep3Payments: React.FC = () => {
           autoAdvance={true}
         />
 
-        <InputWithTooltip
-          label="החזר הלוואות אחרות חודשי"
-          tooltip="החזרים של כל ההלוואות האחרות שלך"
-          name="otherLoansPayment"
-          inputMode="numeric"
-          suffix="₪"
-          value={formatNumberWithCommas(formData.otherLoansPayment)}
-          onChange={handleChange}
-          placeholder="0"
-          icon={<i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]}`}></i>}
-          autoAdvance={true}
-        />
+        {showOtherLoansPayment && (
+          <InputWithTooltip
+            label="החזר הלוואות אחרות חודשי"
+            tooltip="החזרים של כל ההלוואות האחרות שלך"
+            name="otherLoansPayment"
+            inputMode="numeric"
+            suffix="₪"
+            value={formatNumberWithCommas(formData.otherLoansPayment)}
+            onChange={handleChange}
+            placeholder="0"
+            icon={<i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]}`}></i>}
+            autoAdvance={true}
+          />
+        )}
 
-        {/* Current Total Display */}
-        <div className={`${primaryStyling} rounded-lg p-3`}>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-medium text-base">סך החזר חודשי נוכחי:</span>
-            <span className={`text-xl font-bold ${accentStyling.split(' ')[0]}`}>
-              {formatNumberWithCommas(currentTotal)} ₪
-            </span>
+        {/* Current Total Display - only when user has other loans (otherwise redundant with mortgage payment) */}
+        {showOtherLoansPayment && (
+          <div className={`${primaryStyling} rounded-lg p-3`}>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-medium text-base">סך החזר חודשי נוכחי:</span>
+              <span className={`text-xl font-bold ${accentStyling.split(' ')[0]}`}>
+                {formatNumberWithCommas(currentTotal)} ₪
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Savings Estimate Display - Replaces Target Payment Slider */}
         <div className="space-y-3">

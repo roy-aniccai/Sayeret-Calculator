@@ -54,11 +54,11 @@ describe('SingleTrackApp', () => {
     expect(screen.getByText('הקטן תשלום חודשי')).toBeInTheDocument();
   });
 
-  it('shows progress bar at 16.67% for step 1', () => {
+  it('shows progress bar at 0% for landing (step 1)', () => {
     render(<SingleTrackApp />);
     
     const progressBar = document.querySelector('.bg-yellow-400');
-    expect(progressBar).toHaveStyle('width: 16.666666666666664%');
+    expect(progressBar).toHaveStyle('width: 0%');
   });
 
   it('navigates to step 2 when clicking "בואו נתחיל לחסוך"', () => {
@@ -231,15 +231,15 @@ describe('SingleTrackApp', () => {
   it('updates progress bar correctly for different steps', () => {
     render(<SingleTrackApp />);
     
-    // Step 1: 16.67%
+    // Landing (step 1): 0%
     let progressBar = document.querySelector('.bg-yellow-400');
-    expect(progressBar).toHaveStyle('width: 16.666666666666664%');
+    expect(progressBar).toHaveStyle('width: 0%');
     
     // Navigate to step 3
     fireEvent.click(screen.getByText('בואו נתחיל לחסוך')); // Step 1 -> 2
     fireEvent.click(screen.getByText('המשך לחישוב')); // Step 2 -> 3
     
-    // Step 3: 50%
+    // Internal step 3 is flow step 2/4 => 50%
     progressBar = document.querySelector('.bg-yellow-400');
     expect(progressBar).toHaveStyle('width: 50%');
   });

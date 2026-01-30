@@ -75,15 +75,23 @@ describe('SingleTrackStep3Payments', () => {
     expect(screen.getByDisplayValue('6,500')).toBeInTheDocument();
   });
 
-  it('displays other loans payment input field', () => {
-    renderWithProvider();
+  it('displays other loans payment input when user has other loans', () => {
+    renderWithProvider({ hasOtherLoans: true });
     
     expect(screen.getByText('החזר הלוואות אחרות חודשי')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('0')).toBeInTheDocument();
   });
 
-  it('shows current total payment calculation', () => {
+  it('hides other loans payment and total when user has no other loans', () => {
+    renderWithProvider({ hasOtherLoans: false });
+    
+    expect(screen.queryByText('החזר הלוואות אחרות חודשי')).not.toBeInTheDocument();
+    expect(screen.queryByText('סך החזר חודשי נוכחי:')).not.toBeInTheDocument();
+  });
+
+  it('shows current total payment calculation when user has other loans', () => {
     renderWithProvider({
+      hasOtherLoans: true,
       mortgagePayment: 6500,
       otherLoansPayment: 1500
     });
