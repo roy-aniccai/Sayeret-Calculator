@@ -1,27 +1,30 @@
 /// <reference types="vite/client" />
 import { auth } from '../src/firebase';
-import { 
-  UserProfile, 
-  UserEvent, 
-  createEnhancedEvent, 
-  calculateLeadScore,
-  determineLeadTier,
-  validateUserProfile,
-  validateUserEvent,
-  sanitizeUserData
+import {
+    UserProfile,
+    UserEvent,
+    createEnhancedEvent,
+    calculateLeadScore,
+    determineLeadTier,
+    validateUserProfile,
+    validateUserEvent,
+    sanitizeUserData
 } from '../types/analytics';
-import { 
-  withApiRetry, 
-  withFirebaseRetry, 
-  apiCircuitBreaker, 
-  firebaseCircuitBreaker,
-  withRobustExecution 
+import {
+    withApiRetry,
+    withFirebaseRetry,
+    apiCircuitBreaker,
+    firebaseCircuitBreaker,
+    withRobustExecution
 } from './retryUtils';
+
 
 // Use environment variable with fallback for Jest compatibility
 const isProduction = process.env.NODE_ENV === 'production';
-const API_BASE_URL = isProduction ? '/api' : 'http://localhost:3005/api';
-const ADMIN_API_BASE_URL = isProduction ? '/api/admin' : 'http://localhost:3005/api/admin';
+// FIXED: Use production Firebase Functions URLs instead of localhost SQLite server
+// The Firebase Functions are deployed at: https://us-central1-mortgage-85413.cloudfunctions.net/
+const API_BASE_URL = isProduction ? '/api' : 'https://us-central1-mortgage-85413.cloudfunctions.net/api';
+const ADMIN_API_BASE_URL = isProduction ? '/api/admin' : 'https://us-central1-mortgage-85413.cloudfunctions.net/adminApi';
 
 // ============================================================================
 // ENHANCED SUBMISSION FUNCTIONS WITH RETRY LOGIC
@@ -37,7 +40,7 @@ export const submitData = async (data: Partial<UserProfile>) => {
     return withRobustExecution(
         async () => {
             console.log(`Submitting enhanced data to ${API_BASE_URL}/submit`, data);
-            
+
             // Calculate lead score
             const scoringResult = calculateLeadScore(data);
             const enhancedProfile: Partial<UserProfile> = {
@@ -50,17 +53,17 @@ export const submitData = async (data: Partial<UserProfile>) => {
                 isConverted: true,
                 conversionTimestamp: new Date() as any,
             };
-            
+
             // Validate the enhanced profile
             const validation = validateUserProfile(enhancedProfile);
             if (!validation.isValid) {
                 console.warn('Profile validation warnings:', validation.errors);
                 // Continue with submission but log warnings
             }
-            
+
             // Sanitize data before submission
             const sanitizedData = sanitizeUserData(enhancedProfile);
-            
+
             const response = await fetch(`${API_BASE_URL}/submit`, {
                 method: 'POST',
                 headers: {
@@ -73,14 +76,14 @@ export const submitData = async (data: Partial<UserProfile>) => {
                     scoringBreakdown: scoringResult.breakdown
                 }),
             });
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`Failed to submit enhanced data: ${response.status} ${response.statusText} - ${errorText}`);
             }
-            
+
             const result = await response.json();
-            
+
             // Track successful submission event (with retry)
             try {
                 await trackEvent(
@@ -98,7 +101,7 @@ export const submitData = async (data: Partial<UserProfile>) => {
                 console.warn('Failed to track submission success event:', trackingError);
                 // Don't fail the submission if tracking fails
             }
-            
+
             return result;
         },
         {
@@ -108,7 +111,7 @@ export const submitData = async (data: Partial<UserProfile>) => {
         }
     ).catch(async (error) => {
         console.error('CRITICAL: Error submitting enhanced data after all retries.', error);
-        
+
         // Track submission error (best effort, no retry)
         try {
             await fetch(`${API_BASE_URL}/event`, {
@@ -127,7 +130,7 @@ export const submitData = async (data: Partial<UserProfile>) => {
         } catch (trackingError) {
             console.warn('Failed to track submission error:', trackingError);
         }
-        
+
         throw error;
     });
 };
@@ -143,8 +146,8 @@ export const submitData = async (data: Partial<UserProfile>) => {
  * and comprehensive context information with retry logic.
  */
 export const trackEvent = async (
-    sessionId: string, 
-    eventType: string, 
+    sessionId: string,
+    eventType: string,
     eventData?: any,
     userId?: string
 ) => {
@@ -152,14 +155,14 @@ export const trackEvent = async (
         async () => {
             // Create enhanced event with device detection and categorization
             const enhancedEvent = createEnhancedEvent(sessionId, eventType, eventData, userId);
-            
+
             // Validate event data
             const validation = validateUserEvent(enhancedEvent);
             if (!validation.isValid) {
                 console.warn('Event validation warnings:', validation.errors);
                 // Continue with tracking but log warnings
             }
-            
+
             // Submit to Firebase Functions
             const response = await fetch(`${API_BASE_URL}/event`, {
                 method: 'POST',
@@ -173,11 +176,11 @@ export const trackEvent = async (
                     timestamp: new Date().toISOString()
                 }),
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Failed to track event: ${response.status} ${response.statusText}`);
             }
-            
+
             return response.json();
         },
         {
@@ -207,7 +210,7 @@ export const trackStep = async (
         step,
         ...additionalData
     };
-    
+
     return trackEvent(sessionId, eventType, eventData, userId);
 };
 
@@ -225,7 +228,7 @@ export const trackConversion = async (
         timestamp: new Date().toISOString(),
         ...conversionData
     };
-    
+
     return trackEvent(sessionId, 'conversion', eventData, userId);
 };
 
@@ -245,7 +248,7 @@ export const trackFieldInteraction = async (
         value: typeof value === 'string' ? value.substring(0, 100) : value, // Limit value length
         component: 'form_field'
     };
-    
+
     return trackEvent(sessionId, eventType, eventData, userId);
 };
 
@@ -263,7 +266,7 @@ export const trackButtonClick = async (
         component: 'button',
         ...context
     };
-    
+
     return trackEvent(sessionId, 'button_click', eventData, userId);
 };
 
@@ -284,10 +287,10 @@ export const batchTrackEvents = async (events: Array<{
 }>) => {
     return withRobustExecution(
         async () => {
-            const enhancedEvents = events.map(event => 
+            const enhancedEvents = events.map(event =>
                 createEnhancedEvent(event.sessionId, event.eventType, event.eventData, event.userId)
             );
-            
+
             // Submit batch to Firebase Functions
             const response = await fetch(`${API_BASE_URL}/events/batch`, {
                 method: 'POST',
@@ -300,11 +303,11 @@ export const batchTrackEvents = async (events: Array<{
                     batchTimestamp: new Date().toISOString()
                 }),
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Batch event tracking failed: ${response.status}`);
             }
-            
+
             return response.json();
         },
         {
@@ -314,19 +317,19 @@ export const batchTrackEvents = async (events: Array<{
         }
     ).catch(async (error) => {
         console.warn('Batch event tracking failed, falling back to individual tracking:', error);
-        
+
         // Fallback to individual tracking with limited retries
         const results = await Promise.allSettled(
-            events.map(event => 
+            events.map(event =>
                 trackEvent(event.sessionId, event.eventType, event.eventData, event.userId)
             )
         );
-        
+
         const failures = results.filter(r => r.status === 'rejected').length;
         if (failures > 0) {
             console.warn(`${failures}/${events.length} individual event tracking attempts failed`);
         }
-        
+
         return { batchFailed: true, individualResults: results };
     });
 };
@@ -387,15 +390,15 @@ export const getAnalyticsData = async (options?: {
         async () => {
             const headers = await getAuthHeaders();
             const queryParams = new URLSearchParams();
-            
+
             if (options?.startDate) queryParams.append('startDate', options.startDate);
             if (options?.endDate) queryParams.append('endDate', options.endDate);
             if (options?.eventTypes) queryParams.append('eventTypes', options.eventTypes.join(','));
             if (options?.limit) queryParams.append('limit', options.limit.toString());
-            
+
             const url = `${ADMIN_API_BASE_URL}/analytics${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
             const response = await fetch(url, { headers });
-            
+
             if (!response.ok) throw new Error(`Failed to fetch analytics data: ${response.status}`);
             return await response.json();
         },

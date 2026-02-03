@@ -67,7 +67,7 @@ export const Step1Debts: React.FC = () => {
         stepTitle: config.ui.stepTitles[2] || 'מצב חובות נוכחי',
         stepDescription: config.ui.stepDescriptions[2] || 'נבדוק את המצב הכספי הנוכחי',
         mortgageTooltip: config.messaging.tooltips.mortgagePayment || 'נדרש לחישוב הריבית החדשה ואפשרויות המיחזור',
-        otherLoansDescription: 'נאחד את כל החובות למשכנתא אחת בריבית נמוכה יותר',
+        otherLoansDescription: '',
         overdraftDescription: 'חובות בריבית גבוהה שכדאי לאחד למשכנתא',
         ctaText: config.messaging.ctaTexts.primary || 'המשך לחישוב',
         ctaMessage: 'מידע מדויק = חיסכון מדויק יותר בתשלום החודשי'
@@ -275,7 +275,10 @@ export const Step1Debts: React.FC = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]} text-lg`}></i>
-              <h3 className="text-base font-semibold text-gray-900">האם יש לך הלוואות נוספות?</h3>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">תרצה להוסיף הלוואות נוספות לבדיקה?</h3>
+                <p className="text-xs text-gray-500 mt-1">במידה וישנן הלוואות נוספות רצוי ולרוב ניתן להכניסן תחת המשכנתא וכך להנות מפריסה ארוכה וריבית נמוכה</p>
+              </div>
             </div>
             <div className="flex gap-2">
               <button

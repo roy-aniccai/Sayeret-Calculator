@@ -12,7 +12,8 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
             lead_name TEXT,
             lead_phone TEXT,
             lead_email TEXT,
-            full_data_json TEXT
+            full_data_json TEXT,
+            session_id TEXT
         )`);
 
         db.run(`CREATE TABLE IF NOT EXISTS events (
