@@ -75,7 +75,7 @@ export const Step2Payments: React.FC = () => {
         targetTooltip: config.messaging.tooltips.targetPayment || 'כמה תרצה לשלם? נמצא את הדרך הטובה ביותר',
         sliderTooltip: config.messaging.tooltips.simulator || 'שחק עם הסליידר לראות אפשרויות הפחתה',
         ctaText: config.messaging.ctaTexts.primary || 'המשך לחישוב',
-        ctaMessage: 'נאחד את כל החובות למשכנתא אחת בריבית נמוכה יותר',
+        ctaMessage: '',
         reductionText: 'הפחתה של',
         increaseText: 'תוספת של'
       };
@@ -87,7 +87,7 @@ export const Step2Payments: React.FC = () => {
         targetTooltip: config.messaging.tooltips.targetPayment || 'כמה אתה מוכן לשלם כדי לקצר שנים?',
         sliderTooltip: config.messaging.tooltips.simulator || 'שחק עם הסליידר לראות כמה שנים תחסוך',
         ctaText: config.messaging.ctaTexts.primary || 'המשך לחישוב',
-        ctaMessage: 'נאחד את כל החובות למשכנתא אחת לקיצור שנים מקסימלי',
+        ctaMessage: '',
         reductionText: 'חיסכון של',
         increaseText: 'השקעה נוספת של'
       };
@@ -101,7 +101,7 @@ export const Step2Payments: React.FC = () => {
       targetTooltip: 'כמה תרצה לשלם בחודש?',
       sliderTooltip: 'שחק עם הסליידר לראות אפשרויות',
       ctaText: 'המשך לחישוב',
-      ctaMessage: 'נאחד את כל החובות למשכנתא אחת בריבית נמוכה',
+      ctaMessage: '',
       reductionText: 'הפחתה של',
       increaseText: 'תוספת של'
     };
