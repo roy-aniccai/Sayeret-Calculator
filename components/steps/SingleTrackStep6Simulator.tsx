@@ -1,6 +1,10 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
 import { Button } from '../ui/Button';
+import { Dialog } from '../ui/Dialog';
+import { Input } from '../ui/Input';
+import { useNotification } from '../../context/NotificationContext';
+import { submitData } from '../../utils/api';
 import { ContactOptionsPage } from '../ContactOptionsPage';
 import { formatNumberWithCommas } from '../../utils/helpers';
 import {
@@ -16,6 +20,9 @@ import { SimulatorVersion } from '../../utils/abTestingUtils';
 import { ScenarioCard } from '../ui/ScenarioCard';
 import { calculateScenarios, ScenarioInput } from '../../utils/scenarioCalculator';
 import { validateCalculationConsistency } from '../../utils/calculationConsistency';
+import { SimulatorFooter } from './SimulatorFooter';
+import { NoSavingsCard } from './NoSavingsCard';
+import { InsufficientSavingsCard } from './InsufficientSavingsCard';
 
 /**
  * SingleTrackStep6Simulator - Monthly payment reduction simulator for single-track calculator
@@ -30,25 +37,80 @@ interface SingleTrackStep6SimulatorProps {
   version?: SimulatorVersion;
 }
 
-export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps> = ({ 
-  version = 'A' 
+export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps> = ({
+  version = 'A'
 }) => {
   console.log('Single Track Simulator RTL Fix Applied: v1.1 (Consistent Scale)');
-  const { 
-    formData, 
-    updateFormData, 
-    resetForm, 
+  const {
+    formData,
+    updateFormData,
+    resetForm,
     trackCampaignEvent,
     trackConversion,
-    sessionId 
+    sessionId
   } = useSingleTrackForm();
-  
+
   // Get track configuration for single-track (always MONTHLY_REDUCTION)
   const config = getTrackConfigSafe(TrackType.MONTHLY_REDUCTION);
   const primaryColor = config.ui.primaryColor;
 
   const [showContactOptions, setShowContactOptions] = useState(false);
+  const [showLeadDialog, setShowLeadDialog] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // Lead Form State
+  const [leadName, setLeadName] = useState(formData.leadName || '');
+  const [leadPhone, setLeadPhone] = useState(formData.leadPhone || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ name?: string, phone?: string }>({});
+  const { showSuccessAlert, showErrorAlert } = useNotification();
+
+  const validatePhone = (phone: string) => {
+    const phoneRegex = /^0[5-9]\d{8}$/;
+    return phoneRegex.test(phone.replace(/[-\s]/g, ''));
+  };
+
+  const handleLeadSubmit = async () => {
+    // Validation
+    const errors: { name?: string, phone?: string } = {};
+    if (!leadName.trim()) errors.name = 'נא להזין שם מלא';
+    if (!leadPhone.trim()) errors.phone = 'נא להזין מספר טלפון';
+    else if (!validatePhone(leadPhone)) errors.phone = 'מספר טלפון לא תקין';
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await submitData({
+        ...formData,
+        leadName,
+        leadPhone,
+        interestedInInsurance: true, // Auto-flag for insurance
+        sessionId,
+        track: 'MONTHLY_REDUCTION' // Explicit track for this simulator
+      });
+
+      setShowLeadDialog(false);
+      showSuccessAlert('הפרטים נשלחו בהצלחה!', 'מומחה יחזור אליך בהקדם לבחינת חיסכון בביטוח.');
+      setLeadName('');
+      setLeadPhone('');
+
+      // Track conversion
+      trackConversion('insurance_lead_submitted', {
+        step: 6,
+        version
+      });
+
+    } catch (error) {
+      console.error('Submission error:', error);
+      showErrorAlert('שגיאה', 'אירעה שגיאה בשליחת הפרטים, אנא נסה שנית.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleShare = async () => {
     const shareData = {
@@ -127,7 +189,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
   const { min: minYears, max: maxYears, noSolution } = useMemo(() => {
     // Calculate current payment inside the function
     const currentPayment = formData.mortgagePayment + formData.otherLoansPayment;
-    
+
     // Basic Regulatory Constraints
     const minRegYears = 5; // Minimum 5 years by regulation/logic
     const maxRegYears = 30; // Standard max years
@@ -243,7 +305,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
     // Ensure the years are within valid range
     if (years >= minYears && years <= maxYears) {
       setSimulatorYears(years);
-      
+
       // Track slider interaction
       trackCampaignEvent('single_track_simulator_years_changed', {
         step: 6,
@@ -262,7 +324,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
       currentPayment,
       version // Track which version is being used
     });
-    
+
     // Track conversion - user has completed the entire single-track flow
     trackConversion('flow_completion', {
       step: 6,
@@ -287,7 +349,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
       sessionId,
       version
     });
-    
+
     // Track conversion - user has completed the single-track flow
     trackConversion('contact_expert', {
       step: 6,
@@ -298,8 +360,17 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
       paymentReduction: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0,
       version
     });
-    
-    setShowContactOptions(true);
+
+    // Determine correct dialog to open based on state
+    // 'no-mortgage-savings' -> Lead Dialog (Insurance only)
+    // 'insufficient-savings' -> Contact Options (Calendly/Details) like normal success
+    const isNoSolution = noSolution || (version === 'B' && scenarios.specialCase === 'no-mortgage-savings');
+
+    if (isNoSolution) {
+      setShowLeadDialog(true);
+    } else {
+      setShowContactOptions(true);
+    }
   };
 
   const handleTryAnother = () => {
@@ -312,7 +383,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
       paymentDiff,
       version
     });
-    
+
     resetForm();
   };
 
@@ -347,11 +418,72 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
   // State for selected scenario in Version B
   const [selectedScenario, setSelectedScenario] = useState<'minimum' | 'maximum' | 'middle' | null>(null);
 
+  const renderLeadDialog = () => (
+    <Dialog
+      isOpen={showLeadDialog}
+      onClose={() => setShowLeadDialog(false)}
+      title={null}
+      showCloseButton={true}
+      showIcon={false}
+      showFooterButton={false}
+    >
+      <div className="text-center">
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">אשמח שיחזרו אלי</h3>
+        <p className="text-gray-600 mb-6">
+          השאר פרטים ויועץ מומחה יחזור אליך בהקדם עם ניתוח מלא והצעה מותאמת אישית.
+        </p>
+
+        <div className="space-y-4 text-right">
+          <Input
+            label="שם מלא"
+            value={leadName}
+            onChange={(e) => {
+              setLeadName(e.target.value);
+              if (formErrors.name) setFormErrors({ ...formErrors, name: '' });
+            }}
+            error={formErrors.name}
+            placeholder="ישראל ישראלי"
+          />
+
+          <Input
+            label="טלפון"
+            value={leadPhone}
+            onChange={(e) => {
+              setLeadPhone(e.target.value);
+              if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' });
+            }}
+            error={formErrors.phone}
+            placeholder="050-0000000"
+            inputMode="tel"
+          />
+
+          <Button
+            onClick={handleLeadSubmit}
+            disabled={isSubmitting}
+            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl mt-4 shadow-lg"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <i className="fa-solid fa-circle-notch fa-spin"></i>
+                שולח...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <i className="fa-solid fa-paper-plane"></i>
+                אישור ושליחה למומחה
+              </span>
+            )}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
+  );
+
   // Version B - Scenario Cards Interface
   if (version === 'B') {
     const handleScenarioSelect = (scenarioType: 'minimum' | 'maximum' | 'middle') => {
       setSelectedScenario(scenarioType);
-      
+
       // Track scenario selection
       const scenario = scenarios[`${scenarioType}Scenario`];
       if (scenario) {
@@ -372,91 +504,27 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
         {/* Promoted Subtitle as Primary Step Title */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">תוצאות הסימולציה</h2>
-          <p className="text-gray-600">בחר את התרחיש המתאים לך</p>
+          {scenarios.specialCase !== 'no-mortgage-savings' && (
+            <p className="text-gray-600">בחר את התרחיש המתאים לך</p>
+          )}
         </div>
 
         {/* Scenario Cards Container */}
-        <div className={`bg-gradient-to-br from-${primaryColor}-50 to-indigo-50 border-2 border-${primaryColor}-200 rounded-2xl p-4 shadow-lg`}>
-          
+        <div className={`bg-gradient-to-br from-${primaryColor}-50 to-indigo-50 border-2 border-${primaryColor}-200 rounded-2xl p-4 shadow-lg mb-20 md:mb-4`}>
+
           {/* Special Cases Handling */}
           {scenarios.specialCase === 'no-mortgage-savings' && (
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm text-center">
-              <div className="mb-4">
-                <i className="fa-solid fa-exclamation-triangle text-4xl text-orange-500 mb-3"></i>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                אין אפשרות לחסוך
-              </h3>
-              <p className="text-gray-600 mb-4">
-                בנתונים שהוזנו, לא ניתן להגיע לחיסכון במשכנתא. אולי נוכל לעזור עם ביטוח משכנתא?
-              </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold text-blue-800 mb-2">חיסכון בביטוח משכנתא</h4>
-                <p className="text-blue-700 mb-2">עד 50,000 ש"ח חיסכון בביטוח משכנתא</p>
-                <p className="text-blue-600 text-sm">בדיקה חינמית של הפוליסה הקיימת שלך</p>
-              </div>
-              <Button
-                onClick={handleContactExpert}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-              >
-                <i className="fa-solid fa-phone mr-2"></i>
-                אשמח שנציג יחזור אלי
-              </Button>
-            </div>
+            <NoSavingsCard />
           )}
 
-          {scenarios.specialCase === 'insufficient-savings' && (
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm text-center">
-              {scenarios.maximumScenario && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6 bg-gradient-to-br from-blue-50 to-green-50">
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <i className="fa-solid fa-star text-blue-600 text-xl"></i>
-                    <h4 className="text-lg font-bold text-gray-900">האפשרות הטובה ביותר עבורך</h4>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600 mb-1">
-                        {Math.round(scenarios.maximumScenario.monthlyReduction)} ש"ח
-                      </div>
-                      <div className="text-sm text-gray-600 mb-2">חיסכון בחודש</div>
-                      <div className="flex justify-between items-center text-sm bg-blue-50 rounded-lg p-2">
-                        <span className="text-gray-600">תקופה:</span>
-                        <span className="font-semibold">{scenarios.maximumScenario.years} שנים</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm bg-green-50 rounded-lg p-2 mt-1">
-                        <span className="text-green-700">סה"כ חיסכון:</span>
-                        <span className="font-semibold text-green-700">{formatNumberWithCommas(Math.round(scenarios.maximumScenario.totalSavings))} ש"ח</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-4">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <i className="fa-solid fa-shield-check text-green-600 text-xl"></i>
-                  <h4 className="text-lg font-bold text-green-800">חיסכון נוסף בביטוח משכנתא</h4>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-600 mb-1">עד 50,000 ש"ח</div>
-                  <p className="text-green-700 text-sm">בדיקה חינמית של הפוליסה הקיימת</p>
-                </div>
-              </div>
-              <div className="mb-4">
-                <p className="text-gray-600 text-center">
-                  נציג מומחה יכול לבדוק אפשרויות נוספות ולמצוא את הפתרון המתאים ביותר עבורך
-                </p>
-              </div>
-              <Button
-                onClick={handleContactExpert}
-                className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md"
-              >
-                <i className="fa-solid fa-phone mr-2"></i>
-                אשמח שנציג יחזור אלי
-              </Button>
-            </div>
+          {scenarios.specialCase === 'insufficient-savings' && scenarios.maximumScenario && (
+            <InsufficientSavingsCard
+              maximumScenario={scenarios.maximumScenario}
+              currentPayment={currentPayment}
+            />
           )}
 
-          {/* Normal Scenario Cards - Display exactly three cards */}
+          {/* Normal Scenario Cards */}
           {scenarios.hasValidScenarios && (
             <div className="space-y-4">
               {/* Minimum Scenario Card */}
@@ -496,46 +564,57 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
               )}
             </div>
           )}
-
-          {/* Call to Action for Version B */}
-          <div className="mt-6 space-y-3">
-            <Button
-              onClick={handleContactExpert}
-              className="w-full py-3 md:py-4 text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30 transform transition-all hover:scale-[1.02]"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <i className="fa-solid fa-phone-volume animate-bounce"></i>
-                לשיחה עם המומחים
-              </span>
-            </Button>
-
-            <button 
-              onClick={handleTryAnother} 
-              className={`w-full text-${primaryColor}-600 font-medium text-base md:text-lg hover:underline`}
-            >
-              בדוק תרחיש אחר
-            </button>
-          </div>
         </div>
 
-        {/* Contact Options Page */}
+        <SimulatorFooter
+          onContactExpert={handleContactExpert}
+          onTryAnother={handleTryAnother}
+          primaryColor={primaryColor}
+        />
+
+        {/* Contact Options Page for Version B - Uses selected or default scenario */}
         {showContactOptions && (
           <ContactOptionsPage
             onClose={() => setShowContactOptions(false)}
-            calculationSummary={{
-              currentPayment,
-              newPayment: Math.round(newPayment),
-              monthlySavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0,
-              totalSavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) * simulatorYears * 12 : 0,
-              years: simulatorYears
-            }}
+            calculationSummary={(() => {
+              // Determine which scenario usage data to show
+              const activeScenario =
+                // 1. User selected specific
+                (selectedScenario && scenarios[`${selectedScenario}Scenario`]) ||
+                // 2. Insufficient savings (force max)
+                (scenarios.specialCase === 'insufficient-savings' ? scenarios.maximumScenario : null) ||
+                // 3. Default to middle (or minimum/maximum if middle missing)
+                scenarios.middleScenario ||
+                scenarios.maximumScenario ||
+                scenarios.minimumScenario;
+
+              if (activeScenario) {
+                return {
+                  currentPayment,
+                  newPayment: Math.round(activeScenario.monthlyPayment),
+                  monthlySavings: Math.round(activeScenario.monthlyReduction),
+                  totalSavings: Math.round(activeScenario.totalSavings),
+                  years: activeScenario.years
+                };
+              }
+
+              // Fallback if something is weird
+              return {
+                currentPayment,
+                newPayment: Math.round(newPayment),
+                monthlySavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0,
+                totalSavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) * simulatorYears * 12 : 0,
+                years: simulatorYears
+              };
+            })()}
           />
         )}
+
+        {renderLeadDialog()}
       </div>
     );
   }
 
-  // Version A - Current Slider Interface (Default)
 
   return (
     <div className="animate-fade-in-up">
@@ -718,25 +797,7 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
             </label>
 
             {noSolution ? (
-              /* No Solution Message */
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 text-center animate-fade-in">
-                <div className="mb-3">
-                  <i className="fa-solid fa-triangle-exclamation text-orange-500 text-3xl"></i>
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  לא נמצאו אפשרויות להפחתת ההחזר
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  בנתונים שהוזנו, לא ניתן להגיע להחזר חודשי נמוך מהנוכחי, גם בפריסה ל-30 שנה. מומלץ להתייעץ עם מומחה.
-                </p>
-                <Button
-                  onClick={handleContactExpert}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md"
-                >
-                  <i className="fa-solid fa-comments mr-2"></i>
-                  דבר עם יועץ לבדיקה ידנית
-                </Button>
-              </div>
+              <NoSavingsCard />
             ) : (
               /* Active Slider */
               <>
@@ -772,42 +833,31 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
           </div>
         </div>
 
-        {/* Call to Action */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-4 space-y-3">
-          {/* Primary CTA */}
-          <Button
-            onClick={handleContactExpert}
-            className="w-full py-3 md:py-4 text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30 transform transition-all hover:scale-[1.02]"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <i className="fa-solid fa-phone-volume animate-bounce"></i>
-              לשיחה עם המומחים
-            </span>
-          </Button>
-
-          {/* Secondary CTA */}
-          <button 
-            onClick={handleTryAnother} 
-            className={`w-full text-${primaryColor}-600 font-medium text-base md:text-lg hover:underline`}
-          >
-            בדוק תרחיש אחר
-          </button>
-        </div>
+        <SimulatorFooter
+          onContactExpert={handleContactExpert}
+          onTryAnother={handleTryAnother}
+          primaryColor={primaryColor}
+        />
 
         {/* Contact Options Page */}
-        {showContactOptions && (
-          <ContactOptionsPage
-            onClose={() => setShowContactOptions(false)}
-            calculationSummary={{
-              currentPayment,
-              newPayment: Math.round(newPayment),
-              monthlySavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0,
-              totalSavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) * simulatorYears * 12 : 0,
-              years: simulatorYears
-            }}
-          />
-        )}
-      </div>
+        {
+          showContactOptions && (
+            <ContactOptionsPage
+              onClose={() => setShowContactOptions(false)}
+              calculationSummary={{
+                currentPayment,
+                newPayment: Math.round(newPayment),
+                monthlySavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0,
+                totalSavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) * simulatorYears * 12 : 0,
+                years: simulatorYears
+              }}
+            />
+          )
+        }
+
+
+        {renderLeadDialog()}
+      </div >
 
       <style>{`
         .slider-enhanced::-webkit-slider-thumb {
@@ -871,6 +921,6 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
           border: none;
         }
       `}</style>
-    </div>
+    </div >
   );
 };

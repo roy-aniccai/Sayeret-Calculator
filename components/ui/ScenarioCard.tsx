@@ -10,6 +10,8 @@ export interface ScenarioCardProps {
   onClick: () => void;
   isSelected?: boolean;
   className?: string;
+  titleOverride?: string;
+  descriptionOverride?: string;
 }
 
 /**
@@ -28,12 +30,15 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
   currentPayment,
   onClick,
   isSelected = false,
-  className = ''
+  className = '',
+  titleOverride,
+  descriptionOverride
 }) => {
   const newPayment = currentPayment - monthlyReduction;
-  
+
   // Hebrew text for scenario types with proper RTL formatting
   const getScenarioTitle = (type: string): string => {
+    if (titleOverride) return ensureRTLDirection(titleOverride);
     const titles = {
       minimum: 'תרחיש מינימלי',
       maximum: 'תרחיש מקסימלי',
@@ -43,6 +48,7 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
   };
 
   const getScenarioDescription = (type: string): string => {
+    if (descriptionOverride !== undefined) return ensureRTLDirection(descriptionOverride);
     const descriptions = {
       minimum: 'התקופה הקצרה ביותר עם חיסכון של 500+ ש"ח',
       maximum: 'התקופה הארוכה ביותר עם החיסכון המקסימלי',
@@ -116,11 +122,10 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-full ${colors.accent} flex items-center justify-center`}>
-            <i className={`fa-solid ${
-              type === 'minimum' ? 'fa-clock' : 
-              type === 'maximum' ? 'fa-chart-line' : 
-              'fa-balance-scale'
-            } ${colors.icon}`}></i>
+            <i className={`fa-solid ${type === 'minimum' ? 'fa-clock' :
+              type === 'maximum' ? 'fa-chart-line' :
+                'fa-balance-scale'
+              } ${colors.icon}`}></i>
           </div>
           <h3 className={`text-xl font-bold ${colors.text}`}>
             {getScenarioTitle(type)}
@@ -168,9 +173,11 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
       </div>
 
       {/* Description */}
-      <div className="text-sm text-gray-600 leading-relaxed">
-        {getScenarioDescription(type)}
-      </div>
+      {(descriptionOverride !== "" && getScenarioDescription(type)) && (
+        <div className="text-sm text-gray-600 leading-relaxed">
+          {getScenarioDescription(type)}
+        </div>
+      )}
 
       {/* Selection indicator */}
       {isSelected && (

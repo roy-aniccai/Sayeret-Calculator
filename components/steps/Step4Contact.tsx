@@ -170,8 +170,8 @@ export const Step4Contact: React.FC = () => {
               <i className="fa-solid fa-shield-heart text-lg"></i>
             </div>
             <div>
-              <p className="text-gray-900 text-lg font-bold">חיסכון נוסף בביטוח המשכנתא</p>
-              <p className="text-gray-700 text-sm">ניתן לחסוך כ-<span className="font-bold text-green-700 text-base">50,000 ש"ח</span> בביטוח</p>
+              {/* Header removed */}
+              <p className="text-gray-700 text-sm">ניתן לחסוך עד <span className="font-bold text-green-700 text-base">50,000 ₪</span> במצטבר בביטוח המשכנתא</p>
             </div>
           </div>
         </div>

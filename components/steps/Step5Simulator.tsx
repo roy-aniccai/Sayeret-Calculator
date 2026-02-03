@@ -2,6 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { useForm } from '../../context/FormContext';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
+import { Input } from '../ui/Input'; // Added Input
+import { useNotification } from '../../context/NotificationContext'; // Added Notification
+import { submitData } from '../../utils/api'; // Added submitData
 import { formatNumberWithCommas } from '../../utils/helpers';
 import {
   validateLoanParams,
@@ -22,6 +25,53 @@ export const Step5Simulator: React.FC = () => {
   const [simulatorYears, setSimulatorYears] = useState(20); // Start with 20 years
   const [showDialog, setShowDialog] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // Lead Form State
+  const [leadName, setLeadName] = useState(formData.leadName || '');
+  const [leadPhone, setLeadPhone] = useState(formData.leadPhone || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ name?: string, phone?: string }>({});
+  const { showSuccessAlert, showErrorAlert } = useNotification();
+
+  const validatePhone = (phone: string) => {
+    const phoneRegex = /^0[5-9]\d{8}$/;
+    return phoneRegex.test(phone.replace(/[-\s]/g, ''));
+  };
+
+  const handleLeadSubmit = async () => {
+    // Validation
+    const errors: { name?: string, phone?: string } = {};
+    if (!leadName.trim()) errors.name = 'נא להזין שם מלא';
+    if (!leadPhone.trim()) errors.phone = 'נא להזין מספר טלפון';
+    else if (!validatePhone(leadPhone)) errors.phone = 'מספר טלפון לא תקין';
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await submitData({
+        ...formData,
+        leadName,
+        leadPhone,
+        interestedInInsurance: true, // Auto-flag for insurance
+        sessionId: (useForm() as any).sessionId,
+        track: formData.track as any // Fix type mismatch
+      });
+
+      setShowDialog(false);
+      showSuccessAlert('הפרטים נשלחו בהצלחה!', 'מומחה יחזור אליך בהקדם לבחינת חיסכון בביטוח.');
+      setLeadName('');
+      setLeadPhone('');
+    } catch (error) {
+      console.error('Submission error:', error);
+      showErrorAlert('שגיאה', 'אירעה שגיאה בשליחת הפרטים, אנא נסה שנית.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleShare = async () => {
     const shareData = {
@@ -556,28 +606,31 @@ export const Step5Simulator: React.FC = () => {
                 </div>
               </div>
             ) : noSolution ? (
-              /* No Solution Message */
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 text-center animate-fade-in">
-                <div className="mb-3">
-                  <i className="fa-solid fa-triangle-exclamation text-orange-500 text-3xl"></i>
+              /* No Solution Message - CONGRATULATORY MODE */
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center animate-fade-in shadow-sm">
+                <div className="mb-4 relative inline-block">
+                  <div className="absolute inset-0 bg-blue-200 rounded-full opacity-50 blur-lg animate-pulse"></div>
+                  <i className="fa-solid fa-trophy text-yellow-500 text-5xl relative z-10 drop-shadow-sm"></i>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  {formData.track === TrackType.MONTHLY_REDUCTION
-                    ? 'לא נמצאו אפשרויות להפחתת ההחזר'
-                    : 'לא ניתן לקצר את תקופת המשכנתא'}
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  {formData.track === TrackType.MONTHLY_REDUCTION
-                    ? 'בנתונים שהוזנו, לא ניתן להגיע להחזר חודשי נמוך מהנוכחי, גם בפריסה ל-30 שנה. מומלץ להתייעץ עם מומחה.'
-                    : 'בנתונים שהוזנו, קיצור התקופה מעבר למצב הנוכחי יחייב החזר חודשי גבוה מאוד שאינו עומד בכללי הרגולציה.'}
+
+                {/* Header removed */}
+
+                <p className="text-gray-800 mb-6 text-xl font-bold leading-relaxed">
+                  אתה נמצא בתנאי משכנתא מעולים שלא ניתן לשפר
                 </p>
-                <Button
-                  onClick={() => setShowDialog(true)}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md"
-                >
-                  <i className="fa-solid fa-comments mr-2"></i>
-                  דבר עם יועץ לבדיקה ידנית
-                </Button>
+
+                {/* Insurance Upsell Box */}
+                <div className="bg-white border border-blue-100 rounded-xl p-4 mb-6 shadow-sm">
+                  {/* Header removed as per request */}
+                  <p className="text-blue-600 font-medium text-lg mb-2">
+                    ניתן לחסוך עד 50,000 ₪ במצטבר בביטוח המשכנתא
+                  </p>
+                  <p className="text-blue-400 text-sm">
+                    בדיקה חינמית של הפוליסה הקיימת שלך
+                  </p>
+                </div>
+
+
               </div>
             ) : (
               /* Active Slider */
@@ -623,7 +676,7 @@ export const Step5Simulator: React.FC = () => {
           >
             <span className="flex items-center justify-center gap-2">
               <i className="fa-solid fa-phone-volume animate-bounce"></i>
-              לשיחה עם המומחים
+              אני רוצה שתחסכו לי
             </span>
           </Button>
 
@@ -636,37 +689,94 @@ export const Step5Simulator: React.FC = () => {
         <Dialog
           isOpen={showDialog}
           onClose={() => setShowDialog(false)}
-          title="סיירת המשכנתא"
-          confirmText="תודה, מעולה!"
+          title={null} // Custom header managed inside
+          showCloseButton={true}
+          showIcon={false} // We provide our own icons/layout
+          showFooterButton={false} // We provide our own buttons
         >
-          <p>
-            תודה שבחרת בנו!
-            <br />
-            קיבלנו את הפנייה שלך, ויועץ מומחה מסיירת המשכנתא כבר עובר על הנתונים.
-            <br />
-            נחזור אליך בהקדם עם ניתוח מלא והצעה שתחסוך לך כסף.
-            <br />
-            שיהיה יום נפלא!
-          </p>
+          <div className="text-center">
+            {noSolution ? (
+              <>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">אשמח שיחזרו אלי</h3>
+                <p className="text-gray-600 mb-6">
+                  השאר פרטים ויועץ מומחה יחזור אליך בהקדם עם ניתוח מלא והצעה מותאמת אישית.
+                </p>
 
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-gray-600 mb-4 font-medium">אהבת? שתף עם חברים:</p>
-            <div className="flex flex-col items-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={handleShare}
-                className={`w-full !bg-white !border-2 !border-${primaryColor}-200 hover:!bg-${primaryColor}-50 !text-${primaryColor}-700 gap-2 !rounded-xl !py-3`}
-              >
-                <i className={`fa-solid ${copySuccess ? 'fa-check' : 'fa-share-nodes'}`}></i>
-                {copySuccess ? 'הקישור הועתק!' : 'שתף את המחשבון'}
-              </Button>
+                <div className="space-y-4 text-right">
+                  <Input
+                    label="שם מלא"
+                    value={leadName}
+                    onChange={(e) => {
+                      setLeadName(e.target.value);
+                      if (formErrors.name) setFormErrors({ ...formErrors, name: '' });
+                    }}
+                    error={formErrors.name}
+                    placeholder="ישראל ישראלי"
+                  />
 
-              {copySuccess && (
-                <span className="text-green-600 text-sm animate-fade-in font-medium">
-                  הקישור הועתק ללוח בהצלחה
-                </span>
-              )}
-            </div>
+                  <Input
+                    label="טלפון"
+                    value={leadPhone}
+                    onChange={(e) => {
+                      setLeadPhone(e.target.value);
+                      if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' });
+                    }}
+                    error={formErrors.phone}
+                    placeholder="050-0000000"
+                    inputMode="tel"
+                  />
+
+                  <Button
+                    onClick={handleLeadSubmit}
+                    disabled={isSubmitting}
+                    className="w-full py-3 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl mt-4 shadow-lg"
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-circle-notch fa-spin"></i>
+                        שולח...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-paper-plane"></i>
+                        אישור ושליחה למומחה
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // ORIGINAL SUCCESS CONTENT FOR REGULAR FLOW
+              <>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">סיירת המשכנתא</h3>
+                <p className="mb-6 text-gray-600">
+                  תודה שבחרת בנו!
+                  <br />
+                  {/* ... Rest of existing success message content if needed, or we can unify ... */}
+                  נחזור אליך בהקדם עם ניתוח מלא והצעה שתחסוך לך כסף.
+                </p>
+
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <p className="text-gray-600 mb-4 font-medium">אהבת? שתף עם חברים:</p>
+                  <div className="flex flex-col items-center gap-3">
+                    <Button
+                      variant="secondary"
+                      onClick={handleShare}
+                      className={`w-full !bg-white !border-2 !border-${primaryColor}-200 hover:!bg-${primaryColor}-50 !text-${primaryColor}-700 gap-2 !rounded-xl !py-3`}
+                    >
+                      <i className={`fa-solid ${copySuccess ? 'fa-check' : 'fa-share-nodes'}`}></i>
+                      {copySuccess ? 'הקישור הועתק!' : 'שתף את המחשבון'}
+                    </Button>
+
+                    {copySuccess && (
+                      <span className="text-green-600 text-sm animate-fade-in font-medium">
+                        הקישור הועתק ללוח בהצלחה
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </Dialog>
       </div>
