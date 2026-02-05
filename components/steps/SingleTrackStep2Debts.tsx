@@ -23,8 +23,8 @@ const InputWithTooltip: React.FC<{
 }> = ({ label, tooltip, ...inputProps }) => {
   return (
     <div>
-      <div className="flex items-center gap-2 mb-2">
-        <label className="block text-lg font-semibold text-gray-900">
+      <div className="flex items-center gap-2 mb-1">
+        <label className="block text-base font-semibold text-gray-900">
           {label}
         </label>
         <Tooltip
@@ -34,13 +34,38 @@ const InputWithTooltip: React.FC<{
           allowWrap={true}
           maxWidth={280}
         >
-          <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-sm"></i>
+          <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-xs"></i>
         </Tooltip>
       </div>
-      <Input {...inputProps} label="" />
+      <Input {...inputProps} label="" className="py-2" />
     </div>
   );
 };
+
+interface Recommendation {
+  id: number;
+  name: string;
+  details: string;
+  text: string;
+  stars: number;
+}
+
+const RECOMMENDATIONS: Recommendation[] = [
+  {
+    id: 1,
+    name: "יפה",
+    details: "53, קרית עקרון",
+    text: "נתקלתי במקרה במחשבון באינטרנט, הקלדתי את נתוני המשכנתא שלי והוצג לי שאני יכולה לצמצם את הוצאת המשכנתא ב 1500 ₪ לחודש. הייתי מעט סקפטית אך החלטתי לנסות, חזר אלי תומר המדהים, תוך כחודש מחזר לי את המשכנתא וחתך לי את ההחזר החודשי, מקצוען אמיתי!!",
+    stars: 5
+  },
+  {
+    id: 2,
+    name: "חיים",
+    details: "48, פתח תקווה",
+    text: "תוך כמה קליקים הבנתי שאפשר להקל עלי בעלויות משכנתא החודשיות שתפחו מאוד בשנים האחרונות, אייל יצר איתי קשר, נפגשנו, התרשמתי מאוד לטובה, היום אני חודשיים אחרי ההוזלה של כמעט 2000 ₪ לחודש, ממש חזרתי לנשום מודה לכם מאוד!!!",
+    stars: 5
+  }
+];
 
 /**
  * SingleTrackStep2Debts - Debt collection step for single-track calculator
@@ -72,6 +97,8 @@ export const SingleTrackStep2Debts: React.FC = () => {
     ctaText: 'המשך לחישוב',
     ctaMessage: 'מידע מדויק = חיסכון מדויק יותר בתשלום החודשי'
   };
+
+
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -117,23 +144,21 @@ export const SingleTrackStep2Debts: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in-up">
-      {/* Step Title */}
-      <div className="text-center mb-6">
-        <h2 className={`text-2xl font-bold mb-2 ${accentStyling}`}>
+    <div className="animate-fade-in-up flex flex-col h-full">
+      {/* Step Title - Compact */}
+      <div className="text-center mb-2">
+        <h2 className={`text-xl font-bold mb-1 ${accentStyling}`}>
           {stepContent.stepDescription}
         </h2>
       </div>
 
-      {/* Add padding bottom to prevent content from being hidden behind sticky footer */}
-      <div className="space-y-4 pb-32 md:pb-0">
+      <div className="flex-grow flex flex-col gap-3">
         {/* Mortgage Balance */}
         <InputWithTooltip
           label="יתרת משכנתא נוכחית"
           tooltip={stepContent.mortgageTooltip}
           name="mortgageBalance"
           inputMode="numeric"
-          suffix="₪"
           value={formatNumberWithCommas(formData.mortgageBalance)}
           onChange={handleChange}
           placeholder="1,200,000"
@@ -142,21 +167,21 @@ export const SingleTrackStep2Debts: React.FC = () => {
           autoAdvance={true}
         />
 
-        {/* Other Loans Section */}
-        <div className={`${primaryStyling} rounded-lg p-3`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]} text-lg`}></i>
+        {/* Other Loans Section - Compact */}
+        <div className={`${primaryStyling} rounded-lg p-2.5`}>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]} text-base`}></i>
               <div>
-                <h3 className="text-base font-semibold text-gray-900">תרצה להוסיף הלוואות נוספות לבדיקה?</h3>
-                <p className="text-xs text-gray-500 mt-1">במידה וישנן הלוואות נוספות רצוי ולרוב ניתן להכניסן תחת המשכנתא וכך להנות מפריסה ארוכה וריבית נמוכה</p>
+                <h3 className="text-sm font-semibold text-gray-900 leading-tight">תרצה להוסיף הלוואות נוספות לבדיקה?</h3>
+                <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">במידה וישנן הלוואות נוספות רצוי ולרוב ניתן להכניסן תחת המשכנתא וכך להנות מפריסה ארוכה וריבית נמוכה</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => handleOtherLoansToggle(true)}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${hasOtherLoans
+                className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${hasOtherLoans
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
@@ -166,7 +191,7 @@ export const SingleTrackStep2Debts: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleOtherLoansToggle(false)}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${!hasOtherLoans
+                className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${!hasOtherLoans
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
@@ -177,16 +202,12 @@ export const SingleTrackStep2Debts: React.FC = () => {
           </div>
 
           {hasOtherLoans && (
-            <div className="mt-3">
-              <p className="text-xs text-gray-600 mb-2">
-                {stepContent.otherLoansDescription}
-              </p>
+            <div className="mt-2 animate-fade-in">
               <InputWithTooltip
                 label="סך כל ההלוואות האחרות"
                 tooltip="כולל אשראי אישי, הלוואת רכב, כרטיס אשראי וכל הלוואה אחרת"
                 name="otherLoansBalance"
                 inputMode="numeric"
-                suffix="₪"
                 value={formatNumberWithCommas(formData.otherLoansBalance)}
                 onChange={handleOtherLoansChange}
                 placeholder="150,000"
@@ -196,18 +217,40 @@ export const SingleTrackStep2Debts: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Recommendations - Stacked Vertically */}
+        <div className="flex flex-col gap-3 mt-1">
+          {RECOMMENDATIONS.map((rec) => (
+            <div
+              key={rec.id}
+              className="bg-white rounded-lg p-2.5 shadow-sm border border-gray-100"
+            >
+              <div className="flex text-yellow-400 text-xs mb-1">
+                {[...Array(rec.stars)].map((_, i) => (
+                  <i key={i} className="fa-solid fa-star"></i>
+                ))}
+              </div>
+              <p className="text-sm text-gray-600 italic leading-snug mb-1.5">
+                "{rec.text}"
+              </p>
+              <div className="font-semibold text-xs text-gray-800">
+                {rec.name} ({rec.details})
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Sticky Footer for Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-6">
-        {/* Validation Errors - Included in sticky footer to be visible */}
+      {/* Button Section */}
+      <div className="mt-3 bg-white pt-2">
+        {/* Validation Errors */}
         {Object.keys(errors).length > 0 && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 mx-auto max-w-md md:max-w-none">
-            <div className="flex items-center text-red-800 font-medium mb-1">
-              <i className="fa-solid fa-circle-exclamation ml-2"></i>
-              יש לתקן את השגיאות הבאות:
+          <div className="mb-2 bg-red-50 border border-red-200 rounded-lg p-2">
+            <div className="flex items-center text-red-800 text-xs font-medium mb-0.5">
+              <i className="fa-solid fa-circle-exclamation ml-1"></i>
+              יש לתקן:
             </div>
-            <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+            <ul className="list-disc list-inside text-xs text-red-700">
               {Object.values(errors).map((error, index) => (
                 <li key={index}>{error}</li>
               ))}
@@ -215,10 +258,9 @@ export const SingleTrackStep2Debts: React.FC = () => {
           </div>
         )}
 
-        {/* Primary CTA */}
         <Button
           onClick={handleNext}
-          className={`w-full text-lg py-3 shadow-lg hover:shadow-xl transition-all ${buttonStyling}`}
+          className={`w-full text-lg py-2.5 shadow-md hover:shadow-lg transition-all ${buttonStyling}`}
         >
           {stepContent.ctaText}
           <i className="fa-solid fa-arrow-left mr-2"></i>

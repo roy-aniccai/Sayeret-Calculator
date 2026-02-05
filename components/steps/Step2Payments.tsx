@@ -255,7 +255,6 @@ export const Step2Payments: React.FC = () => {
             tooltip={trackContent.mortgageTooltip}
             name="mortgagePayment"
             inputMode="numeric"
-            suffix="₪"
             value={formatNumberWithCommas(formData.mortgagePayment)}
             onChange={handleChange}
             placeholder="6,500"
@@ -270,7 +269,6 @@ export const Step2Payments: React.FC = () => {
             tooltip="משמש לחישוב יכולת ההחזר לפי כללי האצבע"
             name="netIncome"
             inputMode="numeric"
-            suffix="₪"
             value={formatNumberWithCommas(formData.netIncome || 0)}
             onChange={handleChange}
             placeholder="20,000"
@@ -413,7 +411,6 @@ export const Step2Payments: React.FC = () => {
           tooltip={trackContent.mortgageTooltip}
           name="mortgagePayment"
           inputMode="numeric"
-          suffix="₪"
           value={formatNumberWithCommas(formData.mortgagePayment)}
           onChange={handleChange}
           placeholder="6,500"
@@ -427,7 +424,6 @@ export const Step2Payments: React.FC = () => {
           tooltip="החזרים של כל ההלוואות האחרות שלך"
           name="otherLoansPayment"
           inputMode="numeric"
-          suffix="₪"
           value={formatNumberWithCommas(formData.otherLoansPayment)}
           onChange={handleChange}
           placeholder="0"

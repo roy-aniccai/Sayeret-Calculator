@@ -121,7 +121,6 @@ export const SingleTrackStep4Assets: React.FC = () => {
           tooltip={stepContent.propertyValueTooltip}
           name="propertyValue"
           inputMode="numeric"
-          suffix="₪"
           value={formatNumberWithCommas(formData.propertyValue)}
           onChange={handleChange}
           placeholder="2,500,000"

@@ -89,7 +89,7 @@ export const Step1Debts: React.FC = () => {
       stepTitle: 'נתוני משכנתא והלוואות',
       stepDescription: 'נבדוק את המצב הכספי הנוכחי',
       mortgageTooltip: 'נדרש לחישוב הריבית החדשה ואפשרויות המיחזור',
-      otherLoansDescription: 'נאחד את כל החובות למשכנתא אחת בריבית נמוכה',
+      otherLoansDescription: '',
       overdraftDescription: 'חובות בריבית גבוהה שכדאי לאחד למשכנתא',
       ctaText: 'המשך לחישוב',
       ctaMessage: 'מידע מדויק = חיסכון מדויק יותר'
@@ -173,7 +173,6 @@ export const Step1Debts: React.FC = () => {
             tooltip="קובע את אחוז המימון ותנאי ההלוואה החדשה"
             name="propertyValue"
             inputMode="numeric"
-            suffix="₪"
             value={formatNumberWithCommas(formData.propertyValue)}
             onChange={handleChange}
             placeholder="2,500,000"
@@ -188,7 +187,6 @@ export const Step1Debts: React.FC = () => {
             tooltip={trackContent.mortgageTooltip}
             name="mortgageBalance"
             inputMode="numeric"
-            suffix="₪"
             value={formatNumberWithCommas(formData.mortgageBalance)}
             onChange={handleChange}
             placeholder="1,200,000"
@@ -261,7 +259,6 @@ export const Step1Debts: React.FC = () => {
           tooltip={trackContent.mortgageTooltip}
           name="mortgageBalance"
           inputMode="numeric"
-          suffix="₪"
           value={formatNumberWithCommas(formData.mortgageBalance)}
           onChange={handleChange}
           placeholder="1,200,000"
@@ -314,7 +311,6 @@ export const Step1Debts: React.FC = () => {
                 tooltip="כולל אשראי אישי, הלוואת רכב, כרטיס אשראי וכל הלוואה אחרת"
                 name="otherLoansBalance"
                 inputMode="numeric"
-                suffix="₪"
                 value={formatNumberWithCommas(formData.otherLoansBalance)}
                 onChange={handleOtherLoansChange}
                 placeholder="150,000"
@@ -366,7 +362,6 @@ export const Step1Debts: React.FC = () => {
                 tooltip="הסכום הממוצע שאתה במינוס בחשבון הבנק - חוב בריבית גבוהה"
                 name="bankOverdraftAmount"
                 inputMode="numeric"
-                suffix="₪"
                 value={formatNumberWithCommas(Math.abs(formData.bankAccountBalance))}
                 onChange={handleBankOverdraftChange}
                 placeholder="5,000"

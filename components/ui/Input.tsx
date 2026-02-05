@@ -25,7 +25,7 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   // Generate a unique ID if not provided
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -94,8 +94,8 @@ export const Input: React.FC<InputProps> = ({
       {label && <label htmlFor={inputId} className="block text-xl font-bold text-gray-800 mb-2 md:mb-3">{label}</label>}
       <div className="relative">
         {/* Suffix/Icon: Positioned on the LEFT (left-6) for RTL alignment */}
-        {suffix && <span className="absolute top-6 left-6 text-gray-500 font-bold text-xl pointer-events-none">{suffix}</span>}
-        {icon && <span className="absolute top-6 left-6 text-gray-500 text-xl mt-0.5 pointer-events-none">{icon}</span>}
+        {suffix && <span className="absolute top-1/2 -translate-y-1/2 left-6 text-gray-500 font-bold text-xl pointer-events-none">{suffix}</span>}
+        {icon && <span className="absolute top-1/2 -translate-y-1/2 left-6 text-gray-500 text-xl pointer-events-none">{icon}</span>}
 
 
         <input

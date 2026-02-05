@@ -143,7 +143,6 @@ export const Step3Assets: React.FC = () => {
                 tooltip="סכום זה ישמש להקטנת קרן המשכנתא וקיצור תקופה"
                 name="oneTimePaymentAmount"
                 inputMode="numeric"
-                suffix="₪"
                 value={formatNumberWithCommas(formData.oneTimePaymentAmount || 0)}
                 onChange={handleChange}
                 placeholder="100,000"
@@ -219,7 +218,6 @@ export const Step3Assets: React.FC = () => {
           tooltip="קובע את אחוז המימון ותנאי ההלוואה החדשה"
           name="propertyValue"
           inputMode="numeric"
-          suffix="₪"
           value={formatNumberWithCommas(formData.propertyValue)}
           onChange={handleChange}
           placeholder="2,500,000"

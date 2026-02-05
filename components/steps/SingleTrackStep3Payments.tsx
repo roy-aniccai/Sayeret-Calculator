@@ -104,7 +104,7 @@ export const SingleTrackStep3Payments: React.FC = () => {
       const regulatoryMinPayment = Math.max(minPossiblePayment, currentMortgageParams.regulations.minMonthlyPayment);
 
       const potentialSavings = currentTotal - regulatoryMinPayment;
-      
+
       return {
         canSave: potentialSavings > 100, // Only show savings if meaningful (>100 NIS)
         estimatedSavings: Math.max(0, potentialSavings),
@@ -128,17 +128,17 @@ export const SingleTrackStep3Payments: React.FC = () => {
     stepDescription: 'כמה אתה משלם היום?',
     mortgageTooltip: 'בסיס לחישוב הערכת החיסכון',
     ctaText: 'המשך לחישוב מדויק',
-    ctaMessage: savingsEstimate.canSave 
-      ? 'מעולה! יש פוטנציאל לחיסכון' 
+    ctaMessage: savingsEstimate.canSave
+      ? 'מעולה! יש פוטנציאל לחיסכון'
       : 'בואו נבדוק את האפשרויות שלך'
   };
 
   // Set target payment based on estimated savings - use useEffect with stable dependencies
   useEffect(() => {
-    const targetPayment = savingsEstimate.canSave 
+    const targetPayment = savingsEstimate.canSave
       ? Math.round(savingsEstimate.estimatedNewPayment)
       : currentTotal;
-    
+
     // Only update if the target payment has actually changed to prevent infinite loops
     if (formData.targetTotalPayment !== targetPayment) {
       updateFormData({ targetTotalPayment: targetPayment });
@@ -180,7 +180,6 @@ export const SingleTrackStep3Payments: React.FC = () => {
           tooltip={stepContent.mortgageTooltip}
           name="mortgagePayment"
           inputMode="numeric"
-          suffix="₪"
           value={formatNumberWithCommas(formData.mortgagePayment)}
           onChange={handleChange}
           placeholder="6,500"
@@ -226,14 +225,14 @@ export const SingleTrackStep3Payments: React.FC = () => {
                   <i className="fa-solid fa-calculator text-green-600 text-xl"></i>
                   <h3 className="text-lg font-bold text-gray-900">הערכת חיסכון ראשונית</h3>
                 </div>
-                
+
                 <div className="bg-white rounded-lg p-4 border border-green-200">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-green-600 mb-1">
                       {formatNumberWithCommas(Math.round(savingsEstimate.estimatedSavings))} ₪
                     </div>
                     <div className="text-sm text-gray-600 mb-2">חיסכון משוער בחודש</div>
-                    
+
                     <div className="flex justify-between items-center text-sm bg-gray-50 rounded-lg p-2">
                       <span className="text-gray-600">החזר נוכחי:</span>
                       <span className="font-semibold">{formatNumberWithCommas(currentTotal)} ₪</span>
@@ -244,9 +243,9 @@ export const SingleTrackStep3Payments: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="text-xs text-gray-500 leading-relaxed">
-                  * הערכה ראשונית בהתבסס על ריביות שוק נוכחיות ופריסה מקסימלית של 30 שנה. 
+                  * הערכה ראשונית בהתבסס על ריביות שוק נוכחיות ופריסה מקסימלית של 30 שנה.
                   החישוב המדויק יתבצע בשלבים הבאים.
                 </div>
               </div>
