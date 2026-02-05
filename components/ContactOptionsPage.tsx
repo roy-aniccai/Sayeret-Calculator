@@ -22,9 +22,9 @@ interface ContactOptionsPageProps {
  * 1. Schedule meeting - Opens Calendly modal
  * 2. Request callback - Shows form with summary and saves to system
  */
-export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({ 
-  onClose, 
-  calculationSummary 
+export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
+  onClose,
+  calculationSummary
 }) => {
   const { formData, trackCampaignEvent } = useSingleTrackForm();
   const [selectedOption, setSelectedOption] = useState<'schedule' | 'callback' | null>(null);
@@ -41,7 +41,7 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
   // Initialize Calendly widget
   const openCalendly = () => {
     setIsCalendlyLoading(true);
-    
+
     trackCampaignEvent('contact_option_selected', {
       option: 'schedule_meeting',
       step: 6
@@ -52,6 +52,11 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
       setIsCalendlyLoading(false);
       window.open('https://calendly.com/tomers-finance-info/meet-with-me-1', '_blank');
     }, 500);
+
+    // Track scheduler click
+    if (window.dataLayer) {
+      window.dataLayer.push({ event: 'scheduler_click' });
+    }
   };
 
   const handleCallbackSubmit = async () => {
@@ -60,7 +65,7 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
     }
 
     setIsSubmitting(true);
-    
+
     try {
       trackCampaignEvent('contact_option_selected', {
         option: 'request_callback',
@@ -75,8 +80,13 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
       // Here you would typically save to your backend/database
       // For now, we'll simulate the API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       setIsSubmitted(true);
+
+      // Track lead form submission
+      if (window.dataLayer) {
+        window.dataLayer.push({ event: 'lead_form_submit' });
+      }
     } catch (error) {
       console.error('Error submitting callback request:', error);
     } finally {
@@ -205,7 +215,7 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-gray-900 text-lg mb-1">תיאום פגישה</h3>
                   <p className="text-gray-600 text-sm mb-3 leading-relaxed">
-                    קבע פגישה עם המומחה שלנו. 
+                    קבע פגישה עם המומחה שלנו.
                     בחר את הזמן הנוח לך ותקבל אישור מיידי.
                     {isCalendlyLoading && (
                       <span className="block text-blue-600 font-medium mt-2">
@@ -243,7 +253,7 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-gray-900 text-lg mb-1">אשמח שיחזרו אלי</h3>
                   <p className="text-gray-600 text-sm mb-3 leading-relaxed">
-                    השאר פרטים ויועץ מומחה יחזור אליך בהקדם עם ניתוח מלא 
+                    השאר פרטים ויועץ מומחה יחזור אליך בהקדם עם ניתוח מלא
                     והצעה מותאמת אישית.
                   </p>
                   <button

@@ -98,6 +98,11 @@ export const SingleTrackStep6Simulator: React.FC<SingleTrackStep6SimulatorProps>
       setLeadName('');
       setLeadPhone('');
 
+      // Track lead form submission
+      if (window.dataLayer) {
+        window.dataLayer.push({ event: 'lead_form_submit' });
+      }
+
       // Track conversion
       trackConversion('insurance_lead_submitted', {
         step: 6,
