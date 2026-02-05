@@ -43,7 +43,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
     adjustedPosition: 'top',
     withinBounds: true
   });
-  
+
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipId = useRef(`tooltip-${Math.random().toString(36).substr(2, 9)}`).current;
@@ -86,10 +86,10 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
     // Check which positions fit within viewport bounds
     const fitsInViewport = (pos: { x: number; y: number }) => {
-      return pos.x >= margin && 
-             pos.x + tooltipRect.width <= viewport.width - margin &&
-             pos.y >= margin && 
-             pos.y + tooltipRect.height <= viewport.height - margin;
+      return pos.x >= margin &&
+        pos.x + tooltipRect.width <= viewport.width - margin &&
+        pos.y >= margin &&
+        pos.y + tooltipRect.height <= viewport.height - margin;
     };
 
     let bestPosition: 'top' | 'bottom' | 'left' | 'right';
@@ -98,7 +98,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
     if (position === 'auto') {
       // Try positions in order of preference: top, bottom, right, left
       const preferenceOrder: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'right', 'left'];
-      
+
       bestPosition = preferenceOrder.find(pos => fitsInViewport(positions[pos])) || 'top';
       finalPos = positions[bestPosition];
     } else {
@@ -108,7 +108,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
     // If the preferred position doesn't fit, adjust coordinates to stay within bounds
     let withinBounds = fitsInViewport(finalPos);
-    
+
     if (!withinBounds) {
       // Adjust horizontal position
       if (finalPos.x < margin) {
@@ -223,9 +223,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
           ref={tooltipRef}
           id={tooltipId}
           role="tooltip"
-          className={`fixed z-50 px-4 py-3 bg-gray-900 text-white rounded-lg shadow-lg transition-opacity duration-200 ${
-            fontSizeClasses[fontSize]
-          } ${allowWrap ? 'break-words' : 'whitespace-nowrap'} border border-gray-700`}
+          className={`fixed z-50 px-4 py-3 bg-gray-900 text-white rounded-lg shadow-lg transition-opacity duration-200 ${fontSizeClasses[fontSize]
+            } ${allowWrap ? 'break-words whitespace-normal' : 'whitespace-nowrap'} border border-gray-700`}
           style={{
             left: tooltipPosition.x,
             top: tooltipPosition.y,
@@ -241,15 +240,14 @@ export const Tooltip: React.FC<TooltipProps> = ({
           aria-live="polite"
         >
           {content}
-          
+
           {/* Arrow pointing to trigger element */}
           <div
-            className={`absolute w-2 h-2 bg-gray-900 transform rotate-45 ${
-              tooltipPosition.adjustedPosition === 'top' ? 'bottom-[-4px] left-1/2 -translate-x-1/2' :
-              tooltipPosition.adjustedPosition === 'bottom' ? 'top-[-4px] left-1/2 -translate-x-1/2' :
-              tooltipPosition.adjustedPosition === 'left' ? 'right-[-4px] top-1/2 -translate-y-1/2' :
-              'left-[-4px] top-1/2 -translate-y-1/2'
-            }`}
+            className={`absolute w-2 h-2 bg-gray-900 transform rotate-45 ${tooltipPosition.adjustedPosition === 'top' ? 'bottom-[-4px] left-1/2 -translate-x-1/2' :
+                tooltipPosition.adjustedPosition === 'bottom' ? 'top-[-4px] left-1/2 -translate-x-1/2' :
+                  tooltipPosition.adjustedPosition === 'left' ? 'right-[-4px] top-1/2 -translate-y-1/2' :
+                    'left-[-4px] top-1/2 -translate-y-1/2'
+              }`}
           />
         </div>
       )}

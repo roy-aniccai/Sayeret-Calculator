@@ -7,11 +7,11 @@ import { SingleTrackStep3Payments } from './steps/SingleTrackStep3Payments';
 import { SingleTrackStep4Assets } from './steps/SingleTrackStep4Assets';
 import { SingleTrackStep5Contact } from './steps/SingleTrackStep5Contact';
 import { SingleTrackStep6Simulator } from './steps/SingleTrackStep6Simulator';
-import { 
-  parseCampaignDataFromLocation, 
-  createCampaignData, 
+import {
+  parseCampaignDataFromLocation,
+  createCampaignData,
   getDefaultSingleTrackExperience,
-  type CampaignData 
+  type CampaignData
 } from '../utils/campaignUrlParser';
 import { getSimulatorVersionFromUrl, type SimulatorVersion } from '../utils/abTestingUtils';
 import { useScrollLock } from '../utils/useScrollLock';
@@ -43,28 +43,28 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
     const initializeCampaignData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Get simulator version from URL parameter
         const urlVersion = getSimulatorVersionFromUrl();
         setSimulatorVersion(urlVersion);
-        
+
         let parsedCampaignData: CampaignData;
-        
+
         // If props are provided (for testing), use them
         if (campaignId || utmParams) {
-          const search = utmParams ? 
-            '?' + Object.entries(utmParams).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&') : 
+          const search = utmParams ?
+            '?' + Object.entries(utmParams).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&') :
             '';
           const pathname = campaignId ? `/reduce-payments/${campaignId}` : '/';
-          
+
           parsedCampaignData = createCampaignData(search, pathname);
         } else {
           // Parse from browser location with error handling
           parsedCampaignData = parseCampaignDataFromLocation();
         }
-        
+
         setCampaignData(parsedCampaignData);
-        
+
         // Log campaign initialization with error information
         if (parsedCampaignData.errors.length > 0) {
           console.warn('Single-track calculator loaded with campaign warnings:', {
@@ -74,7 +74,7 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
         } else {
           console.log('Single-track calculator loaded successfully with campaign data:', parsedCampaignData);
         }
-        
+
         // Track initialization event with error context
         if (typeof window !== 'undefined') {
           const eventData = {
@@ -83,13 +83,13 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
             errorCount: parsedCampaignData.errors.length,
             isValidCampaign: parsedCampaignData.isValid,
           };
-          
+
           console.log('Single-track initialization event:', eventData);
         }
-        
+
       } catch (error) {
         console.error('Critical error initializing campaign data:', error);
-        
+
         // Use default experience on critical error
         const fallbackData = getDefaultSingleTrackExperience();
         fallbackData.errors.push(`Initialization error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -124,9 +124,36 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
     errors: campaignData.errors,
   };
 
+  // Parse initial step from URL query param
+  // Logic: Map user-facing "Flow Step" (1-4) to Internal Step (2-5)
+  // ?step=1 -> Debts (Internal 2)
+  // ?step=2 -> Payments (Internal 3)
+  // etc.
+  // Default: Internal 1 (Landing)
+  const getInitialStep = (): number => {
+    if (typeof window === 'undefined') return 1;
+
+    const params = new URLSearchParams(window.location.search);
+    const stepParam = params.get('step');
+
+    if (stepParam) {
+      const flowStep = parseInt(stepParam, 10);
+      // Valid flow steps are 1 to 5 (1=Debts ... 5=Simulator)
+      if (!isNaN(flowStep) && flowStep >= 1 && flowStep <= 5) {
+        return flowStep + 1;
+      }
+    }
+    return 1;
+  };
+
+  const initialStep = getInitialStep();
+
   return (
     <NotificationProvider>
-      <SingleTrackFormProvider initialCampaignData={initialCampaignData}>
+      <SingleTrackFormProvider
+        initialCampaignData={initialCampaignData}
+        initialFormData={{ step: initialStep }}
+      >
         <SingleTrackAppContent campaignData={campaignData} simulatorVersion={simulatorVersion} />
       </SingleTrackFormProvider>
     </NotificationProvider>
@@ -137,8 +164,8 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
  * SingleTrackAppContent - The main content component that uses the form context
  * Enhanced with error handling for campaign data issues and A/B testing support
  */
-const SingleTrackAppContent: React.FC<{ 
-  campaignData: CampaignData; 
+const SingleTrackAppContent: React.FC<{
+  campaignData: CampaignData;
   simulatorVersion: SimulatorVersion;
 }> = ({ campaignData, simulatorVersion }) => {
   const { step, prevStep, resetForm } = useSingleTrackForm();
@@ -182,14 +209,14 @@ const SingleTrackAppContent: React.FC<{
       }
     } catch (error) {
       console.error('Error rendering step:', error);
-      
+
       // Fallback error UI
       return (
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-800 mb-4">שגיאה בטעינת השלב</h2>
           <p className="text-gray-600 mb-6">אירעה שגיאה בטעינת השלב הנוכחי</p>
-          <button 
-            onClick={resetForm} 
+          <button
+            onClick={resetForm}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
             התחל מחדש
@@ -204,13 +231,13 @@ const SingleTrackAppContent: React.FC<{
     try {
       const baseTitle = (() => {
         switch (currentStep) {
-        case 1: return "הקטן תשלום חודשי";
-        case 2: return "מצב חובות נוכחי";
-        case 3: return "החזרים חודשיים נוכחיים";
-        case 4: return "פרטים למיחזור";
-        case 5: return "פרטי קשר";
-        case 6: return "סימולטור משכנתא";
-        default: return "הקטן תשלום חודשי";
+          case 1: return "הקטן תשלום חודשי";
+          case 2: return "מצב חובות נוכחי";
+          case 3: return "החזרים חודשיים נוכחיים";
+          case 4: return "פרטים למיחזור";
+          case 5: return "פרטי קשר";
+          case 6: return "סימולטור משכנתא";
+          default: return "הקטן תשלום חודשי";
         }
       })();
 
@@ -258,7 +285,7 @@ const SingleTrackAppContent: React.FC<{
   return (
     <div className="flex sm:items-center sm:justify-center min-h-screen p-0 sm:p-4 relative bg-gray-100">
       <div className="w-full sm:max-w-lg bg-white sm:rounded-2xl shadow-xl overflow-hidden relative h-[100dvh] sm:h-auto sm:min-h-[600px] flex flex-col">
-        
+
         {/* Campaign warning notification (non-blocking) */}
         {showCampaignWarning && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-sm">
@@ -274,7 +301,7 @@ const SingleTrackAppContent: React.FC<{
             </div>
           </div>
         )}
-        
+
         {/* Header with progress bar */}
         <div className="bg-blue-600 px-4 py-3 text-white relative">
           <div className="flex items-center justify-between">
@@ -293,9 +320,9 @@ const SingleTrackAppContent: React.FC<{
 
             {/* Header title with logo */}
             <div className="text-center flex-1 flex items-center justify-center gap-2">
-              <img 
-                src="/logo.svg" 
-                alt="סיירת המשכנתא" 
+              <img
+                src="/logo.svg"
+                alt="סיירת המשכנתא"
                 className="w-6 h-6 flex-shrink-0"
               />
               <h1 className="text-lg font-bold">{getHeaderTitle(step)}</h1>
@@ -321,7 +348,7 @@ const SingleTrackAppContent: React.FC<{
         </div>
 
         {/* Content area */}
-        <div 
+        <div
           ref={containerRef}
           className={`p-6 flex-grow relative ${scrollClassName}`}
         >

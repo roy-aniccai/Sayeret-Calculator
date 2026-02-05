@@ -171,10 +171,23 @@ export const SingleTrackStep2Debts: React.FC = () => {
         <div className={`${primaryStyling} rounded-lg p-2.5`}>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]} text-base`}></i>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 leading-tight">תרצה להוסיף הלוואות נוספות לבדיקה?</h3>
-                <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">במידה וישנן הלוואות נוספות רצוי ולרוב ניתן להכניסן תחת המשכנתא וכך להנות מפריסה ארוכה וריבית נמוכה</p>
+                <div>
+                  <h3 className="text-base font-normal text-gray-900 inline">
+                    תרצה להוסיף הלוואות נוספות לבדיקה?
+                    <span className="inline-block whitespace-nowrap mr-1 align-middle">
+                      <Tooltip
+                        content="במידה וישנן הלוואות נוספות רצוי ולרוב ניתן להכניסן תחת המשכנתא וכך להנות מפריסה ארוכה וריבית נמוכה"
+                        position="auto"
+                        fontSize="base"
+                        allowWrap={true}
+                        maxWidth={320}
+                      >
+                        <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-xs"></i>
+                      </Tooltip>
+                    </span>
+                  </h3>
+                </div>
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
@@ -219,7 +232,7 @@ export const SingleTrackStep2Debts: React.FC = () => {
         </div>
 
         {/* Recommendations - Stacked Vertically */}
-        <div className="flex flex-col gap-3 mt-1">
+        <div className="flex flex-col gap-3 mt-1 pb-32">
           {RECOMMENDATIONS.map((rec) => (
             <div
               key={rec.id}
@@ -241,8 +254,8 @@ export const SingleTrackStep2Debts: React.FC = () => {
         </div>
       </div>
 
-      {/* Button Section */}
-      <div className="mt-3 bg-white pt-2">
+      {/* Sticky Button Section */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-t-0 md:shadow-none md:p-0 md:mt-3">
         {/* Validation Errors */}
         {Object.keys(errors).length > 0 && (
           <div className="mb-2 bg-red-50 border border-red-200 rounded-lg p-2">
