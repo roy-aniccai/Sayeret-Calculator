@@ -6,11 +6,12 @@ import { Tooltip } from '../ui/Tooltip';
 import { Checkbox } from '../ui/Checkbox';
 
 import { useNotification } from '../../context/NotificationContext';
-import { submitData } from '../../utils/api';
+import { submitData, updateSubmission } from '../../utils/api';
 import { generateContextualBackText } from '../../utils/navigationContext';
 import { TrackType } from '../../types';
 import { getTrackConfigSafe } from '../../utils/trackConfig';
 import { calculateScenarios, ScenarioInput } from '../../utils/scenarioCalculator';
+import { getMaxSavingsScenario } from '../../utils/scenarioHelpers';
 import { SimulationResult } from '../../types/analytics';
 
 // Enhanced InputWithTooltip using the new Tooltip component
@@ -66,7 +67,9 @@ export const SingleTrackStep5Contact: React.FC = () => {
     sessionId,
     trackCampaignEvent,
     trackConversion,
-    setSubmissionDocId
+    setSubmissionDocId,
+    sendSubmissionUpdate,
+    submissionDocId
   } = useSingleTrackForm();
 
   // Get track configuration for single-track (always MONTHLY_REDUCTION)
@@ -96,8 +99,14 @@ export const SingleTrackStep5Contact: React.FC = () => {
   }, [errors, updateFormData, trackCampaignEvent]);
 
   const validatePhone = (phone: string) => {
-    const phoneRegex = /^0[5-9]\d{8}$/;
-    return phoneRegex.test(phone.replace(/[-\s]/g, ''));
+    const cleanPhone = phone.replace(/\D/g, '');
+    const phoneRegex = /^05[0-58]\d{7}$/;
+
+    // Check for logical spam (repeated or sequential)
+    if (/^(\d)\1+$/.test(cleanPhone)) return false; // Repeated
+    if ('0123456789'.includes(cleanPhone) || '9876543210'.includes(cleanPhone)) return false; // Sequential
+
+    return phoneRegex.test(cleanPhone);
   };
 
   const validate = () => {
@@ -132,7 +141,8 @@ export const SingleTrackStep5Contact: React.FC = () => {
       trackCampaignEvent('single_track_contact_submit_start', {
         step: 5,
         hasName: !!formData.leadName,
-        hasPhone: !!formData.leadPhone
+        hasPhone: !!formData.leadPhone,
+        isUpdate: !!submissionDocId
       });
 
       // Calculate scenarios before submission
@@ -147,31 +157,28 @@ export const SingleTrackStep5Contact: React.FC = () => {
 
       const calculationResult = calculateScenarios(scenarioInput);
 
+      // Determine the MAX savings scenario for storage using the helper
+      // This ensures we always store the "best case" even if the user sees something else
+      const maxScenario = getMaxSavingsScenario(calculationResult);
+
+      // Default fallback logic just in case helper returns null (empty scenarios)
       let scenario: 'HIGH_SAVING' | 'LOW_SAVING' | 'NO_SAVING' = 'NO_SAVING';
-      const bestScenario = calculationResult.middleScenario || calculationResult.minimumScenario || calculationResult.maximumScenario;
-
-      if (bestScenario && bestScenario.monthlyReduction > 0) {
-        scenario = bestScenario.monthlyReduction > 500 ? 'HIGH_SAVING' : 'LOW_SAVING';
+      if (maxScenario && maxScenario.monthlyReduction > 0) {
+        scenario = maxScenario.monthlyReduction > 500 ? 'HIGH_SAVING' : 'LOW_SAVING';
       } else if (calculationResult.specialCase === 'insufficient-savings') {
-        // Explicitly handle insufficient savings as LOW_SAVING instead of NO_SAVING
         scenario = 'LOW_SAVING';
-      }
-
-      // Only force NO_SAVING if truly no scenarios and no special case of insufficient savings
-      if (!calculationResult.hasValidScenarios && calculationResult.specialCase !== 'insufficient-savings') {
-        scenario = 'NO_SAVING';
       }
 
       const simulationResult: SimulationResult = {
         scenario,
-        monthlySavings: bestScenario?.monthlyReduction || 0,
-        newMortgageDurationYears: bestScenario?.years || 0,
+        monthlySavings: maxScenario?.monthlyReduction || 0,
+        newMortgageDurationYears: maxScenario?.years || 0,
         canSave: scenario !== 'NO_SAVING',
         timestamp: new Date().toISOString()
       };
 
-      // Submit clean payload to backend
-      const submissionResponse = await submitData({
+      // Prepare payload
+      const payload = {
         sessionId,
         leadName: formData.leadName,
         leadPhone: formData.leadPhone,
@@ -183,34 +190,53 @@ export const SingleTrackStep5Contact: React.FC = () => {
         age: formData.age || null,
         simulationResult,
         utmParams: formData.utmParams || {},
-      });
+        interestedInInsurance: formData.interestedInInsurance ?? null
+      };
 
-      // Store the submission ID for subsequent updates
-      if (submissionResponse && submissionResponse.id) {
-        setSubmissionDocId(submissionResponse.id);
+      if (submissionDocId) {
+        // UPDATE existing submission
+        await updateSubmission(submissionDocId, {
+          ...payload,
+          contactUpdate: {
+            leadName: formData.leadName,
+            leadPhone: formData.leadPhone,
+            interestedInInsurance: formData.interestedInInsurance
+          }
+        });
+
+        trackCampaignEvent('single_track_contact_resubmit_success', {
+          submissionId: submissionDocId,
+          wasUpdate: true
+        });
+      } else {
+        // CREATE new submission
+        const submissionResponse = await submitData(payload);
+
+        // Store the submission ID for subsequent updates
+        if (submissionResponse && submissionResponse.id) {
+          setSubmissionDocId(submissionResponse.id);
+        }
+
+        trackCampaignEvent('single_track_contact_submit_success', {
+          submissionId: submissionResponse?.id,
+          wasUpdate: false
+        });
       }
 
-      // Track successful submission
-      trackCampaignEvent('single_track_contact_submit_success', {
-        step: 5
-      });
-
-      // Track conversion - user has provided contact information (lead conversion)
+      // Track conversion
       trackConversion('lead_submission', {
-        step: 5
+        step: 5,
+        value: simulationResult.monthlySavings
       });
 
-      // Proceed to next step (simulator)
+      // Proceed to next step
       nextStep();
     } catch (error) {
       console.error('Submission failed:', error);
-
-      // Track submission failure
       trackCampaignEvent('single_track_contact_submit_failed', {
         step: 5,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
-
       showErrorAlert(
         'שגיאה בשליחת הנתונים',
         'אירעה שגיאה בשליחת הנתונים. אנא בדוק את החיבור לאינטרנט ונסה שנית.'
@@ -233,7 +259,7 @@ export const SingleTrackStep5Contact: React.FC = () => {
           name="leadName"
           value={formData.leadName}
           onChange={handleChange}
-          placeholder="ישראל ישראלי"
+          placeholder="שם מלא"
           error={errors.leadName}
           icon={<i className="fa-solid fa-user text-blue-500"></i>}
           disabled={isSubmitting}
@@ -245,13 +271,71 @@ export const SingleTrackStep5Contact: React.FC = () => {
           name="leadPhone"
           inputMode="tel"
           value={formData.leadPhone}
-          onChange={handleChange}
-          placeholder="050-1234567"
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, ''); // Remove non-digits
+
+            // Allow empty string to clear input
+            if (val === '') {
+              updateFormData({ leadPhone: '' });
+              // Clear specific errors if field is empty (optional, depending on UX preference)
+              if (errors.leadPhone) {
+                setErrors(prev => {
+                  const newErr = { ...prev };
+                  delete newErr.leadPhone;
+                  return newErr;
+                });
+              }
+              return;
+            }
+
+            // Limit to 10 digits
+            if (val.length > 10) return;
+
+            // Format for display: 05X-XXXXXXX
+            let formatted = val;
+            if (val.length > 3) {
+              formatted = val.slice(0, 3) + '-' + val.slice(3);
+            }
+
+            // Update form data with raw digits (or formatted if preferred, but usually raw is better for storage)
+            // Storing formatted for display in input, but stripping for validation/submission might be needed depending on form handling.
+            // Here we store the formatted value in the context state to be displayed in the input.
+            // The context usually holds the display value for text inputs.
+            updateFormData({ leadPhone: formatted });
+
+            // Live Validation
+            const newErrors = { ...errors };
+
+            // Check prefix (must be 05X)
+            if (val.length >= 2 && val.substring(0, 2) !== '05') {
+              newErrors.leadPhone = 'מספר נייד חייב להתחיל ב-05';
+            } else if (val.length === 10) {
+              // Full length checks
+              const prefix = val.substring(0, 3);
+              // Valid 3rd digits: 0-5, 8
+              if (!['050', '051', '052', '053', '054', '055', '058'].includes(prefix)) {
+                newErrors.leadPhone = 'קידומת לא תקינה';
+              } else if (/^(\d)\1+$/.test(val)) { // Check for repeated digits (e.g., 0500000000)
+                newErrors.leadPhone = 'מספר לא תקין (ספרות חוזרות)';
+              } else if ('0123456789'.includes(val) || '9876543210'.includes(val)) { // Sequential
+                newErrors.leadPhone = 'מספר לא תקין (ספרות עוקבות)';
+              } else {
+                delete newErrors.leadPhone; // Valid!
+              }
+            } else {
+              // Partial input - clear error if it was "required" or specific format error that might differ
+              if (newErrors.leadPhone !== 'נא להזין מספר טלפון') {
+                delete newErrors.leadPhone;
+              }
+            }
+            setErrors(newErrors);
+          }}
+          placeholder="מספר נייד (05X-XXXXXXX)"
           error={errors.leadPhone}
           icon={<i className="fa-solid fa-phone text-green-500"></i>}
           disabled={isSubmitting}
           autoAdvance={true}
-          maxLength={11}
+          maxLength={11} // 10 digits + 1 hyphen
         />
 
         {/* WhatsApp Report Message */}

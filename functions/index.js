@@ -47,7 +47,7 @@ publicRouter.post('/submit', async (req, res) => {
 
 publicRouter.post('/update-submission', async (req, res) => {
     try {
-        const { submissionId, action, contactUpdate } = req.body;
+        const { submissionId, action, contactUpdate, ...financialData } = req.body;
 
         if (!submissionId) {
             return res.status(400).json({ error: 'Missing submissionId' });
@@ -83,6 +83,31 @@ publicRouter.post('/update-submission', async (req, res) => {
                 timestamp: new Date().toISOString(),
                 details: contactUpdate
             });
+        }
+
+
+        // Handle Financial Data Update (Re-submission)
+        // If financial fields are present in the top-level body (excluding reserved keys), update them
+        const reservedKeys = ['submissionId', 'action', 'contactUpdate'];
+        const financialUpdates = {};
+        Object.keys(financialData).forEach(key => {
+            if (!reservedKeys.includes(key)) {
+                financialUpdates[key] = financialData[key];
+            }
+        });
+
+        if (Object.keys(financialUpdates).length > 0) {
+            // Merge financial updates into the root document
+            Object.assign(updates, financialUpdates);
+
+            // Also update fullDataJson if it exists in the payload, or merge into it
+            if (financialData.fullDataJson) {
+                updates.fullDataJson = financialData.fullDataJson;
+            } else {
+                // If fullDataJson isn't explicitly passed but we have other fields, 
+                // we might want to update it. However, Firestore doesn't support deep merge easily.
+                // Best practice: Frontend should send the full `fullDataJson` object if it wants to update it.
+            }
         }
 
         updates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
@@ -150,7 +175,24 @@ adminRouter.get('/health', (req, res) => {
 adminRouter.get('/submissions', async (req, res) => {
     try {
         const snapshot = await db.collection('submissions').orderBy('createdAt', 'desc').get();
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), full_data_json: doc.data().fullDataJson }));
+        const data = snapshot.docs.map(doc => {
+            const d = doc.data();
+            let createdAt = d.createdAt;
+            // Convert Firestore Timestamp to ISO string
+            if (createdAt) {
+                if (typeof createdAt.toDate === 'function') {
+                    createdAt = createdAt.toDate().toISOString();
+                } else if (createdAt._seconds) {
+                    createdAt = new Date(createdAt._seconds * 1000).toISOString();
+                }
+            }
+            return {
+                id: doc.id,
+                ...d,
+                createdAt,
+                full_data_json: d.fullDataJson
+            };
+        });
         res.json({ message: 'success', data });
     } catch (error) {
         console.error('Admin error:', error);
@@ -161,7 +203,23 @@ adminRouter.get('/submissions', async (req, res) => {
 adminRouter.get('/events', async (req, res) => {
     try {
         const snapshot = await db.collection('events').orderBy('createdAt', 'desc').limit(100).get();
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), event_data_json: doc.data().eventData }));
+        const data = snapshot.docs.map(doc => {
+            const d = doc.data();
+            let createdAt = d.createdAt;
+            if (createdAt) {
+                if (typeof createdAt.toDate === 'function') {
+                    createdAt = createdAt.toDate().toISOString();
+                } else if (createdAt._seconds) {
+                    createdAt = new Date(createdAt._seconds * 1000).toISOString();
+                }
+            }
+            return {
+                id: doc.id,
+                ...d,
+                createdAt,
+                event_data_json: d.eventData
+            };
+        });
         res.json({ message: 'success', data });
     } catch (error) {
         console.error('Admin error:', error);
@@ -258,8 +316,8 @@ adminRouter.post('/export-csv', async (req, res) => {
         if (mode === 'delta' && sinceDate) {
             query = query.where('createdAt', '>', sinceDate);
         }
-        // Limit to 2 for testing
-        query = query.limit(2);
+        // Remove limit for production
+        // query = query.limit(2);
 
         const snapshot = await query.get();
         const rows = snapshot.docs.map(extractRow);
@@ -272,6 +330,7 @@ adminRouter.post('/export-csv', async (req, res) => {
         const ts = now.toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
         const fileName = `csv_exports/submissions_${mode}_${ts}.csv`;
 
+        // Use the explicit bucket name confirmed by the user
         const bucket = admin.storage().bucket('mortgage-85413.firebasestorage.app');
         const file = bucket.file(fileName);
 
@@ -281,10 +340,25 @@ adminRouter.post('/export-csv', async (req, res) => {
         });
 
         // Generate signed URL (valid 7 days)
-        const [signedUrl] = await file.getSignedUrl({
-            action: 'read',
-            expires: Date.now() + 7 * 24 * 60 * 60 * 1000
-        });
+        let signedUrl = '';
+        try {
+            const [url] = await file.getSignedUrl({
+                action: 'read',
+                expires: Date.now() + 7 * 24 * 60 * 60 * 1000
+            });
+            signedUrl = url;
+        } catch (signError) {
+            console.error('Error generating signed URL:', signError);
+            // Fallback: try to make public if signing fails (or return empty string and let user download from console)
+            try {
+                await file.makePublic();
+                signedUrl = file.publicUrl();
+            } catch (publicError) {
+                console.error('Error making file public:', publicError);
+            }
+        }
+
+        const consoleUrl = `https://console.firebase.google.com/project/mortgage-85413/storage/${bucket.name}/files`;
 
         // Save export metadata to Firestore
         const exportDoc = {
@@ -294,7 +368,8 @@ adminRouter.post('/export-csv', async (req, res) => {
             submissionCount: rows.length,
             csvStoragePath: fileName,
             csvDownloadUrl: signedUrl,
-            rows
+            consoleUrl,
+            rows: [] // Don't save rows to Firestore anymore to save space/cost, just metadata
         };
         const docRef = await db.collection('csv_exports').add(exportDoc);
 
@@ -303,6 +378,7 @@ adminRouter.post('/export-csv', async (req, res) => {
             success: true,
             exportId: docRef.id,
             csvDownloadUrl: signedUrl,
+            consoleUrl,
             submissionCount: rows.length,
             csvStoragePath: fileName
         });
@@ -331,6 +407,7 @@ adminRouter.get('/export-history', async (req, res) => {
                 mode: d.mode,
                 submissionCount: d.submissionCount,
                 csvDownloadUrl: d.csvDownloadUrl,
+                consoleUrl: d.consoleUrl,
                 csvStoragePath: d.csvStoragePath
             };
         });
@@ -338,6 +415,38 @@ adminRouter.get('/export-history', async (req, res) => {
         res.json({ message: 'success', data });
     } catch (error) {
         console.error('Export history error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+adminRouter.delete('/export-history/:id', async (req, res) => {
+    try {
+        const docId = req.params.id;
+        console.log(`Deleting export: ${docId}`);
+        const docRef = db.collection('csv_exports').doc(docId);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            return res.status(404).json({ error: 'Export not found' });
+        }
+
+        const data = doc.data();
+        if (data.csvStoragePath) {
+            try {
+                // Use explicit bucket
+                const bucket = admin.storage().bucket('mortgage-85413.firebasestorage.app');
+                const file = bucket.file(data.csvStoragePath);
+                await file.delete();
+                console.log(`Deleted file: ${data.csvStoragePath}`);
+            } catch (storageError) {
+                console.warn('Failed to delete file from storage (might represent already deleted file):', storageError);
+            }
+        }
+
+        await docRef.delete();
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Delete export error:', error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -7,9 +7,10 @@ import {
 } from './retryUtils';
 
 // Use environment variable with fallback for Jest compatibility
+// Use environment variable with fallback for Jest compatibility
 const isProduction = process.env.NODE_ENV === 'production';
 const API_BASE_URL = isProduction ? '/api' : 'https://us-central1-mortgage-85413.cloudfunctions.net/api';
-const ADMIN_API_BASE_URL = isProduction ? '/api/admin' : 'https://us-central1-mortgage-85413.cloudfunctions.net/adminApi';
+const ADMIN_API_BASE_URL = isProduction ? '/admin-api' : 'https://us-central1-mortgage-85413.cloudfunctions.net/adminApi';
 
 // ============================================================================
 // SUBMISSION PAYLOAD
@@ -127,8 +128,8 @@ export const updateSubmission = async (
     submissionId: string,
     update: {
         action?: PostSubmissionAction;
-        contactUpdate?: { leadName?: string; leadPhone?: string };
-    }
+        contactUpdate?: { leadName?: string; leadPhone?: string; interestedInInsurance?: boolean };
+    } & Partial<SubmissionPayload>
 ) => {
     return withRobustExecution(
         async () => {
@@ -232,6 +233,7 @@ export interface CsvExportResult {
     success: boolean;
     exportId: string;
     csvDownloadUrl: string;
+    consoleUrl?: string;
     submissionCount: number;
     csvStoragePath: string;
 }
@@ -242,6 +244,7 @@ export interface ExportHistoryItem {
     mode: 'full' | 'delta';
     submissionCount: number;
     csvDownloadUrl: string;
+    consoleUrl?: string;
     csvStoragePath: string;
 }
 
@@ -279,6 +282,24 @@ export const getExportHistory = async (): Promise<{ data: ExportHistoryItem[] }>
         {
             circuitBreaker: apiCircuitBreaker,
             operationName: 'get_export_history'
+        }
+    );
+};
+
+export const deleteExport = async (id: string): Promise<{ success: boolean }> => {
+    return withRobustExecution(
+        async () => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${ADMIN_API_BASE_URL}/export-history/${id}`, {
+                method: 'DELETE',
+                headers
+            });
+            if (!response.ok) throw new Error(`Failed to delete export: ${response.status}`);
+            return await response.json();
+        },
+        {
+            circuitBreaker: apiCircuitBreaker,
+            operationName: 'delete_export'
         }
     );
 };
