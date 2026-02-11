@@ -4,12 +4,14 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Checkbox } from '../ui/Checkbox';
-import { MarketingMessage, MARKETING_MESSAGES } from '../ui/MarketingMessage';
+
 import { useNotification } from '../../context/NotificationContext';
 import { submitData } from '../../utils/api';
 import { generateContextualBackText } from '../../utils/navigationContext';
 import { TrackType } from '../../types';
 import { getTrackConfigSafe } from '../../utils/trackConfig';
+import { calculateScenarios, ScenarioInput } from '../../utils/scenarioCalculator';
+import { SimulationResult } from '../../types/analytics';
 
 // Enhanced InputWithTooltip using the new Tooltip component
 const InputWithTooltip: React.FC<{
@@ -56,20 +58,21 @@ const InputWithTooltip: React.FC<{
  * Requirements: 1.2, 4.2
  */
 export const SingleTrackStep5Contact: React.FC = () => {
-  const { 
-    formData, 
-    updateFormData, 
-    nextStep, 
-    prevStep, 
+  const {
+    formData,
+    updateFormData,
+    nextStep,
+    prevStep,
     sessionId,
     trackCampaignEvent,
-    trackConversion
+    trackConversion,
+    setSubmissionDocId
   } = useSingleTrackForm();
-  
+
   // Get track configuration for single-track (always MONTHLY_REDUCTION)
   const config = getTrackConfigSafe(TrackType.MONTHLY_REDUCTION);
   const primaryColor = config.ui.primaryColor;
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showErrorAlert } = useNotification();
@@ -83,7 +86,7 @@ export const SingleTrackStep5Contact: React.FC = () => {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
     updateFormData({ [name]: finalValue });
-    
+
     // Track form interaction for campaign analytics
     trackCampaignEvent('single_track_contact_field_change', {
       field: name,
@@ -132,35 +135,82 @@ export const SingleTrackStep5Contact: React.FC = () => {
         hasPhone: !!formData.leadPhone
       });
 
-      // Submit data to backend with single-track context
-      await submitData({ 
-        ...formData, 
+      // Calculate scenarios before submission
+      const scenarioInput: ScenarioInput = {
+        mortgageBalance: formData.mortgageBalance,
+        otherLoansBalance: formData.otherLoansBalance,
+        currentMortgagePayment: formData.mortgagePayment,
+        currentOtherLoansPayment: formData.otherLoansPayment,
+        age: formData.age || undefined,
+        propertyValue: formData.propertyValue
+      };
+
+      const calculationResult = calculateScenarios(scenarioInput);
+
+      let scenario: 'HIGH_SAVING' | 'LOW_SAVING' | 'NO_SAVING' = 'NO_SAVING';
+      const bestScenario = calculationResult.middleScenario || calculationResult.minimumScenario || calculationResult.maximumScenario;
+
+      if (bestScenario && bestScenario.monthlyReduction > 0) {
+        scenario = bestScenario.monthlyReduction > 500 ? 'HIGH_SAVING' : 'LOW_SAVING';
+      } else if (calculationResult.specialCase === 'insufficient-savings') {
+        // Explicitly handle insufficient savings as LOW_SAVING instead of NO_SAVING
+        scenario = 'LOW_SAVING';
+      }
+
+      // Only force NO_SAVING if truly no scenarios and no special case of insufficient savings
+      if (!calculationResult.hasValidScenarios && calculationResult.specialCase !== 'insufficient-savings') {
+        scenario = 'NO_SAVING';
+      }
+
+      const simulationResult: SimulationResult = {
+        scenario,
+        monthlySavings: bestScenario?.monthlyReduction || 0,
+        newMortgageDurationYears: bestScenario?.years || 0,
+        canSave: scenario !== 'NO_SAVING',
+        timestamp: new Date().toISOString()
+      };
+
+      // Submit clean payload to backend
+      const submissionResponse = await submitData({
         sessionId,
-        track: TrackType.MONTHLY_REDUCTION,
-        isSingleTrack: true
+        leadName: formData.leadName,
+        leadPhone: formData.leadPhone,
+        mortgageBalance: formData.mortgageBalance,
+        otherLoansBalance: formData.otherLoansBalance,
+        mortgagePayment: formData.mortgagePayment,
+        otherLoansPayment: formData.otherLoansPayment,
+        propertyValue: formData.propertyValue,
+        age: formData.age || null,
+        simulationResult,
+        utmParams: formData.utmParams || {},
       });
-      
+
+      // Store the submission ID for subsequent updates
+      if (submissionResponse && submissionResponse.id) {
+        setSubmissionDocId(submissionResponse.id);
+      }
+
       // Track successful submission
       trackCampaignEvent('single_track_contact_submit_success', {
         step: 5
       });
-      
+
       // Track conversion - user has provided contact information (lead conversion)
       trackConversion('lead_submission', {
         step: 5
       });
-      
+
       // Proceed to next step (simulator)
       nextStep();
     } catch (error) {
       console.error('Submission failed:', error);
-      
+
       // Track submission failure
       trackCampaignEvent('single_track_contact_submit_failed', {
         step: 5,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
-      
+
       showErrorAlert(
         'שגיאה בשליחת הנתונים',
         'אירעה שגיאה בשליחת הנתונים. אנא בדוק את החיבור לאינטרנט ונסה שנית.'
@@ -204,12 +254,11 @@ export const SingleTrackStep5Contact: React.FC = () => {
           maxLength={11}
         />
 
-        {/* Marketing Message for Phone Number Entry */}
-        <MarketingMessage
-          message={MARKETING_MESSAGES.whatsappReport}
-          variant="whatsapp-report"
-          className="mt-2"
-        />
+        {/* WhatsApp Report Message */}
+        <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+          <i className="fa-brands fa-whatsapp text-green-600 text-lg"></i>
+          <span className="text-green-700 text-sm font-medium">נשלח לך דוח מפורט לוואטסאפ</span>
+        </div>
       </div>
 
       {/* Submit Actions */}

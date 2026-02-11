@@ -88,7 +88,7 @@ export const SingleTrackStep3Payments: React.FC = () => {
       highInterestLoans: 0,
       loansPayment: 0,
       urgency: null,
-      leadEmail: '',
+      // leadEmail removed
       termsAccepted: false,
       interestedInInsurance: false
     };

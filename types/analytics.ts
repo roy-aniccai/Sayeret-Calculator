@@ -8,6 +8,7 @@
  */
 
 import { Timestamp } from 'firebase/firestore';
+import { TrackType } from '../types';
 
 // ============================================================================
 // USER PROFILE INTERFACES
@@ -25,48 +26,83 @@ export interface UserProfile {
   sessionId: string;             // Unique session identifier
   createdAt: Timestamp;          // First interaction timestamp
   updatedAt: Timestamp;          // Last update timestamp
-  
+
   // Contact Information
   leadName: string;              // שם מלא
   leadPhone: string;             // מספר טלפון
-  leadEmail?: string;            // Email (optional)
   age?: number;                  // גיל
-  
+
   // Financial Profile
-  mortgageBalance: number;       // יתרת משכנתא נוכחית
-  otherLoansBalance: number;     // סך ההלוואות האחרות
-  mortgagePayment: number;       // החזר משכנתא חודשי נוכחי
-  otherLoansPayment: number;     // החזר הלוואות אחרות חודשי
-  propertyValue: number;         // שווי נכס מוערך כיום
-  targetTotalPayment: number;    // Target monthly payment
-  oneTimePaymentAmount: number;  // One-time payment capability
-  
+  mortgageBalance: number;
+  otherLoansBalance: number;
+  mortgagePayment: number;
+  otherLoansPayment: number;
+  propertyValue: number;
+
   // Preferences and Interests
   interestedInInsurance?: boolean;
-  track: 'MONTHLY_REDUCTION' | 'SHORTEN_TERM' | null;
-  
+  track: TrackType | null;
+
   // Campaign Attribution
   campaignId?: string;
   utmParams: Record<string, string>;
   referrer?: string;
   landingPage?: string;
-  
+
   // Lead Qualification
   leadScore: number;             // Calculated lead score (0-100)
   leadTier: 'HOT' | 'WARM' | 'COLD';
   qualificationFactors: string[];
-  
+
   // CRM Integration
   crmStatus: 'PENDING' | 'SYNCED' | 'FAILED';
   crmLeadId?: string;            // Scalla CRM lead ID
   crmSyncedAt?: Timestamp;
   crmErrors?: string[];
-  
+
   // Journey Completion
   completedSteps: number[];      // Array of completed step numbers
   conversionStep?: number;       // Step where conversion occurred
   isConverted: boolean;
   conversionTimestamp?: Timestamp;
+
+  // Simulation Results & Post-Submission
+  simulationResult?: SimulationResult;
+  postSubmissionLog: PostSubmissionAction[];
+
+  // Post-Submission Flags
+  didClickCalendly: boolean;
+  didRequestCallback: boolean;
+  didRequestSavings: boolean;
+  contactDetailsUpdated: boolean;
+}
+
+// ============================================================================
+// POST-SUBMISSION INTERFACES
+// ============================================================================
+
+export interface SimulationResult {
+  scenario: 'HIGH_SAVING' | 'LOW_SAVING' | 'NO_SAVING';
+  monthlySavings: number;
+  newMortgageDurationYears: number;
+  canSave: boolean;
+  timestamp: string;
+}
+
+export type ActionType =
+  | 'CLICK_SAVE_FOR_ME'
+  | 'CLICK_SCHEDULE_MEETING'
+  | 'CLICK_CALLBACK'
+  | 'CLICK_CALENDLY'
+  | 'CLICK_TRY_ANOTHER'
+  | 'TOGGLE_INSURANCE'
+  | 'REQUEST_CALLBACK'
+  | 'UPDATE_CONTACT_DETAILS';
+
+export interface PostSubmissionAction {
+  type: ActionType;
+  timestamp: string;
+  details?: any; // e.g., { oldPhone: '...', newPhone: '...' }
 }
 
 /**
@@ -82,10 +118,10 @@ export interface UserProfileValidation {
 
 export const USER_PROFILE_VALIDATION: UserProfileValidation = {
   required: ['id', 'sessionId', 'createdAt', 'leadName', 'leadPhone', 'mortgageBalance', 'propertyValue'],
-  optional: ['leadEmail', 'age', 'campaignId', 'crmLeadId', 'conversionStep'],
-  numeric: ['mortgageBalance', 'otherLoansBalance', 'mortgagePayment', 'otherLoansPayment', 'propertyValue', 'targetTotalPayment', 'oneTimePaymentAmount', 'leadScore', 'age'],
-  strings: ['id', 'sessionId', 'leadName', 'leadPhone', 'leadEmail', 'campaignId', 'referrer', 'landingPage', 'crmLeadId'],
-  arrays: ['completedSteps', 'qualificationFactors', 'crmErrors']
+  optional: ['age', 'campaignId', 'crmLeadId', 'conversionStep', 'simulationResult'],
+  numeric: ['mortgageBalance', 'otherLoansBalance', 'mortgagePayment', 'otherLoansPayment', 'propertyValue', 'leadScore', 'age'],
+  strings: ['id', 'sessionId', 'leadName', 'leadPhone', 'campaignId', 'referrer', 'landingPage', 'crmLeadId'],
+  arrays: ['completedSteps', 'qualificationFactors', 'crmErrors', 'postSubmissionLog']
 };
 
 // ============================================================================
@@ -103,23 +139,23 @@ export interface UserEvent {
   userId: string;                // Reference to user document
   sessionId: string;             // Session identifier
   timestamp: Timestamp;          // Event timestamp
-  
+
   // Event Classification
   eventType: string;             // Event type identifier
   eventCategory: EventCategory;  // Event category
-  
+
   // Event Context
   step?: number;                 // Current form step
   component?: string;            // UI component involved
   action?: string;               // Specific action taken
-  
+
   // Event Data
   eventData: Record<string, any>; // Flexible event data
-  
+
   // Performance Metrics
   duration?: number;             // Time spent on action (ms)
   previousStep?: number;         // Previous step (for navigation)
-  
+
   // Technical Context
   userAgent?: string;
   viewport?: ViewportSize;
@@ -155,25 +191,25 @@ export const EVENT_TYPES = {
   STEP_NEXT: 'step_next',
   STEP_PREV: 'step_prev',
   FORM_RESET: 'form_reset',
-  
+
   // Interaction Events
   FIELD_FOCUS: 'field_focus',
   FIELD_BLUR: 'field_blur',
   FIELD_CHANGE: 'field_change',
   BUTTON_CLICK: 'button_click',
   TOOLTIP_VIEW: 'tooltip_view',
-  
+
   // Conversion Events
   LEAD_QUALIFIED: 'lead_qualified',
   FORM_SUBMIT: 'form_submit',
   CRM_SYNC: 'crm_sync',
   APPOINTMENT_SCHEDULED: 'appointment_scheduled',
-  
+
   // Error Events
   API_ERROR: 'api_error',
   VALIDATION_ERROR: 'validation_error',
   CRM_SYNC_ERROR: 'crm_sync_error',
-  
+
   // Single Track Events
   SINGLE_TRACK_SESSION_START: 'single_track_session_start',
   SINGLE_TRACK_STEP_VIEW: 'single_track_step_view',
@@ -196,18 +232,18 @@ export interface UserSession {
   startTime: Timestamp;
   endTime?: Timestamp;
   duration?: number;             // Session duration in seconds
-  
+
   // Session Metrics
   pageViews: number;
   stepProgression: number[];     // Steps visited in order
   maxStepReached: number;
   bounceRate: boolean;           // True if single page view
-  
+
   // Attribution
   campaignData: Record<string, any>;
   referrer?: string;
   landingPage: string;
-  
+
   // Conversion
   converted: boolean;
   conversionStep?: number;
@@ -307,31 +343,31 @@ export const CRM_STATUS_VALUES = {
  */
 export function validateUserProfile(data: Partial<UserProfile>): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
+
   // Check required fields
   USER_PROFILE_VALIDATION.required.forEach(field => {
     if (!data[field]) {
       errors.push(`Missing required field: ${field}`);
     }
   });
-  
+
   // Validate numeric fields
   USER_PROFILE_VALIDATION.numeric.forEach(field => {
     if (data[field] !== undefined && (typeof data[field] !== 'number' || isNaN(data[field] as number))) {
       errors.push(`Invalid numeric value for field: ${field}`);
     }
   });
-  
+
   // Validate lead score range
   if (data.leadScore !== undefined && (data.leadScore < 0 || data.leadScore > 100)) {
     errors.push('Lead score must be between 0 and 100');
   }
-  
+
   // Validate phone number format (basic)
   if (data.leadPhone && !/^\d{9,10}$/.test(data.leadPhone.replace(/[-\s]/g, ''))) {
     errors.push('Invalid phone number format');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -343,22 +379,22 @@ export function validateUserProfile(data: Partial<UserProfile>): { isValid: bool
  */
 export function validateUserEvent(data: Partial<UserEvent>): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
+
   // Required fields
   if (!data.sessionId) errors.push('Missing sessionId');
   if (!data.eventType) errors.push('Missing eventType');
   if (!data.eventCategory) errors.push('Missing eventCategory');
-  
+
   // Validate event category
   if (data.eventCategory && !['NAVIGATION', 'INTERACTION', 'CONVERSION', 'ERROR'].includes(data.eventCategory)) {
     errors.push('Invalid event category');
   }
-  
+
   // Validate device type
   if (data.device && !['MOBILE', 'TABLET', 'DESKTOP'].includes(data.device)) {
     errors.push('Invalid device type');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -370,27 +406,24 @@ export function validateUserEvent(data: Partial<UserEvent>): { isValid: boolean;
  */
 export function calculateLeadScore(profile: Partial<UserProfile>): number {
   let score = 0;
-  
+
   // Profile Completeness (30 points max)
   if (profile.leadName) score += 10;
   if (profile.leadPhone) score += 10;
   if (profile.age) score += 5;
-  if (profile.leadEmail) score += 5;
-  
+
   // Financial Profile (40 points max)
   if (profile.propertyValue && profile.propertyValue > 2000000) score += 15; // >2M NIS
   if (profile.mortgageBalance && profile.mortgageBalance > 1000000) score += 10; // >1M NIS
   if (profile.mortgagePayment && profile.mortgagePayment > 5000) score += 10; // >5K NIS
   if (profile.otherLoansBalance && profile.otherLoansBalance > 0) score += 5;
-  
+
   // Engagement (20 points max)
   if (profile.completedSteps && profile.completedSteps.length >= 6) score += 10; // All steps
   if (profile.isConverted) score += 10; // Conversion bonus
-  
-  // Intent (10 points max)
+
   if (profile.interestedInInsurance) score += 5;
-  if (profile.targetTotalPayment && profile.targetTotalPayment > 0) score += 5;
-  
+
   return Math.min(100, Math.max(0, score));
 }
 
@@ -439,7 +472,7 @@ function determineEventCategory(eventType: string): EventCategory {
  */
 function detectDeviceType(): DeviceType {
   if (typeof window === 'undefined') return 'DESKTOP';
-  
+
   const width = window.innerWidth;
   if (width <= 768) return 'MOBILE';
   if (width <= 1024) return 'TABLET';
@@ -451,7 +484,7 @@ function detectDeviceType(): DeviceType {
  */
 function getViewportSize(): ViewportSize {
   if (typeof window === 'undefined') return { width: 1920, height: 1080 };
-  
+
   return {
     width: window.innerWidth,
     height: window.innerHeight
@@ -465,29 +498,26 @@ function getViewportSize(): ViewportSize {
  */
 export function sanitizeUserData(data: any): any {
   const sanitized = { ...data };
-  
+
   // Remove any potential sensitive fields
   delete sanitized.password;
   delete sanitized.creditCard;
   delete sanitized.ssn;
-  
+
   // Normalize phone number
   if (sanitized.leadPhone) {
     sanitized.leadPhone = sanitized.leadPhone.replace(/[-\s]/g, '');
   }
-  
-  // Normalize email
-  if (sanitized.leadEmail) {
-    sanitized.leadEmail = sanitized.leadEmail.toLowerCase().trim();
-  }
-  
+
+
+
   // Ensure numeric fields are numbers
   USER_PROFILE_VALIDATION.numeric.forEach(field => {
     if (sanitized[field] !== undefined) {
       sanitized[field] = Number(sanitized[field]) || 0;
     }
   });
-  
+
   return sanitized;
 }
 
@@ -516,14 +546,3 @@ export interface AnalyticsQueryOptions {
 /**
  * Export all types for easy importing
  */
-export type {
-  UserProfile,
-  UserEvent,
-  UserSession,
-  ScallaCRMPayload,
-  EventCategory,
-  DeviceType,
-  ViewportSize,
-  LeadScoringConfig,
-  LeadTierConfig
-};

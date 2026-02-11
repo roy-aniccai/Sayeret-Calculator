@@ -97,59 +97,6 @@ export const TRACK_CONFIGS: Record<TrackType, TrackConfig> = {
         secondary: 'חזור לבחירת מטרה'
       }
     }
-  },
-
-  [TrackType.SHORTEN_TERM]: {
-    ui: {
-      primaryColor: 'green',
-      secondaryColor: 'green-50',
-      iconClass: 'fa-piggy-bank',
-      stepTitles: {
-        2: 'פרטי הנכס והמשכנתא',
-        3: 'הכנסות ויכולת החזר',
-        4: 'סילוק מוקדם',
-        6: 'סימולטור הוזלת משכנתא'
-      },
-      stepDescriptions: {
-        2: 'פרטים על המשכנתא הקיימת והנכס',
-        3: 'בדיקת יכולת החזר חודשי',
-        4: 'האם יש סכומים חד פעמיים לשימוש?',
-        6: 'בדוק אפשרויות להוזלת המשכנתא'
-      }
-    },
-    validation: {
-      paymentRangeMultiplier: 0.6, // 60% range for aggressive payment
-      maxTermYears: 25, // Shorter max for aggressive payoff
-      minPaymentIncrease: 500, // Minimum increase for term shortening
-      ageWeightFactor: 1.2
-    },
-    calculation: {
-      optimizationPriority: 'term',
-      simulatorDefaults: {
-        paymentStep: 200,
-        termStep: 1,
-        focusMetric: 'termReduction'
-      }
-    },
-    messaging: {
-      tooltips: {
-        mortgagePayment: 'ההחזר הנוכחי - נוסיף עליו להוזלת המשכנתא',
-        targetPayment: 'כמה אתה מוכן לשלם כדי להוזיל את המשכנתא?',
-        simulator: 'שחק עם הסליידר לראות כמה שנים תחסוך'
-      },
-      successMessages: {
-        calculation: 'מצאנו דרך להוזיל את המשכנתא!',
-        simulation: 'חיסכון מרשים בשנים ובריבית'
-      },
-      warningMessages: {
-        paymentIncrease: 'הוזלת המשכנתא דורשת העלאת התשלום החודשי',
-        ageLimit: 'תקופת המשכנתא מוגבלת לפי הגיל'
-      },
-      ctaTexts: {
-        primary: 'בדוק הוזלת משכנתא',
-        secondary: 'חזור לבחירת מטרה'
-      }
-    }
   }
 };
 
@@ -309,8 +256,6 @@ export const getTrackDisplayName = (track: TrackType): string => {
   switch (track) {
     case TrackType.MONTHLY_REDUCTION:
       return 'הפחתת תשלום חודשי';
-    case TrackType.SHORTEN_TERM:
-      return 'הוזלת המשכנתא';
     default:
       return 'מסלול לא מוכר';
   }

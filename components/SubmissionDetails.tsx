@@ -12,27 +12,24 @@ export const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({ submission
         // Prioritize new API (camelCase), then DB raw (snake_case), then JSON data, then fallback
         const name = sub.leadName || sub.lead_name || data.leadName || data.lead_name || 'לא צוין';
         const phone = sub.leadPhone || sub.lead_phone || data.leadPhone || data.lead_phone || 'לא צוין';
-        const email = sub.leadEmail || sub.lead_email || data.leadEmail || data.lead_email || 'לא צוין';
 
         // Handle Date (New API = createdAt, Old = created_at)
         const dateRaw = sub.createdAt || sub.created_at;
         const dateStr = dateRaw ? new Date(dateRaw.replace(' ', 'T')).toLocaleString() : 'תאריך לא ידוע';
 
-        return { name, phone, email, dateStr };
+        return { name, phone, dateStr };
     };
 
     const generateMockMessage = (sub: Submission) => {
         const data = sub.full_data_json || {};
         const results = calculateResults(data);
-        const { name, phone, email, dateStr } = getSubmissionDetails(sub);
-
+        const { name, phone, dateStr } = getSubmissionDetails(sub);
         // Using concatenation for safety against parser issues with Hebrew in template literals during build
         let msg = "*הודעת סיכום (Mock)*\n";
         msg += "-------------------\n";
         msg += "*פרטי לקוח:*\n";
         msg += `שם: ${name}\n`;
-        msg += `טלפון: ${phone}\n`;
-        msg += `אימייל: ${email}\n\n`;
+        msg += `טלפון: ${phone}\n\n`;
 
         msg += "*נתוני בסיס:*\n";
         msg += `שווי נכס: ${data.propertyValue?.toLocaleString()} ₪\n`;

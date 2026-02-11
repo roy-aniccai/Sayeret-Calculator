@@ -1,38 +1,39 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { TrackType } from '../types';
-import { 
-  validateAndFallbackCampaignData, 
+import {
+  validateAndFallbackCampaignData,
   getDefaultSingleTrackExperience,
-  type CampaignData 
+  type CampaignData
 } from '../utils/campaignUrlParser';
+import { updateSubmission } from '../utils/api';
+import { PostSubmissionAction } from '../types/analytics';
 
 // Single track form data interface tailored to single-track flow
 interface SingleTrackFormData {
   // Step tracking
   step: number;
-  
+
   // Step 2 - Debts (excludes bank overdraft for single-track)
   mortgageBalance: number;
   otherLoansBalance: number;
   hasOtherLoans?: boolean; // true = user chose "כן" for הלוואות נוספות
-  
+
   // Step 3 - Monthly Payments (same as original)
   mortgagePayment: number;
   otherLoansPayment: number;
   targetTotalPayment: number;
-  
+
   // Step 4 - Assets (same as original)
   propertyValue: number;
-  
+
   // Step 5 - Contact (same as original)
   leadName: string;
   leadPhone: string;
   interestedInInsurance?: boolean;
-  
-  // Step 6 - Simulator (same as original)
+
+  // Step 6 - Simulator
   age: number | null;
-  oneTimePaymentAmount: number;
-  
+
   // Campaign tracking (new)
   campaignId?: string;
   utmParams?: Record<string, string>;
@@ -51,30 +52,37 @@ interface SingleTrackFormContextType {
   resetForm: () => void;
   nextStep: () => void;
   prevStep: () => void;
-  
+
   // Campaign-specific methods
   campaignData: CampaignData;
   setCampaignData: (data: CampaignData) => void;
   trackCampaignEvent: (eventType: string, eventData?: any) => void;
   trackConversion: (conversionType: string, conversionData?: any) => void;
-  
+
   // Single-track specific methods
   getTrack: () => TrackType;
   isMonthlyReductionTrack: () => boolean;
-  
+
   // Session tracking
   sessionId: string;
+  submissionDocId: string | null;
+  setSubmissionDocId: (id: string) => void;
+  sendSubmissionUpdate: (update: { action?: PostSubmissionAction; contactUpdate?: any }) => Promise<void>;
 }
 
 // Helper function to safely convert legacy data to SingleTrackFormData
 const sanitizeLegacyFormData = (data: any): Partial<SingleTrackFormData> => {
-  const { bankAccountBalance, ...cleanData } = data;
-  
+  const { bankAccountBalance, leadEmail, ...cleanData } = data;
+
   // Log warning if legacy field is detected
   if (bankAccountBalance !== undefined) {
     console.warn('SingleTrackFormContext: Removing legacy bankAccountBalance field from form data');
   }
-  
+
+  if (leadEmail !== undefined) {
+    console.warn('SingleTrackFormContext: Removing legacy leadEmail field from form data');
+  }
+
   return cleanData;
 };
 
@@ -82,29 +90,28 @@ const sanitizeLegacyFormData = (data: any): Partial<SingleTrackFormData> => {
 const initialSingleTrackFormData: SingleTrackFormData = {
   // Step tracking
   step: 1,
-  
+
   // Step 2 - Debts (excludes bank overdraft)
   mortgageBalance: 1200000,
   otherLoansBalance: 0,
   hasOtherLoans: false,
-  
+
   // Step 3 - Monthly Payments
   mortgagePayment: 6500,
   otherLoansPayment: 0,
   targetTotalPayment: 6500,
-  
+
   // Step 4 - Assets
   propertyValue: 2500000,
-  
+
   // Step 5 - Contact
   leadName: '',
   leadPhone: '',
   interestedInInsurance: true, // Default to checked
-  
+
   // Step 6 - Simulator
   age: null,
-  oneTimePaymentAmount: 0,
-  
+
   // Campaign tracking
   campaignId: undefined,
   utmParams: {},
@@ -125,7 +132,7 @@ const SingleTrackFormContext = createContext<SingleTrackFormContextType | undefi
  * 
  * Requirements: 1.1, 5.2
  */
-export const SingleTrackFormProvider: React.FC<{ 
+export const SingleTrackFormProvider: React.FC<{
   children: ReactNode;
   initialCampaignData?: CampaignData;
   initialFormData?: Partial<SingleTrackFormData>;
@@ -139,7 +146,7 @@ export const SingleTrackFormProvider: React.FC<{
       ...sanitizedInitialData,
     };
   });
-  
+
   // Use robust campaign data validation
   const [campaignData, setCampaignDataState] = useState<CampaignData>(() => {
     if (initialCampaignData) {
@@ -147,7 +154,7 @@ export const SingleTrackFormProvider: React.FC<{
     }
     return getDefaultSingleTrackExperience();
   });
-  
+
   const [sessionId] = useState(() => {
     try {
       return crypto.randomUUID();
@@ -166,47 +173,47 @@ export const SingleTrackFormProvider: React.FC<{
         if (initialCampaignData) {
           const validatedData = validateAndFallbackCampaignData(initialCampaignData);
           setCampaignDataState(validatedData);
-          
+
           // Update form data with campaign information
           setFormData(prev => ({
             ...prev,
             campaignId: validatedData.campaignId,
             utmParams: validatedData.utmParams || {},
           }));
-          
+
           // Log initialization with error context
           if (validatedData.errors.length > 0) {
             console.warn('Campaign data initialized with warnings:', validatedData.errors);
           }
-          
+
           return validatedData;
         }
-        
+
         // Fallback to default experience
         const defaultData = getDefaultSingleTrackExperience();
         setCampaignDataState(defaultData);
-        
+
         setFormData(prev => ({
           ...prev,
           campaignId: defaultData.campaignId,
           utmParams: defaultData.utmParams || {},
         }));
-        
+
         return defaultData;
       } catch (error) {
         console.error('Error initializing campaign data:', error);
-        
+
         // Use default experience on error
         const fallbackData = getDefaultSingleTrackExperience();
         fallbackData.errors.push(`Initialization error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        
+
         setCampaignDataState(fallbackData);
         setFormData(prev => ({
           ...prev,
           campaignId: fallbackData.campaignId,
           utmParams: fallbackData.utmParams || {},
         }));
-        
+
         return fallbackData;
       }
     };
@@ -226,7 +233,7 @@ export const SingleTrackFormProvider: React.FC<{
   useEffect(() => {
     try {
       const duration = (Date.now() - startTime) / 1000;
-      
+
       // Log previous step completion time (if not first load)
       if (step > 1 || duration > 1) {
         trackCampaignEvent('single_track_step_complete', {
@@ -258,12 +265,12 @@ export const SingleTrackFormProvider: React.FC<{
     try {
       // Filter out any legacy bankAccountBalance field that might be passed
       const { bankAccountBalance, ...cleanData } = data as any;
-      
+
       // Log warning if legacy field is detected
       if (bankAccountBalance !== undefined) {
         console.warn('SingleTrackFormContext: Ignoring legacy bankAccountBalance field in single-track calculator');
       }
-      
+
       setFormData((prev) => ({ ...prev, ...cleanData }));
     } catch (error) {
       console.error('Error updating form data:', error);
@@ -277,21 +284,21 @@ export const SingleTrackFormProvider: React.FC<{
         campaignId: formData.campaignId,
         utmParams: formData.utmParams,
       };
-      
+
       setFormData({
         ...initialSingleTrackFormData,
         ...preservedCampaignData,
       });
       setStep(1);
       setStartTime(Date.now());
-      
+
       trackCampaignEvent('single_track_form_reset', {
         track: TrackType.MONTHLY_REDUCTION,
         campaignData,
       });
     } catch (error) {
       console.error('Error resetting form:', error);
-      
+
       // Force basic reset on error
       setFormData(initialSingleTrackFormData);
       setStep(1);
@@ -304,7 +311,7 @@ export const SingleTrackFormProvider: React.FC<{
     try {
       const newStep = Math.min(Math.max(step + 1, 1), 6);
       setStep(newStep);
-      
+
       // Track step progression
       trackCampaignEvent('single_track_step_next', {
         fromStep: step,
@@ -320,7 +327,7 @@ export const SingleTrackFormProvider: React.FC<{
     try {
       const newStep = Math.min(Math.max(step - 1, 1), 6);
       setStep(newStep);
-      
+
       // Track step regression
       trackCampaignEvent('single_track_step_prev', {
         fromStep: step,
@@ -337,14 +344,24 @@ export const SingleTrackFormProvider: React.FC<{
     try {
       const validatedData = validateAndFallbackCampaignData(data);
       setCampaignDataState(validatedData);
-      
+
+      // Filter utmParams to only include keys starting with 'utm_'
+      const cleanUtmParams: Record<string, string> = {};
+      if (validatedData.utmParams) {
+        Object.keys(validatedData.utmParams).forEach(key => {
+          if (key.startsWith('utm_') && validatedData.utmParams[key]) {
+            cleanUtmParams[key] = validatedData.utmParams[key] as string;
+          }
+        });
+      }
+
       // Update form data with campaign information
       setFormData(prev => ({
         ...prev,
         campaignId: validatedData.campaignId,
-        utmParams: validatedData.utmParams || {},
+        utmParams: cleanUtmParams,
       }));
-      
+
       trackCampaignEvent('single_track_campaign_data_updated', {
         campaignData: validatedData,
         track: TrackType.MONTHLY_REDUCTION,
@@ -367,10 +384,10 @@ export const SingleTrackFormProvider: React.FC<{
         step,
         ...eventData,
       };
-      
+
       // Log to console for development (replace with actual analytics in production)
       console.log('Single Track Campaign Event:', eventPayload);
-      
+
       // Import and call actual tracking function dynamically with error handling
       import('../utils/api').then(({ trackEvent }) => {
         trackEvent(sessionId, eventType, eventPayload);
@@ -398,13 +415,13 @@ export const SingleTrackFormProvider: React.FC<{
         formData,
         ...conversionData,
       };
-      
+
       // Log conversion event
       console.log('Single Track Conversion:', conversionPayload);
-      
+
       // Track conversion event
       trackCampaignEvent('single_track_conversion', conversionPayload);
-      
+
       // Also send to dedicated conversion endpoint if available
       import('../utils/api').then(({ trackEvent }) => {
         trackEvent(sessionId, 'conversion', conversionPayload);
@@ -427,6 +444,20 @@ export const SingleTrackFormProvider: React.FC<{
     return true; // Always true for single-track calculator
   };
 
+  const [submissionDocId, setSubmissionDocId] = useState<string | null>(null);
+
+  const sendSubmissionUpdate = async (update: { action?: PostSubmissionAction; contactUpdate?: any }) => {
+    if (!submissionDocId) {
+      console.warn('Cannot send submission update: No submission ID available');
+      return;
+    }
+    try {
+      await updateSubmission(submissionDocId, update);
+    } catch (error) {
+      console.error('Failed to send submission update:', error);
+    }
+  };
+
   const contextValue: SingleTrackFormContextType = {
     step,
     setStep,
@@ -442,6 +473,9 @@ export const SingleTrackFormProvider: React.FC<{
     getTrack,
     isMonthlyReductionTrack,
     sessionId,
+    submissionDocId,
+    setSubmissionDocId,
+    sendSubmissionUpdate,
   };
 
   return (

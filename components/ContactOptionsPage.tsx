@@ -26,7 +26,7 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
   onClose,
   calculationSummary
 }) => {
-  const { formData, trackCampaignEvent } = useSingleTrackForm();
+  const { formData, trackCampaignEvent, sendSubmissionUpdate, submissionDocId } = useSingleTrackForm();
   const [selectedOption, setSelectedOption] = useState<'schedule' | 'callback' | null>(null);
   const [isCalendlyLoading, setIsCalendlyLoading] = useState(false);
   const [callbackForm, setCallbackForm] = useState({
@@ -47,16 +47,21 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
       step: 6
     });
 
+    // Track Calendly click in submission log
+    if (submissionDocId) {
+      sendSubmissionUpdate({
+        action: {
+          type: 'CLICK_CALENDLY',
+          timestamp: new Date().toISOString()
+        }
+      }).catch(err => console.error('Failed to log Calendly click:', err));
+    }
+
     // Simple approach - just open in new tab for reliability
     setTimeout(() => {
       setIsCalendlyLoading(false);
       window.open('https://calendly.com/tomers-finance-info/meet-with-me-1', '_blank');
     }, 500);
-
-    // Track scheduler click
-    if (window.dataLayer) {
-      window.dataLayer.push({ event: 'scheduler_click' });
-    }
   };
 
   const handleCallbackSubmit = async () => {
@@ -79,14 +84,24 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
 
       // Here you would typically save to your backend/database
       // For now, we'll simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (submissionDocId) {
+        await sendSubmissionUpdate({
+          contactUpdate: {
+            leadName: callbackForm.name,
+            leadPhone: callbackForm.phone,
+            interestedInInsurance: callbackForm.interestedInInsurance
+          },
+          action: {
+            type: 'REQUEST_CALLBACK',
+            timestamp: new Date().toISOString(),
+            details: {
+              notes: callbackForm.notes
+            }
+          }
+        });
+      }
 
       setIsSubmitted(true);
-
-      // Track lead form submission
-      if (window.dataLayer) {
-        window.dataLayer.push({ event: 'lead_form_submit' });
-      }
     } catch (error) {
       console.error('Error submitting callback request:', error);
     } finally {

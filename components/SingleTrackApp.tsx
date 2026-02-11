@@ -13,7 +13,7 @@ import {
   getDefaultSingleTrackExperience,
   type CampaignData
 } from '../utils/campaignUrlParser';
-import { getSimulatorVersionFromUrl, type SimulatorVersion } from '../utils/abTestingUtils';
+
 import { useScrollLock } from '../utils/useScrollLock';
 
 // Props interface for the SingleTrackApp component
@@ -36,7 +36,7 @@ interface SingleTrackAppProps {
 const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }) => {
   const [campaignData, setCampaignData] = useState<CampaignData>(() => getDefaultSingleTrackExperience());
   const [isLoading, setIsLoading] = useState(true);
-  const [simulatorVersion, setSimulatorVersion] = useState<SimulatorVersion>('A');
+
 
   // Parse campaign parameters and simulator version from URL on component mount
   useEffect(() => {
@@ -44,9 +44,7 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
       try {
         setIsLoading(true);
 
-        // Get simulator version from URL parameter
-        const urlVersion = getSimulatorVersionFromUrl();
-        setSimulatorVersion(urlVersion);
+
 
         let parsedCampaignData: CampaignData;
 
@@ -154,7 +152,7 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
         initialCampaignData={initialCampaignData}
         initialFormData={{ step: initialStep }}
       >
-        <SingleTrackAppContent campaignData={campaignData} simulatorVersion={simulatorVersion} />
+        <SingleTrackAppContent campaignData={campaignData} />
       </SingleTrackFormProvider>
     </NotificationProvider>
   );
@@ -162,12 +160,10 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
 
 /**
  * SingleTrackAppContent - The main content component that uses the form context
- * Enhanced with error handling for campaign data issues and A/B testing support
  */
 const SingleTrackAppContent: React.FC<{
   campaignData: CampaignData;
-  simulatorVersion: SimulatorVersion;
-}> = ({ campaignData, simulatorVersion }) => {
+}> = ({ campaignData }) => {
   const { step, prevStep, resetForm } = useSingleTrackForm();
   const { containerRef, scrollClassName } = useScrollLock();
 
@@ -200,7 +196,7 @@ const SingleTrackAppContent: React.FC<{
         case 5:
           return <SingleTrackStep5Contact />;
         case 6:
-          return <SingleTrackStep6Simulator version={simulatorVersion} />;
+          return <SingleTrackStep6Simulator />;
         default:
           // Fallback for invalid step numbers
           console.error(`Invalid step number: ${step}, resetting to step 1`);

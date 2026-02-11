@@ -22,12 +22,12 @@ publicRouter.get('/health', (req, res) => {
 publicRouter.post('/submit', async (req, res) => {
     console.log('Received submission', req.body);
     try {
-        const { leadName, leadPhone, leadEmail, sessionId } = req.body;
+        const { leadName, leadPhone, sessionId, simulationResult } = req.body;
         const submission = {
             leadName: leadName || '',
             leadPhone: leadPhone || '',
-            leadEmail: leadEmail || '',
             sessionId: sessionId || '',
+            simulationResult: simulationResult || null,
             fullDataJson: req.body,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         };
@@ -35,6 +35,53 @@ publicRouter.post('/submit', async (req, res) => {
         res.json({ message: 'success', id: docRef.id });
     } catch (error) {
         console.error('Submission error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+publicRouter.post('/update-submission', async (req, res) => {
+    try {
+        const { submissionId, action, contactUpdate } = req.body;
+
+        if (!submissionId) {
+            return res.status(400).json({ error: 'Missing submissionId' });
+        }
+
+        const updates = {};
+
+        // Handle Post-Submission Action (Log it)
+        if (action) {
+            updates.postSubmissionLog = admin.firestore.FieldValue.arrayUnion({
+                ...action,
+                timestamp: new Date().toISOString()
+            });
+
+            // Update convenience flags based on action type
+            if (action.type === 'CLICK_CALENDLY') updates.didClickCalendly = true;
+            if (action.type === 'CLICK_CALLBACK') updates.didRequestCallback = true;
+            if (action.type === 'CLICK_SAVE_FOR_ME') updates.didRequestSavings = true;
+        }
+
+        // Handle Contact Details Update
+        if (contactUpdate) {
+            if (contactUpdate.leadName) updates.leadName = contactUpdate.leadName;
+            if (contactUpdate.leadPhone) updates.leadPhone = contactUpdate.leadPhone;
+            updates.contactDetailsUpdated = true;
+
+            // Log the update action as well
+            updates.postSubmissionLog = admin.firestore.FieldValue.arrayUnion({
+                type: 'UPDATE_CONTACT_DETAILS',
+                timestamp: new Date().toISOString(),
+                details: contactUpdate
+            });
+        }
+
+        updates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+
+        await db.collection('submissions').doc(submissionId).update(updates);
+        res.json({ message: 'success', updated: true });
+    } catch (error) {
+        console.error('Update submission error:', error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -9,7 +9,6 @@ import {
 export interface ScenarioInput {
   mortgageBalance: number;
   otherLoansBalance: number;
-  oneTimePaymentAmount: number;
   currentMortgagePayment: number;
   currentOtherLoansPayment: number;
   age?: number;
@@ -47,7 +46,6 @@ export const calculateScenarios = (input: ScenarioInput): ScenarioCalculationRes
   const {
     mortgageBalance,
     otherLoansBalance,
-    oneTimePaymentAmount,
     currentMortgagePayment,
     currentOtherLoansPayment,
     age,
@@ -56,7 +54,7 @@ export const calculateScenarios = (input: ScenarioInput): ScenarioCalculationRes
 
   // Calculate current payment and total amount after one-time payment
   const currentPayment = currentMortgagePayment + currentOtherLoansPayment;
-  const totalAmount = Math.max(0, mortgageBalance + otherLoansBalance - oneTimePaymentAmount);
+  const totalAmount = Math.max(0, mortgageBalance + otherLoansBalance);
 
   // Calculate weighted interest rate using existing logic
   const mortgageRate = calculateWeightedMortgageRate();
@@ -88,7 +86,7 @@ export const calculateScenarios = (input: ScenarioInput): ScenarioCalculationRes
   for (let years = minRegYears; years <= absoluteMaxYears; years++) {
     const payment = calculateMonthlyPayment(totalAmount, weightedRate, years);
     const reduction = currentPayment - payment;
-    
+
     if (reduction >= minSavingsThreshold) {
       minValidYears = years;
       break;
@@ -140,6 +138,31 @@ export const calculateScenarios = (input: ScenarioInput): ScenarioCalculationRes
 
   // Calculate scenarios if valid range exists
   if (minValidYears === null) {
+    // Determine if we can show at least a max scenario
+    const maxPayment = calculateMonthlyPayment(totalAmount, weightedRate, absoluteMaxYears);
+    const maxReduction = currentPayment - maxPayment;
+
+    if (maxReduction > 0) {
+      // Can save something, even if small
+      const maximumScenario = {
+        type: 'maximum' as const,
+        years: absoluteMaxYears,
+        monthlyPayment: maxPayment,
+        monthlyReduction: maxReduction,
+        totalSavings: maxReduction * absoluteMaxYears * 12,
+        isValid: true
+      };
+
+      return {
+        minimumScenario: null,
+        maximumScenario,
+        middleScenario: null,
+        hasValidScenarios: true, // Allow small savings to be valid
+        specialCase: maxReduction < 500 ? 'insufficient-savings' : null,
+        currentPayment
+      };
+    }
+
     return {
       minimumScenario: null,
       maximumScenario: null,

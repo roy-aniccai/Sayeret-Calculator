@@ -1,12 +1,7 @@
 export enum TrackType {
   MONTHLY_REDUCTION = 'monthly_reduction',
-  SHORTEN_TERM = 'shorten_term',
 }
 
-export enum UrgencyLevel {
-  HIGH = 'high',
-  MEDIUM = 'medium',
-}
 
 export interface FormData {
   // Step 1
@@ -29,13 +24,10 @@ export interface FormData {
   leadName: string;
   leadPhone: string;
 
-  // Step 5 - Simulator (optional for enhanced value)
+  // Step 5 - Simulator
   age: number | null;
 
-  // Step 3 - One-time Payment (Shorten Term Track)
-  oneTimePaymentAmount?: number;
-
-  // Legacy fields (keeping for compatibility)
+  // Legacy fields (keeping for admin compatibility)
   currentPayment: number;
   yearsRemaining: number;
   netIncome: number;
@@ -44,8 +36,6 @@ export interface FormData {
   standardLoans: number;
   highInterestLoans: number;
   loansPayment: number;
-  urgency: UrgencyLevel | null;
-  leadEmail: string;
   termsAccepted: boolean;
   interestedInInsurance: boolean;
 }

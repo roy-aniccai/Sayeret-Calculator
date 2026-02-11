@@ -1,6 +1,14 @@
 import React from 'react';
 import { formatNumberWithCommas } from '../../utils/helpers';
-import { formatHebrewCurrency, formatHebrewTimePeriod, ensureRTLDirection } from '../../utils/hebrewTextValidator';
+
+// Inline helpers (previously from hebrewTextValidator)
+const formatHebrewCurrency = (amount: number): string =>
+  `${formatNumberWithCommas(amount)} \u05e9"\u05d7`;
+
+const formatHebrewTimePeriod = (years: number): string =>
+  `${years} \u05e9\u05e0\u05d9\u05dd`;
+
+const ensureRTLDirection = (text: string): string => text;
 
 export interface ScenarioCardProps {
   type: 'minimum' | 'maximum' | 'middle';

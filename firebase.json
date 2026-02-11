@@ -16,16 +16,8 @@
                 "function": "adminApi"
             },
             {
-                "source": "/home**",
-                "destination": "/home.html"
-            },
-            {
                 "source": "/reduce-payments**",
-                "destination": "/reduce-payments.html"
-            },
-            {
-                "source": "/single-track.html**",
-                "destination": "/home.html"
+                "destination": "/index.html"
             },
             {
                 "source": "**",
