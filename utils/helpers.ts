@@ -34,10 +34,20 @@ export const parseFormattedNumber = (val: string): number => {
 export const formatYearsAndMonths = (years: number): string => {
   const wholeYears = Math.floor(years);
   const months = Math.round((years % 1) * 12);
-  
+
   if (months === 0) {
     return `${wholeYears} שנים`;
   }
-  
+
   return `${wholeYears} שנים ${months} חודשים`;
+};
+
+/**
+ * Formats a number for input display.
+ * Returns empty string if value is 0, null, or undefined.
+ * Otherwise returns comma-separated string.
+ */
+export const formatInputNumber = (val: number | undefined | null): string => {
+  if (!val) return '';
+  return val.toLocaleString();
 };

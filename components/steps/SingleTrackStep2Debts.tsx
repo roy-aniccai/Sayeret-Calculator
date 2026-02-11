@@ -3,7 +3,7 @@ import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
-import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
+import { formatNumberWithCommas, parseFormattedNumber, formatInputNumber } from '../../utils/helpers';
 
 // Enhanced InputWithTooltip using the Tooltip component
 const InputWithTooltip: React.FC<{
@@ -159,11 +159,12 @@ export const SingleTrackStep2Debts: React.FC = () => {
           tooltip={stepContent.mortgageTooltip}
           name="mortgageBalance"
           inputMode="numeric"
-          value={formatNumberWithCommas(formData.mortgageBalance)}
+          value={formatInputNumber(formData.mortgageBalance)}
           onChange={handleChange}
-          placeholder="1,200,000"
+          placeholder="סכום בש״ח"
           error={errors.mortgageBalance}
           icon={<i className={`fa-solid fa-home ${accentStyling.split(' ')[0]}`}></i>}
+          helperText="סכום המשכנתא שנשאר לשלם לבנק"
           autoAdvance={true}
         />
 
@@ -221,10 +222,11 @@ export const SingleTrackStep2Debts: React.FC = () => {
                 tooltip="כולל אשראי אישי, הלוואת רכב, כרטיס אשראי וכל הלוואה אחרת"
                 name="otherLoansBalance"
                 inputMode="numeric"
-                value={formatNumberWithCommas(formData.otherLoansBalance)}
+                value={formatInputNumber(formData.otherLoansBalance)}
                 onChange={handleOtherLoansChange}
-                placeholder="150,000"
+                placeholder="סכום בש״ח"
                 icon={<i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]}`}></i>}
+                helperText="סכום כל ההלוואות החוץ-בנקאיות או הלוואות נוספות"
                 autoAdvance={true}
               />
             </div>

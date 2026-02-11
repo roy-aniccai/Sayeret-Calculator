@@ -8,13 +8,13 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
+const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true' || window.location.pathname.startsWith('/admin');
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     {isAdmin ? (
-      <AdminDashboard onClose={() => window.location.search = ''} />
+      <AdminDashboard onClose={() => window.location.href = '/'} />
     ) : (
       <SingleTrackApp />
     )}

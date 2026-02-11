@@ -92,17 +92,17 @@ const initialSingleTrackFormData: SingleTrackFormData = {
   step: 1,
 
   // Step 2 - Debts (excludes bank overdraft)
-  mortgageBalance: 1200000,
+  mortgageBalance: 0,
   otherLoansBalance: 0,
   hasOtherLoans: false,
 
   // Step 3 - Monthly Payments
-  mortgagePayment: 6500,
+  mortgagePayment: 0,
   otherLoansPayment: 0,
-  targetTotalPayment: 6500,
+  targetTotalPayment: 0,
 
   // Step 4 - Assets
-  propertyValue: 2500000,
+  propertyValue: 0,
 
   // Step 5 - Contact
   leadName: '',

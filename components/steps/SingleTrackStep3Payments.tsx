@@ -3,7 +3,7 @@ import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
-import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
+import { formatNumberWithCommas, parseFormattedNumber, formatInputNumber } from '../../utils/helpers';
 import { calculateRefinancedPayment } from '../../utils/calculator';
 import { currentMortgageParams, calculateMonthlyPayment } from '../../utils/mortgageParams';
 import { TrackType } from '../../types';
@@ -180,11 +180,12 @@ export const SingleTrackStep3Payments: React.FC = () => {
           tooltip={stepContent.mortgageTooltip}
           name="mortgagePayment"
           inputMode="numeric"
-          value={formatNumberWithCommas(formData.mortgagePayment)}
+          value={formatInputNumber(formData.mortgagePayment)}
           onChange={handleChange}
-          placeholder="6,500"
+          placeholder="סכום בש״ח"
           error={errors.mortgagePayment}
           icon={<i className={`fa-solid fa-home ${accentStyling.split(' ')[0]}`}></i>}
+          helperText="סכום התשלום החודשי שיורד מהחשבון עבור המשכנתא"
           autoAdvance={true}
         />
 
@@ -195,10 +196,11 @@ export const SingleTrackStep3Payments: React.FC = () => {
             name="otherLoansPayment"
             inputMode="numeric"
             suffix="₪"
-            value={formatNumberWithCommas(formData.otherLoansPayment)}
+            value={formatInputNumber(formData.otherLoansPayment)}
             onChange={handleChange}
-            placeholder="0"
+            placeholder="סכום בש״ח"
             icon={<i className={`fa-solid fa-credit-card ${accentStyling.split(' ')[0]}`}></i>}
+            helperText="סכום ההחזר החודשי עבור ההלוואות הנוספות"
             autoAdvance={true}
           />
         )}

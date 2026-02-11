@@ -3,7 +3,7 @@ import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
-import { formatNumberWithCommas, parseFormattedNumber } from '../../utils/helpers';
+import { formatNumberWithCommas, parseFormattedNumber, formatInputNumber } from '../../utils/helpers';
 
 // Enhanced InputWithTooltip using the Tooltip component
 const InputWithTooltip: React.FC<{
@@ -121,23 +121,23 @@ export const SingleTrackStep4Assets: React.FC = () => {
           tooltip={stepContent.propertyValueTooltip}
           name="propertyValue"
           inputMode="numeric"
-          value={formatNumberWithCommas(formData.propertyValue)}
+          value={formatInputNumber(formData.propertyValue)}
           onChange={handleChange}
-          placeholder="2,500,000"
+          placeholder="סכום בש״ח"
           error={errors.propertyValue}
           icon={<i className={`fa-solid fa-building ${accentStyling.split(' ')[0]}`}></i>}
-          helperText={stepContent.propertyValueHelper}
+          helperText="ניתן להעריך לפי מחירי שוק או שמאות קודמת"
           autoAdvance={true}
         />
 
         <InputWithTooltip
-          label="גיל"
+          label="גיל הלווה הצעיר ביותר"
           tooltip="הגיל משפיע על תקופת ההלוואה המקסימלית ותנאי המימון"
           name="age"
           inputMode="numeric"
           value={formData.age?.toString() || ''}
           onChange={handleChange}
-          placeholder="35"
+          placeholder="גיל בשנים"
           error={errors.age}
           icon={<i className={`fa-solid fa-user ${accentStyling.split(' ')[0]}`}></i>}
           helperText="גיל בין 18 ל-120 שנים"

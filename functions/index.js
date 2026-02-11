@@ -64,7 +64,7 @@ publicRouter.post('/update-submission', async (req, res) => {
 
             // Update convenience flags based on action type
             if (action.type === 'CLICK_CALENDLY') updates.didClickCalendly = true;
-            if (action.type === 'CLICK_CALLBACK') updates.didRequestCallback = true;
+            if (action.type === 'CLICK_CALLBACK' || action.type === 'REQUEST_CALLBACK') updates.didRequestCallback = true;
             if (action.type === 'CLICK_SAVE_FOR_ME') updates.didRequestSavings = true;
         }
 

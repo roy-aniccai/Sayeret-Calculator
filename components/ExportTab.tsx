@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { exportSubmissionsCsv, getExportHistory, ExportHistoryItem, CsvExportResult } from '../utils/api';
+import { exportSubmissionsCsv, getExportHistory, deleteExport, ExportHistoryItem, CsvExportResult } from '../utils/api';
+import { storage } from '../src/firebase';
+import { ref, getDownloadURL } from 'firebase/storage';
 
 export const ExportTab: React.FC = () => {
     const [history, setHistory] = useState<ExportHistoryItem[]>([]);
@@ -38,6 +40,38 @@ export const ExportTab: React.FC = () => {
             setError(e.message || 'Export failed');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this export record? This action cannot be undone.')) return;
+
+        try {
+            await deleteExport(id);
+            await loadHistory();
+        } catch (e: any) {
+            console.error('Delete failed', e);
+            alert('Failed to delete export: ' + (e.message || 'Unknown error'));
+        }
+    };
+
+    const handleDownload = async (filePath: string) => {
+        if (!filePath) {
+            alert('File path is missing');
+            return;
+        }
+
+        try {
+            // Use client-side SDK to get download URL, leveraging current user auth
+            const storageRef = ref(storage, filePath);
+            const url = await getDownloadURL(storageRef);
+            window.open(url, '_blank');
+        } catch (e: any) {
+            console.error('Download failed', e);
+            let msg = e.message || 'Unknown error';
+            if (e.code === 'storage/object-not-found') msg = 'File not found. It may have been deleted.';
+            if (e.code === 'storage/unauthorized') msg = 'Access denied. You do not have permission to read this file.';
+            alert(`Download failed: ${msg}`);
         }
     };
 
@@ -103,15 +137,26 @@ export const ExportTab: React.FC = () => {
                             </p>
                             <p className="text-green-600 text-sm mt-1 font-mono">{result.csvStoragePath}</p>
                         </div>
-                        <a
-                            href={result.csvDownloadUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-sm flex items-center gap-2"
-                        >
-                            <i className="fa-solid fa-download"></i>
-                            Download
-                        </a>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleDownload(result.csvStoragePath)}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-sm flex items-center gap-2"
+                            >
+                                <i className="fa-solid fa-download"></i>
+                                Download
+                            </button>
+                            {result.consoleUrl && (
+                                <a
+                                    href={result.consoleUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold text-sm flex items-center gap-2"
+                                >
+                                    <i className="fa-solid fa-up-right-from-square"></i>
+                                    Console
+                                </a>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -166,8 +211,8 @@ export const ExportTab: React.FC = () => {
                                     <td className="p-4 text-gray-600 text-sm">{formatDate(item.runTimestamp)}</td>
                                     <td className="p-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.mode === 'full'
-                                                ? 'bg-blue-100 text-blue-700'
-                                                : 'bg-emerald-100 text-emerald-700'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-emerald-100 text-emerald-700'
                                             }`}>
                                             {item.mode === 'full' ? '📊 Full' : '🔄 Delta'}
                                         </span>
@@ -176,16 +221,33 @@ export const ExportTab: React.FC = () => {
                                     <td className="p-4 text-xs text-gray-500 font-mono">
                                         {item.csvStoragePath?.split('/').pop() || '—'}
                                     </td>
-                                    <td className="p-4">
-                                        <a
-                                            href={item.csvDownloadUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-600 hover:text-blue-800 font-bold text-sm flex items-center gap-1 w-fit"
+                                    <td className="p-4 flex gap-2">
+                                        <button
+                                            onClick={() => handleDownload(item.csvStoragePath)}
+                                            className="text-blue-600 hover:text-blue-800 font-bold text-sm flex items-center gap-1"
+                                            title="Download CSV"
                                         >
                                             <i className="fa-solid fa-download"></i>
                                             Download
-                                        </a>
+                                        </button>
+                                        {item.consoleUrl && (
+                                            <a
+                                                href={item.consoleUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-gray-500 hover:text-gray-700 font-bold text-sm flex items-center gap-1"
+                                                title="Open in Firebase Console"
+                                            >
+                                                <i className="fa-solid fa-up-right-from-square"></i>
+                                            </a>
+                                        )}
+                                        <button
+                                            onClick={() => handleDelete(item.id)}
+                                            className="text-red-500 hover:text-red-700 font-bold text-sm flex items-center gap-1 ml-2"
+                                            title="Delete Record & File"
+                                        >
+                                            <i className="fa-solid fa-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
