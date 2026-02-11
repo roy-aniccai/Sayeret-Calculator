@@ -59,6 +59,7 @@ export interface Submission {
   id: number;
   createdAt?: string; // New API
   created_at?: string; // Legacy/SQLite raw
+  updatedAt?: string;
   leadName?: string; // New API
   lead_name?: string; // Legacy
   leadPhone?: string; // New API
@@ -66,6 +67,26 @@ export interface Submission {
   leadEmail?: string; // New API
   lead_email?: string; // Legacy
   full_data_json: any;
+
+  // Simulation & Post-submission (new fields)
+  sessionId?: string;
+  simulationResult?: {
+    scenario: 'HIGH_SAVING' | 'LOW_SAVING' | 'NO_SAVING';
+    monthlySavings: number;
+    newMortgageDurationYears: number;
+    canSave: boolean;
+    timestamp: string;
+  } | null;
+  interestedInInsurance?: boolean | null;
+  postSubmissionLog?: Array<{
+    type: string;
+    timestamp: string;
+    details?: any;
+  }>;
+  didClickCalendly?: boolean;
+  didRequestCallback?: boolean;
+  didRequestSavings?: boolean;
+  contactDetailsUpdated?: boolean;
 }
 
 export interface EventLog {

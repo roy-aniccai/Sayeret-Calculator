@@ -1,56 +1,28 @@
 import React from 'react';
 import { Submission } from '../types';
-import { calculateResults } from '../utils/calculator';
 
 interface SubmissionDetailsProps {
     submission: Submission | null;
 }
 
+const SCENARIO_LABELS: Record<string, string> = {
+    HIGH_SAVING: 'חיסכון גבוה',
+    LOW_SAVING: 'חיסכון נמוך',
+    NO_SAVING: 'אין חיסכון',
+};
+
+const ACTION_LABELS: Record<string, string> = {
+    CLICK_SAVE_FOR_ME: 'לחיצה על "תחסכו לי"',
+    CLICK_SCHEDULE_MEETING: 'תיאום פגישה',
+    CLICK_CALLBACK: 'בקשת שיחה חוזרת',
+    CLICK_CALENDLY: 'פתיחת Calendly',
+    CLICK_TRY_ANOTHER: 'בדיקת תרחיש אחר',
+    TOGGLE_INSURANCE: 'שינוי העדפת ביטוח',
+    REQUEST_CALLBACK: 'שליחת בקשת שיחה',
+    UPDATE_CONTACT_DETAILS: 'עדכון פרטי קשר',
+};
+
 export const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({ submission }) => {
-    const getSubmissionDetails = (sub: Submission) => {
-        const data = sub.full_data_json || {};
-        // Prioritize new API (camelCase), then DB raw (snake_case), then JSON data, then fallback
-        const name = sub.leadName || sub.lead_name || data.leadName || data.lead_name || 'לא צוין';
-        const phone = sub.leadPhone || sub.lead_phone || data.leadPhone || data.lead_phone || 'לא צוין';
-
-        // Handle Date (New API = createdAt, Old = created_at)
-        const dateRaw = sub.createdAt || sub.created_at;
-        const dateStr = dateRaw ? new Date(dateRaw.replace(' ', 'T')).toLocaleString() : 'תאריך לא ידוע';
-
-        return { name, phone, dateStr };
-    };
-
-    const generateMockMessage = (sub: Submission) => {
-        const data = sub.full_data_json || {};
-        const results = calculateResults(data);
-        const { name, phone, dateStr } = getSubmissionDetails(sub);
-        // Using concatenation for safety against parser issues with Hebrew in template literals during build
-        let msg = "*הודעת סיכום (Mock)*\n";
-        msg += "-------------------\n";
-        msg += "*פרטי לקוח:*\n";
-        msg += `שם: ${name}\n`;
-        msg += `טלפון: ${phone}\n\n`;
-
-        msg += "*נתוני בסיס:*\n";
-        msg += `שווי נכס: ${data.propertyValue?.toLocaleString()} ₪\n`;
-        msg += `יתרת משכנתא: ${data.mortgageBalance?.toLocaleString()} ₪\n`;
-        msg += `החזר נוכחי: ${data.currentPayment?.toLocaleString()} ₪\n`;
-        msg += `שנים שנותרו: ${data.yearsRemaining}\n\n`;
-
-        msg += "*ניתוח פיננסי:*\n";
-        msg += `מסלול נבחר: ${results.title}\n`;
-        msg += `${results.labelBefore}: ${results.valBefore.toLocaleString()} ${results.unit}\n`;
-        msg += `${results.labelAfter}: ${results.valAfter.toLocaleString()} ${results.unit}\n`;
-        msg += `חיסכון/שינוי משוער: ${results.badgeText}\n\n`;
-
-        msg += "*ביטוח משכנתא:*\n";
-        msg += "ניתן לחסוך כ-50,000 ש\"ח בביטוח המשכנתא\n\n";
-        msg += "-------------------\n";
-        msg += `נשלח בתאריך: ${dateStr}\n`;
-
-        return msg;
-    };
-
     if (!submission) {
         return (
             <div className="bg-white rounded-xl shadow p-12 text-center text-gray-400 border-2 border-dashed border-gray-200">
@@ -60,18 +32,89 @@ export const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({ submission
         );
     }
 
+    const data = submission.full_data_json || {};
+    const name = submission.leadName || submission.lead_name || data.leadName || data.lead_name || 'לא צוין';
+    const phone = submission.leadPhone || submission.lead_phone || data.leadPhone || data.lead_phone || 'לא צוין';
+    const dateRaw = submission.createdAt || submission.created_at;
+    const dateStr = dateRaw ? new Date(dateRaw.replace(' ', 'T')).toLocaleString() : 'תאריך לא ידוע';
+
+    const sim = submission.simulationResult;
+    const actions = submission.postSubmissionLog || [];
+
     return (
-        <div className="bg-white rounded-xl shadow p-6 sticky top-6">
-            <h3 className="text-xl font-bold mb-4">Lead Details</h3>
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 font-mono text-sm whitespace-pre-wrap">
-                {generateMockMessage(submission)}
+        <div className="bg-white rounded-xl shadow p-6 sticky top-6 space-y-6">
+            <h3 className="text-xl font-bold">Lead Details</h3>
+
+            {/* Contact Info */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><span className="font-semibold">שם:</span> {name}</div>
+                <div><span className="font-semibold">טלפון:</span> {phone}</div>
+                <div><span className="font-semibold">תאריך:</span> {dateStr}</div>
+                <div><span className="font-semibold">Session:</span> <span className="font-mono text-xs">{submission.sessionId || data.sessionId || '—'}</span></div>
             </div>
-            <div className="mt-4">
-                <h4 className="font-bold mb-2">Raw Data:</h4>
-                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto text-xs h-64" dir="ltr">
+
+            {/* Simulation Result */}
+            {sim && (
+                <div className={`rounded-lg p-4 border ${sim.canSave ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                    <h4 className="font-bold mb-2">תוצאות סימולציה</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>תרחיש: <span className="font-semibold">{SCENARIO_LABELS[sim.scenario] || sim.scenario}</span></div>
+                        <div>חיסכון חודשי: <span className="font-semibold">{sim.monthlySavings?.toLocaleString()} ₪</span></div>
+                        <div>תקופה חדשה: <span className="font-semibold">{sim.newMortgageDurationYears} שנים</span></div>
+                        <div>ניתן לחסוך: <span className="font-semibold">{sim.canSave ? '✅ כן' : '❌ לא'}</span></div>
+                    </div>
+                </div>
+            )}
+
+            {/* Financial Data */}
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <h4 className="font-bold mb-2">נתונים פיננסיים</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>יתרת משכנתא: {data.mortgageBalance?.toLocaleString()} ₪</div>
+                    <div>הלוואות אחרות: {data.otherLoansBalance?.toLocaleString()} ₪</div>
+                    <div>החזר משכנתא: {data.mortgagePayment?.toLocaleString()} ₪</div>
+                    <div>החזר הלוואות: {data.otherLoansPayment?.toLocaleString()} ₪</div>
+                    <div>שווי נכס: {data.propertyValue?.toLocaleString()} ₪</div>
+                    <div>גיל: {data.age || '—'}</div>
+                </div>
+            </div>
+
+            {/* Tracking Flags */}
+            <div className="flex flex-wrap gap-2">
+                {submission.interestedInInsurance != null && (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${submission.interestedInInsurance ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                        {submission.interestedInInsurance ? '✅ מעוניין בביטוח' : '❌ לא מעוניין בביטוח'}
+                    </span>
+                )}
+                {submission.didClickCalendly && <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">📅 Calendly</span>}
+                {submission.didRequestCallback && <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">📞 שיחה חוזרת</span>}
+                {submission.didRequestSavings && <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">💰 תחסכו לי</span>}
+                {submission.contactDetailsUpdated && <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">✏️ פרטים עודכנו</span>}
+            </div>
+
+            {/* Post-Submission Actions Log */}
+            {actions.length > 0 && (
+                <div>
+                    <h4 className="font-bold mb-2">לוג פעולות ({actions.length})</h4>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                        {actions.map((action, i) => (
+                            <div key={i} className="text-xs bg-gray-50 rounded p-2 flex justify-between">
+                                <span className="font-medium">{ACTION_LABELS[action.type] || action.type}</span>
+                                <span className="text-gray-400">{new Date(action.timestamp).toLocaleString()}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Raw Data (collapsed) */}
+            <details className="mt-4">
+                <summary className="cursor-pointer font-bold text-sm text-gray-600 hover:text-gray-800">Raw Data</summary>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto text-xs h-64 mt-2" dir="ltr">
                     {JSON.stringify(submission.full_data_json, null, 2)}
                 </pre>
-            </div>
+            </details>
         </div>
     );
 };
+

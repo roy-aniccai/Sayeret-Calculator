@@ -22,12 +22,18 @@ publicRouter.get('/health', (req, res) => {
 publicRouter.post('/submit', async (req, res) => {
     console.log('Received submission', req.body);
     try {
-        const { leadName, leadPhone, sessionId, simulationResult } = req.body;
+        const { leadName, leadPhone, sessionId, simulationResult, interestedInInsurance } = req.body;
         const submission = {
             leadName: leadName || '',
             leadPhone: leadPhone || '',
             sessionId: sessionId || '',
             simulationResult: simulationResult || null,
+            interestedInInsurance: interestedInInsurance ?? null,
+            postSubmissionLog: [],
+            didClickCalendly: false,
+            didRequestCallback: false,
+            didRequestSavings: false,
+            contactDetailsUpdated: false,
             fullDataJson: req.body,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         };
@@ -66,6 +72,9 @@ publicRouter.post('/update-submission', async (req, res) => {
         if (contactUpdate) {
             if (contactUpdate.leadName) updates.leadName = contactUpdate.leadName;
             if (contactUpdate.leadPhone) updates.leadPhone = contactUpdate.leadPhone;
+            if (contactUpdate.interestedInInsurance !== undefined) {
+                updates.interestedInInsurance = contactUpdate.interestedInInsurance;
+            }
             updates.contactDetailsUpdated = true;
 
             // Log the update action as well
