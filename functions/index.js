@@ -169,6 +169,179 @@ adminRouter.get('/events', async (req, res) => {
     }
 });
 
+// ============================================================================
+// CSV EXPORT ENDPOINTS
+// ============================================================================
+
+const CSV_COLUMNS = [
+    'leadName', 'leadPhone', 'createdAt', 'didRequestCallback', 'didClickCalendly',
+    'canSave', 'didRequestSavings', 'monthlySavings', 'newMortgageDurationYears',
+    'age', 'mortgageBalance', 'otherLoansBalance', 'mortgagePayment',
+    'otherLoansPayment', 'propertyValue', 'sessionId'
+];
+
+function extractRow(doc) {
+    const d = doc.data();
+    const json = d.fullDataJson || {};
+    const sim = d.simulationResult || {};
+
+    // Convert Firestore timestamp to ISO string
+    let createdAtStr = '';
+    if (d.createdAt && typeof d.createdAt.toDate === 'function') {
+        createdAtStr = d.createdAt.toDate().toISOString();
+    } else if (d.createdAt) {
+        createdAtStr = String(d.createdAt);
+    }
+
+    return {
+        leadName: d.leadName || json.leadName || json.lead_name || '',
+        leadPhone: d.leadPhone || json.leadPhone || json.lead_phone || '',
+        createdAt: createdAtStr,
+        didRequestCallback: d.didRequestCallback || false,
+        didClickCalendly: d.didClickCalendly || false,
+        canSave: sim.canSave != null ? sim.canSave : '',
+        didRequestSavings: d.didRequestSavings || false,
+        monthlySavings: sim.monthlySavings != null ? sim.monthlySavings : '',
+        newMortgageDurationYears: sim.newMortgageDurationYears != null ? sim.newMortgageDurationYears : '',
+        age: json.age != null ? json.age : '',
+        mortgageBalance: json.mortgageBalance != null ? json.mortgageBalance : '',
+        otherLoansBalance: json.otherLoansBalance != null ? json.otherLoansBalance : '',
+        mortgagePayment: json.mortgagePayment != null ? json.mortgagePayment : '',
+        otherLoansPayment: json.otherLoansPayment != null ? json.otherLoansPayment : '',
+        propertyValue: json.propertyValue != null ? json.propertyValue : '',
+        sessionId: d.sessionId || json.sessionId || ''
+    };
+}
+
+function escapeCsvValue(val) {
+    const str = String(val == null ? '' : val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+}
+
+function buildCsv(rows) {
+    const header = CSV_COLUMNS.map(escapeCsvValue).join(',');
+    const lines = rows.map(row =>
+        CSV_COLUMNS.map(col => escapeCsvValue(row[col])).join(',')
+    );
+    return header + '\n' + lines.join('\n');
+}
+
+adminRouter.post('/export-csv', async (req, res) => {
+    try {
+        const { mode } = req.body;
+        if (!mode || !['full', 'delta'].includes(mode)) {
+            return res.status(400).json({ error: 'mode must be "full" or "delta"' });
+        }
+
+        // For delta mode, find the last export timestamp
+        let sinceDate = null;
+        if (mode === 'delta') {
+            const lastExport = await db.collection('csv_exports')
+                .orderBy('runTimestamp', 'desc')
+                .limit(1)
+                .get();
+            if (!lastExport.empty) {
+                const lastRun = lastExport.docs[0].data().runTimestamp;
+                if (lastRun && typeof lastRun.toDate === 'function') {
+                    sinceDate = lastRun.toDate();
+                } else if (lastRun) {
+                    sinceDate = new Date(lastRun);
+                }
+            }
+        }
+
+        // Query submissions
+        let query = db.collection('submissions').orderBy('createdAt', 'desc');
+        if (mode === 'delta' && sinceDate) {
+            query = query.where('createdAt', '>', sinceDate);
+        }
+        // Limit to 2 for testing
+        query = query.limit(2);
+
+        const snapshot = await query.get();
+        const rows = snapshot.docs.map(extractRow);
+
+        // Build CSV string
+        const csvContent = buildCsv(rows);
+
+        // Upload to Firebase Storage
+        const now = new Date();
+        const ts = now.toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+        const fileName = `csv_exports/submissions_${mode}_${ts}.csv`;
+
+        const bucket = admin.storage().bucket('mortgage-85413.firebasestorage.app');
+        const file = bucket.file(fileName);
+
+        await file.save(csvContent, {
+            contentType: 'text/csv',
+            metadata: { cacheControl: 'public, max-age=31536000' }
+        });
+
+        // Generate signed URL (valid 7 days)
+        const [signedUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: Date.now() + 7 * 24 * 60 * 60 * 1000
+        });
+
+        // Save export metadata to Firestore
+        const exportDoc = {
+            runTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+            runTimestampISO: now.toISOString(),
+            mode,
+            submissionCount: rows.length,
+            csvStoragePath: fileName,
+            csvDownloadUrl: signedUrl,
+            rows
+        };
+        const docRef = await db.collection('csv_exports').add(exportDoc);
+
+        console.log(`CSV export (${mode}): ${rows.length} rows → ${fileName}`);
+        res.json({
+            success: true,
+            exportId: docRef.id,
+            csvDownloadUrl: signedUrl,
+            submissionCount: rows.length,
+            csvStoragePath: fileName
+        });
+    } catch (error) {
+        console.error('CSV export error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+adminRouter.get('/export-history', async (req, res) => {
+    try {
+        const snapshot = await db.collection('csv_exports')
+            .orderBy('runTimestamp', 'desc')
+            .limit(20)
+            .get();
+
+        const data = snapshot.docs.map(doc => {
+            const d = doc.data();
+            let runTimestampStr = d.runTimestampISO || '';
+            if (!runTimestampStr && d.runTimestamp && typeof d.runTimestamp.toDate === 'function') {
+                runTimestampStr = d.runTimestamp.toDate().toISOString();
+            }
+            return {
+                id: doc.id,
+                runTimestamp: runTimestampStr,
+                mode: d.mode,
+                submissionCount: d.submissionCount,
+                csvDownloadUrl: d.csvDownloadUrl,
+                csvStoragePath: d.csvStoragePath
+            };
+        });
+
+        res.json({ message: 'success', data });
+    } catch (error) {
+        console.error('Export history error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 adminApp.use('/', adminRouter);
 adminApp.use('/admin-api', adminRouter); // Support direct path if needed
 

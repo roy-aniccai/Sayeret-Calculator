@@ -9,11 +9,12 @@ import { AdminLogin } from './AdminLogin';
 import { SubmissionsTable } from './SubmissionsTable';
 import { EventsTable } from './EventsTable';
 import { SubmissionDetails } from './SubmissionDetails';
+import { ExportTab } from './ExportTab';
 
 export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [events, setEvents] = useState<EventLog[]>([]);
-    const [activeTab, setActiveTab] = useState<'submissions' | 'events' | 'parameters'>('submissions');
+    const [activeTab, setActiveTab] = useState<'submissions' | 'events' | 'parameters' | 'exports'>('submissions');
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [showParametersEditor, setShowParametersEditor] = useState(false);
 
@@ -96,6 +97,13 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
                         <i className="fa-solid fa-cog ml-2"></i>
                         פרמטרי משכנתא
                     </button>
+                    <button
+                        onClick={() => setActiveTab('exports')}
+                        className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'exports' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
+                    >
+                        <i className="fa-solid fa-file-csv ml-2"></i>
+                        CSV Exports
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -136,6 +144,10 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
                                     <ParametersDisplay />
                                 </div>
                             </div>
+                        )}
+
+                        {activeTab === 'exports' && (
+                            <ExportTab />
                         )}
                     </div>
 

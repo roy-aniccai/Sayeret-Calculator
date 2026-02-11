@@ -223,3 +223,63 @@ export const getEvents = async () => {
         }
     );
 };
+
+// ============================================================================
+// CSV EXPORT FUNCTIONS
+// ============================================================================
+
+export interface CsvExportResult {
+    success: boolean;
+    exportId: string;
+    csvDownloadUrl: string;
+    submissionCount: number;
+    csvStoragePath: string;
+}
+
+export interface ExportHistoryItem {
+    id: string;
+    runTimestamp: string;
+    mode: 'full' | 'delta';
+    submissionCount: number;
+    csvDownloadUrl: string;
+    csvStoragePath: string;
+}
+
+export const exportSubmissionsCsv = async (mode: 'full' | 'delta'): Promise<CsvExportResult> => {
+    return withRobustExecution(
+        async () => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${ADMIN_API_BASE_URL}/export-csv`, {
+                method: 'POST',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode })
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`CSV export failed: ${response.status} - ${errorText}`);
+            }
+            return await response.json();
+        },
+        {
+            circuitBreaker: apiCircuitBreaker,
+            timeoutMs: 30000,
+            operationName: 'export_csv'
+        }
+    );
+};
+
+export const getExportHistory = async (): Promise<{ data: ExportHistoryItem[] }> => {
+    return withRobustExecution(
+        async () => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${ADMIN_API_BASE_URL}/export-history`, { headers });
+            if (!response.ok) throw new Error(`Failed to fetch export history: ${response.status}`);
+            return await response.json();
+        },
+        {
+            circuitBreaker: apiCircuitBreaker,
+            operationName: 'get_export_history'
+        }
+    );
+};
+
