@@ -237,14 +237,34 @@ adminRouter.get('/funnel-data', async (req, res) => {
             .where('eventType', '==', 'single_track_step_view')
             .get();
 
-        // Build sets of unique sessionIds per step
-        const stepSessions = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set(), 6: new Set() };
+        // Build cumulative sets based on max step reached per session
+        // Logic: If a session reached Step 3, it implicitly reached Step 1 and 2.
+        // Step N Count = Count of sessions where max_step >= N
+
+        const sessionMaxStep = {}; // sessionId -> maxStep (number)
+
         eventsSnapshot.docs.forEach(doc => {
             const d = doc.data();
             const sid = d.sessionId || (d.eventData && d.eventData.sessionId);
             const step = d.eventData && d.eventData.step;
-            if (sid && step && stepSessions[step]) {
-                stepSessions[step].add(sid);
+            if (sid && step) {
+                // Track max step per session
+                if (!sessionMaxStep[sid] || step > sessionMaxStep[sid]) {
+                    sessionMaxStep[sid] = step;
+                }
+            }
+        });
+
+        // Populate step sets cumulatively
+        const stepSessions = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set(), 6: new Set() };
+
+        Object.keys(sessionMaxStep).forEach(sid => {
+            const maxStep = sessionMaxStep[sid];
+            // Add session to all steps <= maxStep
+            for (let s = 1; s <= 6; s++) {
+                if (maxStep >= s) {
+                    stepSessions[s].add(sid);
+                }
             }
         });
 
@@ -253,7 +273,7 @@ adminRouter.get('/funnel-data', async (req, res) => {
         const requestSavingSessions = new Set();
         const calendlySessions = new Set();
         const callbackSessions = new Set();
-        const insuranceSessions = new Set();
+        const insuranceSessions = new Set(); // For filtering by insurance interest
 
         // Also build a per-session submission map for lead filtering
         const sessionSubmissionMap = {}; // sessionId -> submission data
@@ -269,6 +289,7 @@ adminRouter.get('/funnel-data', async (req, res) => {
                 leadPhone: d.leadPhone || '',
                 createdAt: d.createdAt && typeof d.createdAt.toDate === 'function'
                     ? d.createdAt.toDate().toISOString() : (d.createdAt || ''),
+                interestedInInsurance: d.interestedInInsurance === true // Include this flag for filtering
             };
 
             if (d.didRequestSavings) requestSavingSessions.add(sid);
@@ -292,14 +313,20 @@ adminRouter.get('/funnel-data', async (req, res) => {
 
         const totalSessions = stepSessions[1].size;
 
-        const funnel = stages.map(s => ({
-            key: s.key,
-            label: s.label,
-            step: s.step,
-            count: s.sessions.length,
-            percentage: totalSessions > 0 ? Math.round((s.sessions.length / totalSessions) * 100) : 0,
-            sessionIds: s.sessions, // for linking to filtered leads
-        }));
+        const funnel = stages.map(s => {
+            // Count insurance interest within this stage's sessions
+            const insuranceCount = s.sessions.filter(sid => insuranceSessions.has(sid)).length;
+
+            return {
+                key: s.key,
+                label: s.label,
+                step: s.step,
+                count: s.sessions.length,
+                percentage: totalSessions > 0 ? Math.round((s.sessions.length / totalSessions) * 100) : 0,
+                sessionIds: s.sessions, // for linking to filtered leads
+                insuranceCount // New metric
+            };
+        });
 
         // 4. Extra metrics
         const extras = {

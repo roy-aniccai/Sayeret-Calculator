@@ -315,6 +315,7 @@ export interface FunnelStage {
     count: number;
     percentage: number;
     sessionIds: string[];
+    insuranceCount?: number;
 }
 
 export interface FunnelExtras {
@@ -370,7 +371,7 @@ export const getFunnelData = async (): Promise<FunnelDataResponse> => {
 
 // Mock Data Generator for local development
 const getMockFunnelData = (): FunnelDataResponse => {
-    // Generate ~50 mock sessions
+    // Generate 50 mock sessions
     const sessions: SessionSubmission[] = [];
     const now = new Date();
     for (let i = 0; i < 50; i++) {
@@ -385,18 +386,32 @@ const getMockFunnelData = (): FunnelDataResponse => {
     const map: Record<string, SessionSubmission> = {};
     sessions.forEach(s => map[s.id] = s);
 
+    // Create subsets for funnel stages to simulate drop-off
+    const step1 = sessions; // 50
+    const step2 = step1.slice(0, 45);
+    const step3 = step2.slice(0, 40);
+    const step4 = step3.slice(0, 35);
+    const step5 = step4.slice(0, 30);
+    const step6 = step5.slice(0, 25);
+    const step61 = step6.slice(0, 20); // Request Saving
+    const step7 = step6.slice(0, 10); // Meeting
+    const step8 = step6.slice(10, 25); // Callback
+
+    // Randomly assign insurance interest to some sessions in the "extras" metric calculation
+    // Note: The mock data for submissions list is separate (controlled by getSubmissions mock if it existed, but here we only control funnel stats)
+
     return {
         message: 'success (mock)',
         funnel: [
-            { key: 'landing', label: 'כניסה לדף', step: 1, count: 120, percentage: 100, sessionIds: sessions.map(s => s.id) },
-            { key: 'debts', label: 'חובות', step: 2, count: 90, percentage: 75, sessionIds: sessions.slice(0, 45).map(s => s.id) },
-            { key: 'payments', label: 'החזרים חודשיים', step: 3, count: 80, percentage: 66, sessionIds: sessions.slice(0, 40).map(s => s.id) },
-            { key: 'assets', label: 'נכסים', step: 4, count: 70, percentage: 58, sessionIds: sessions.slice(0, 35).map(s => s.id) },
-            { key: 'contact', label: 'פרטי קשר', step: 5, count: 50, percentage: 41, sessionIds: sessions.slice(0, 25).map(s => s.id) },
-            { key: 'simulator', label: 'סימולטור', step: 6, count: 40, percentage: 33, sessionIds: sessions.slice(0, 20).map(s => s.id) },
-            { key: 'request_saving', label: 'בקשת חיסכון', step: 6.1, count: 25, percentage: 20, sessionIds: sessions.slice(0, 15).map(s => s.id) },
-            { key: 'schedule_meeting', label: 'תיאום פגישה', step: 7, count: 10, percentage: 8, sessionIds: sessions.slice(0, 5).map(s => s.id) },
-            { key: 'request_callback', label: 'בקשת שיחה חוזרת', step: 8, count: 18, percentage: 15, sessionIds: sessions.slice(10, 20).map(s => s.id) },
+            { key: 'landing', label: 'כניסה לדף', step: 1, count: step1.length, percentage: 100, sessionIds: step1.map(s => s.id), insuranceCount: 0 },
+            { key: 'debts', label: 'חובות', step: 2, count: step2.length, percentage: 90, sessionIds: step2.map(s => s.id), insuranceCount: 2 },
+            { key: 'payments', label: 'החזרים חודשיים', step: 3, count: step3.length, percentage: 80, sessionIds: step3.map(s => s.id), insuranceCount: 3 },
+            { key: 'assets', label: 'נכסים', step: 4, count: step4.length, percentage: 70, sessionIds: step4.map(s => s.id), insuranceCount: 4 },
+            { key: 'contact', label: 'פרטי קשר', step: 5, count: step5.length, percentage: 60, sessionIds: step5.map(s => s.id), insuranceCount: 5 },
+            { key: 'simulator', label: 'סימולטור', step: 6, count: step6.length, percentage: 50, sessionIds: step6.map(s => s.id), insuranceCount: 6 },
+            { key: 'request_saving', label: 'בקשת חיסכון', step: 6.1, count: step61.length, percentage: 40, sessionIds: step61.map(s => s.id), insuranceCount: 5 },
+            { key: 'schedule_meeting', label: 'תיאום פגישה', step: 7, count: step7.length, percentage: 20, sessionIds: step7.map(s => s.id), insuranceCount: 2 },
+            { key: 'request_callback', label: 'בקשת שיחה חוזרת', step: 8, count: step8.length, percentage: 30, sessionIds: step8.map(s => s.id), insuranceCount: 12 }, // Used in visual
         ],
         extras: {
             interestedInInsurance: 12,

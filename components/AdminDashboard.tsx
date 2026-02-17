@@ -15,8 +15,11 @@ import { FunnelDashboard } from './FunnelDashboard';
 export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [events, setEvents] = useState<EventLog[]>([]);
+    // AdminDashboard.tsx Logic Update
+
     const [activeTab, setActiveTab] = useState<'funnel' | 'submissions' | 'events' | 'parameters' | 'exports'>('funnel');
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+    const [filteredSessionIds, setFilteredSessionIds] = useState<string[] | null>(null); // New filter state
     const [showParametersEditor, setShowParametersEditor] = useState(false);
 
     const [user, setUser] = useState(auth.currentUser);
@@ -55,6 +58,23 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
         }
     };
 
+    // Helper to handle tab switching + clearing filters
+    const handleTabChange = (tab: typeof activeTab) => {
+        setActiveTab(tab);
+        setFilteredSessionIds(null); // Clear filter when manually switching tabs
+    };
+
+    // Handler for Funnel click
+    const handleFunnelFilter = (stage: any) => {
+        // Decide which tab to show based on step number
+        // Steps 1-4 (Landing, Debts, Payments, Assets) -> Events Tab (shows dropoff in early funnel)
+        // Steps 5-8 (Contact, Simulator, Meeting, Callback) -> Leads Tab (shows identifiable leads)
+        const targetTab = stage.step >= 5 ? 'submissions' : 'events';
+
+        setActiveTab(targetTab);
+        setFilteredSessionIds(stage.sessionIds || []);
+    };
+
     if (loading) {
         return <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">Loading...</div>;
     }
@@ -78,35 +98,51 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
                     </div>
                 </div>
 
+                {/* Filter Active Indicator */}
+                {filteredSessionIds && (
+                    <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-center justify-between mb-6 shadow-sm">
+                        <div className="flex items-center gap-2">
+                            <i className="fa-solid fa-filter"></i>
+                            <span className="font-medium">Filtering by Funnel Stage: {filteredSessionIds.length} sessions found.</span>
+                        </div>
+                        <button
+                            onClick={() => setFilteredSessionIds(null)}
+                            className="text-sm bg-white border border-blue-300 px-3 py-1 rounded hover:bg-blue-100 transition-colors"
+                        >
+                            Clear Filter
+                        </button>
+                    </div>
+                )}
+
                 <div className="flex gap-4 mb-6 flex-wrap">
                     <button
-                        onClick={() => setActiveTab('funnel')}
+                        onClick={() => handleTabChange('funnel')}
                         className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'funnel' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
                     >
                         <i className="fa-solid fa-filter mr-1"></i>
                         Funnel
                     </button>
                     <button
-                        onClick={() => setActiveTab('submissions')}
+                        onClick={() => handleTabChange('submissions')}
                         className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'submissions' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
                     >
                         Leads ({submissions.length})
                     </button>
                     <button
-                        onClick={() => setActiveTab('events')}
+                        onClick={() => handleTabChange('events')}
                         className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'events' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
                     >
                         Event Logs ({events.length})
                     </button>
                     <button
-                        onClick={() => setActiveTab('parameters')}
+                        onClick={() => handleTabChange('parameters')}
                         className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'parameters' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
                     >
                         <i className="fa-solid fa-cog ml-2"></i>
                         פרמטרי משכנתא
                     </button>
                     <button
-                        onClick={() => setActiveTab('exports')}
+                        onClick={() => handleTabChange('exports')}
                         className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'exports' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
                     >
                         <i className="fa-solid fa-file-csv ml-2"></i>
@@ -118,15 +154,22 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
                     {/* List Column */}
                     <div className={`${activeTab === 'funnel' ? 'lg:col-span-3' : 'lg:col-span-2'} space-y-4`}>
                         {activeTab === 'funnel' && (
-                            <FunnelDashboard />
+                            <FunnelDashboard onFilter={handleFunnelFilter} />
                         )}
 
                         {activeTab === 'submissions' && (
-                            <SubmissionsTable submissions={submissions} onSelect={setSelectedSubmission} />
+                            <SubmissionsTable
+                                submissions={submissions}
+                                filteredSessionIds={filteredSessionIds}
+                                onSelect={setSelectedSubmission}
+                            />
                         )}
 
                         {activeTab === 'events' && (
-                            <EventsTable events={events} />
+                            <EventsTable
+                                events={events}
+                                filteredSessionIds={filteredSessionIds}
+                            />
                         )}
 
                         {activeTab === 'parameters' && (
