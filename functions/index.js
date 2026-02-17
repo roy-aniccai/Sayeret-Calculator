@@ -202,7 +202,7 @@ adminRouter.get('/submissions', async (req, res) => {
 
 adminRouter.get('/events', async (req, res) => {
     try {
-        const snapshot = await db.collection('events').orderBy('createdAt', 'desc').limit(100).get();
+        const snapshot = await db.collection('events').orderBy('createdAt', 'desc').get();
         const data = snapshot.docs.map(doc => {
             const d = doc.data();
             let createdAt = d.createdAt;
@@ -223,6 +223,95 @@ adminRouter.get('/events', async (req, res) => {
         res.json({ message: 'success', data });
     } catch (error) {
         console.error('Admin error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================================
+// FUNNEL DATA ENDPOINT
+// ============================================================================
+adminRouter.get('/funnel-data', async (req, res) => {
+    try {
+        // 1. Fetch all step_view events
+        const eventsSnapshot = await db.collection('events')
+            .where('eventType', '==', 'single_track_step_view')
+            .get();
+
+        // Build sets of unique sessionIds per step
+        const stepSessions = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set(), 6: new Set() };
+        eventsSnapshot.docs.forEach(doc => {
+            const d = doc.data();
+            const sid = d.sessionId || (d.eventData && d.eventData.sessionId);
+            const step = d.eventData && d.eventData.step;
+            if (sid && step && stepSessions[step]) {
+                stepSessions[step].add(sid);
+            }
+        });
+
+        // 2. Fetch all submissions for bottom-of-funnel metrics
+        const subsSnapshot = await db.collection('submissions').get();
+        const requestSavingSessions = new Set();
+        const calendlySessions = new Set();
+        const callbackSessions = new Set();
+        const insuranceSessions = new Set();
+
+        // Also build a per-session submission map for lead filtering
+        const sessionSubmissionMap = {}; // sessionId -> submission data
+
+        subsSnapshot.docs.forEach(doc => {
+            const d = doc.data();
+            const sid = d.sessionId || '';
+            if (!sid) return;
+
+            sessionSubmissionMap[sid] = {
+                id: doc.id,
+                leadName: d.leadName || '',
+                leadPhone: d.leadPhone || '',
+                createdAt: d.createdAt && typeof d.createdAt.toDate === 'function'
+                    ? d.createdAt.toDate().toISOString() : (d.createdAt || ''),
+            };
+
+            if (d.didRequestSavings) requestSavingSessions.add(sid);
+            if (d.didClickCalendly) calendlySessions.add(sid);
+            if (d.didRequestCallback) callbackSessions.add(sid);
+            if (d.interestedInInsurance === true) insuranceSessions.add(sid);
+        });
+
+        // 3. Build funnel stages
+        const stages = [
+            { key: 'landing', label: 'כניסה לדף', step: 1, sessions: [...stepSessions[1]] },
+            { key: 'debts', label: 'חובות', step: 2, sessions: [...stepSessions[2]] },
+            { key: 'payments', label: 'החזרים חודשיים', step: 3, sessions: [...stepSessions[3]] },
+            { key: 'assets', label: 'נכסים', step: 4, sessions: [...stepSessions[4]] },
+            { key: 'contact', label: 'פרטי קשר', step: 5, sessions: [...stepSessions[5]] },
+            { key: 'simulator', label: 'סימולטור', step: 6, sessions: [...stepSessions[6]] },
+            { key: 'request_saving', label: 'בקשת חיסכון', step: 6.1, sessions: [...requestSavingSessions] },
+            { key: 'schedule_meeting', label: 'תיאום פגישה', step: 7, sessions: [...calendlySessions] },
+            { key: 'request_callback', label: 'בקשת שיחה חוזרת', step: 8, sessions: [...callbackSessions] },
+        ];
+
+        const totalSessions = stepSessions[1].size;
+
+        const funnel = stages.map(s => ({
+            key: s.key,
+            label: s.label,
+            step: s.step,
+            count: s.sessions.length,
+            percentage: totalSessions > 0 ? Math.round((s.sessions.length / totalSessions) * 100) : 0,
+            sessionIds: s.sessions, // for linking to filtered leads
+        }));
+
+        // 4. Extra metrics
+        const extras = {
+            interestedInInsurance: insuranceSessions.size,
+            interestedInInsurancePercentage: subsSnapshot.size > 0
+                ? Math.round((insuranceSessions.size / subsSnapshot.size) * 100) : 0,
+            totalSubmissions: subsSnapshot.size,
+        };
+
+        res.json({ message: 'success', funnel, extras, sessionSubmissionMap });
+    } catch (error) {
+        console.error('Funnel data error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -373,6 +462,7 @@ adminRouter.post('/export-csv', async (req, res) => {
         };
         const docRef = await db.collection('csv_exports').add(exportDoc);
 
+        // ... inside the existing adminRouter ...
         console.log(`CSV export (${mode}): ${rows.length} rows → ${fileName}`);
         res.json({
             success: true,
@@ -384,6 +474,79 @@ adminRouter.post('/export-csv', async (req, res) => {
         });
     } catch (error) {
         console.error('CSV export error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+adminRouter.post('/export-events-csv', async (req, res) => {
+    try {
+        console.log('Starting events export...');
+        const snapshot = await db.collection('events').orderBy('createdAt', 'desc').get();
+
+        const EVENT_CSV_COLUMNS = ['id', 'sessionId', 'eventType', 'eventData', 'createdAt'];
+
+        const rows = snapshot.docs.map(doc => {
+            const d = doc.data();
+
+            // Format Timestamp
+            let createdAtStr = '';
+            if (d.createdAt && typeof d.createdAt.toDate === 'function') {
+                createdAtStr = d.createdAt.toDate().toISOString();
+            } else if (d.createdAt) {
+                createdAtStr = String(d.createdAt);
+            }
+
+            // Stringify eventData
+            let eventDataStr = '';
+            try {
+                eventDataStr = JSON.stringify(d.eventData || {});
+            } catch (e) {
+                eventDataStr = '{}';
+            }
+
+            return {
+                id: doc.id,
+                sessionId: d.sessionId || '',
+                eventType: d.eventType || '',
+                eventData: eventDataStr,
+                createdAt: createdAtStr
+            };
+        });
+
+        // Build CSV
+        const header = EVENT_CSV_COLUMNS.map(escapeCsvValue).join(',');
+        const lines = rows.map(row =>
+            EVENT_CSV_COLUMNS.map(col => escapeCsvValue(row[col])).join(',')
+        );
+        const csvContent = header + '\n' + lines.join('\n');
+
+        // Upload to Firebase Storage
+        const now = new Date();
+        const ts = now.toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+        const fileName = `csv_exports/events_${ts}.csv`;
+
+        const bucket = admin.storage().bucket('mortgage-85413.firebasestorage.app');
+        const file = bucket.file(fileName);
+
+        await file.save(csvContent, {
+            contentType: 'text/csv',
+            metadata: { cacheControl: 'public, max-age=31536000' }
+        });
+
+        const [signedUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: Date.now() + 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({
+            success: true,
+            csvDownloadUrl: signedUrl,
+            count: rows.length,
+            csvStoragePath: fileName
+        });
+
+    } catch (error) {
+        console.error('Event export error:', error);
         res.status(500).json({ error: error.message });
     }
 });

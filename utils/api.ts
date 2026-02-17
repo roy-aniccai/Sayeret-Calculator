@@ -304,3 +304,105 @@ export const deleteExport = async (id: string): Promise<{ success: boolean }> =>
     );
 };
 
+// ============================================================================
+// FUNNEL DATA FUNCTIONS
+// ============================================================================
+
+export interface FunnelStage {
+    key: string;
+    label: string;
+    step: number;
+    count: number;
+    percentage: number;
+    sessionIds: string[];
+}
+
+export interface FunnelExtras {
+    interestedInInsurance: number;
+    interestedInInsurancePercentage: number;
+    totalSubmissions: number;
+}
+
+export interface SessionSubmission {
+    id: string;
+    leadName: string;
+    leadPhone: string;
+    createdAt: string;
+}
+
+export interface FunnelDataResponse {
+    message: string;
+    funnel: FunnelStage[];
+    extras: FunnelExtras;
+    sessionSubmissionMap: Record<string, SessionSubmission>;
+}
+
+export const getFunnelData = async (): Promise<FunnelDataResponse> => {
+    return withRobustExecution(
+        async () => {
+            try {
+                const headers = await getAuthHeaders();
+                const response = await fetch(`${ADMIN_API_BASE_URL}/funnel-data`, { headers });
+                if (!response.ok) {
+                    // Automatically fallback to mock data on localhost if endpoint is missing (404) or fails
+                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                        console.warn('Funnel API failed, falling back to mock data for local development.');
+                        return getMockFunnelData();
+                    }
+                    throw new Error(`Failed to fetch funnel data: ${response.status}`);
+                }
+                return await response.json();
+            } catch (err) {
+                // Also catch network errors and fallback
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    console.warn('Funnel API network error, falling back to mock data.', err);
+                    return getMockFunnelData();
+                }
+                throw err;
+            }
+        },
+        {
+            circuitBreaker: apiCircuitBreaker,
+            operationName: 'get_funnel_data'
+        }
+    );
+};
+
+// Mock Data Generator for local development
+const getMockFunnelData = (): FunnelDataResponse => {
+    // Generate ~50 mock sessions
+    const sessions: SessionSubmission[] = [];
+    const now = new Date();
+    for (let i = 0; i < 50; i++) {
+        sessions.push({
+            id: `mock-sess-${i}`,
+            leadName: `Lead ${i + 1}`,
+            leadPhone: `050-00000${i.toString().padStart(2, '0')}`,
+            createdAt: new Date(now.getTime() - i * 3600000).toISOString() // 1 hour intervals
+        });
+    }
+
+    const map: Record<string, SessionSubmission> = {};
+    sessions.forEach(s => map[s.id] = s);
+
+    return {
+        message: 'success (mock)',
+        funnel: [
+            { key: 'landing', label: 'כניסה לדף', step: 1, count: 120, percentage: 100, sessionIds: sessions.map(s => s.id) },
+            { key: 'debts', label: 'חובות', step: 2, count: 90, percentage: 75, sessionIds: sessions.slice(0, 45).map(s => s.id) },
+            { key: 'payments', label: 'החזרים חודשיים', step: 3, count: 80, percentage: 66, sessionIds: sessions.slice(0, 40).map(s => s.id) },
+            { key: 'assets', label: 'נכסים', step: 4, count: 70, percentage: 58, sessionIds: sessions.slice(0, 35).map(s => s.id) },
+            { key: 'contact', label: 'פרטי קשר', step: 5, count: 50, percentage: 41, sessionIds: sessions.slice(0, 25).map(s => s.id) },
+            { key: 'simulator', label: 'סימולטור', step: 6, count: 40, percentage: 33, sessionIds: sessions.slice(0, 20).map(s => s.id) },
+            { key: 'request_saving', label: 'בקשת חיסכון', step: 6.1, count: 25, percentage: 20, sessionIds: sessions.slice(0, 15).map(s => s.id) },
+            { key: 'schedule_meeting', label: 'תיאום פגישה', step: 7, count: 10, percentage: 8, sessionIds: sessions.slice(0, 5).map(s => s.id) },
+            { key: 'request_callback', label: 'בקשת שיחה חוזרת', step: 8, count: 18, percentage: 15, sessionIds: sessions.slice(10, 20).map(s => s.id) },
+        ],
+        extras: {
+            interestedInInsurance: 12,
+            interestedInInsurancePercentage: 24,
+            totalSubmissions: 50
+        },
+        sessionSubmissionMap: map
+    };
+};

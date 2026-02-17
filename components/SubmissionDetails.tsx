@@ -39,7 +39,12 @@ export const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({ submission
     const dateStr = dateRaw ? new Date(dateRaw.replace(' ', 'T')).toLocaleString() : 'תאריך לא ידוע';
 
     const sim = submission.simulationResult;
+    const fullDataSim = data.simulationResult;
     const actions = submission.postSubmissionLog || [];
+
+    // Prefer monthlySavings from full_data_json.simulationResult (original submission),
+    // falling back to top-level simulationResult
+    const monthlySavings = fullDataSim?.monthlySavings ?? sim?.monthlySavings;
 
     return (
         <div className="bg-white rounded-xl shadow p-6 sticky top-6 space-y-6">
@@ -59,7 +64,7 @@ export const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({ submission
                     <h4 className="font-bold mb-2">תוצאות סימולציה</h4>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>תרחיש: <span className="font-semibold">{SCENARIO_LABELS[sim.scenario] || sim.scenario}</span></div>
-                        <div>חיסכון חודשי: <span className="font-semibold">{sim.monthlySavings?.toLocaleString()} ₪</span></div>
+                        <div>חיסכון חודשי: <span className="font-semibold">{monthlySavings?.toLocaleString()} ₪</span></div>
                         <div>תקופה חדשה: <span className="font-semibold">{sim.newMortgageDurationYears} שנים</span></div>
                         <div>ניתן לחסוך: <span className="font-semibold">{sim.canSave ? '✅ כן' : '❌ לא'}</span></div>
                     </div>

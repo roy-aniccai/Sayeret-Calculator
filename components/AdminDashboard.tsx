@@ -10,11 +10,12 @@ import { SubmissionsTable } from './SubmissionsTable';
 import { EventsTable } from './EventsTable';
 import { SubmissionDetails } from './SubmissionDetails';
 import { ExportTab } from './ExportTab';
+import { FunnelDashboard } from './FunnelDashboard';
 
 export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [events, setEvents] = useState<EventLog[]>([]);
-    const [activeTab, setActiveTab] = useState<'submissions' | 'events' | 'parameters' | 'exports'>('submissions');
+    const [activeTab, setActiveTab] = useState<'funnel' | 'submissions' | 'events' | 'parameters' | 'exports'>('funnel');
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [showParametersEditor, setShowParametersEditor] = useState(false);
 
@@ -77,7 +78,14 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
                     </div>
                 </div>
 
-                <div className="flex gap-4 mb-6">
+                <div className="flex gap-4 mb-6 flex-wrap">
+                    <button
+                        onClick={() => setActiveTab('funnel')}
+                        className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'funnel' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
+                    >
+                        <i className="fa-solid fa-filter mr-1"></i>
+                        Funnel
+                    </button>
                     <button
                         onClick={() => setActiveTab('submissions')}
                         className={`px-6 py-2 rounded-lg font-bold ${activeTab === 'submissions' ? 'bg-white shadow text-blue-600' : 'bg-gray-200 text-gray-600'}`}
@@ -108,7 +116,11 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* List Column */}
-                    <div className="lg:col-span-2 space-y-4">
+                    <div className={`${activeTab === 'funnel' ? 'lg:col-span-3' : 'lg:col-span-2'} space-y-4`}>
+                        {activeTab === 'funnel' && (
+                            <FunnelDashboard />
+                        )}
+
                         {activeTab === 'submissions' && (
                             <SubmissionsTable submissions={submissions} onSelect={setSelectedSubmission} />
                         )}
