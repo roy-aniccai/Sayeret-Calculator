@@ -29,8 +29,8 @@ export const stepHeaderConfig: StepHeaderConfig = {
   },
   2: {
     stepNumber: 2,
-    mainHeaderTitle: "מצב חובות נוכחי",
-    stepTitle: "נבדוק את המצב הכספי הנוכחי", 
+    mainHeaderTitle: "הקטן תשלום חודשי",
+    stepTitle: "נבדוק את המצב הכספי הנוכחי",
     backNavigationText: "חזור לבחירת מטרה"
   },
   3: {
@@ -66,13 +66,13 @@ export const stepHeaderConfig: StepHeaderConfig = {
  */
 export const getStepHeaderConfig = (stepNumber: number): StepHeaderMapping => {
   const config = stepHeaderConfig[stepNumber];
-  
+
   if (!config) {
     // Fallback to step 1 configuration if step not found
     console.warn(`Step header configuration not found for step ${stepNumber}, falling back to step 1`);
     return stepHeaderConfig[1];
   }
-  
+
   return config;
 };
 

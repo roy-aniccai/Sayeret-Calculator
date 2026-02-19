@@ -20,7 +20,8 @@ const InputWithTooltip: React.FC<{
   helperText?: string;
   autoAdvance?: boolean;
   maxLength?: number;
-}> = ({ label, tooltip, ...inputProps }) => {
+  inputRef?: React.RefObject<HTMLInputElement>;
+}> = ({ label, tooltip, inputRef, ...inputProps }) => {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
@@ -37,7 +38,7 @@ const InputWithTooltip: React.FC<{
           <i className="fa-solid fa-info-circle text-blue-400 hover:text-blue-600 cursor-help text-xs"></i>
         </Tooltip>
       </div>
-      <Input {...inputProps} label="" className="py-2" />
+      <Input {...inputProps} inputRef={inputRef} label="" className="py-2" />
     </div>
   );
 };
@@ -82,6 +83,17 @@ export const SingleTrackStep2Debts: React.FC = () => {
   const { formData, updateFormData, nextStep, prevStep } = useSingleTrackForm();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasOtherLoans, setHasOtherLoans] = useState(formData.hasOtherLoans ?? formData.otherLoansBalance > 0);
+  const mortgageInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Auto-focus on desktop only to avoid mobile keyboard pop-up
+  React.useEffect(() => {
+    if (window.innerWidth > 768 && mortgageInputRef.current) {
+      // Small delay to ensure render
+      setTimeout(() => {
+        mortgageInputRef.current?.focus();
+      }, 100);
+    }
+  }, []);
 
   // Fixed styling for single-track (monthly reduction focused)
   const primaryStyling = 'bg-blue-50 border border-blue-200';
@@ -89,12 +101,14 @@ export const SingleTrackStep2Debts: React.FC = () => {
   const accentStyling = 'text-blue-600';
 
   // Single-track specific content (focused on monthly reduction)
+  // Single-track specific content (focused on monthly reduction)
   const stepContent = {
-    stepTitle: 'מצב חובות נוכחי',
-    stepDescription: 'נבדוק את המצב הכספי הנוכחי',
-    mortgageTooltip: 'נדרש לחישוב הריבית החדשה ואפשרויות המיחזור',
+    stepTitle: "פרטי המשכנתא הנוכחית", // Changed from "בדיקת זכאות לחיסכון" to complement header
+    stepDescription: "בדיקת זכאות לחיסכון",
+    mortgageLabel: "מהי יתרת המשכנתא המשוערת?",
+    mortgageTooltip: "סכום מוערך. נשתמש בזה כדי לחשב את פוטנציאל החיסכון שלך",
     otherLoansDescription: '',
-    ctaText: 'המשך לחישוב',
+    ctaText: 'המשך לבדיקה',
     ctaMessage: 'מידע מדויק = חיסכון מדויק יותר בתשלום החודשי'
   };
 
@@ -154,22 +168,24 @@ export const SingleTrackStep2Debts: React.FC = () => {
 
       <div className="flex-grow flex flex-col gap-3">
         {/* Mortgage Balance */}
+        {/* Mortgage Balance */}
         <InputWithTooltip
-          label="יתרת משכנתא נוכחית"
+          label="מה יתרת המשכנתא כיום?"
           tooltip={stepContent.mortgageTooltip}
           name="mortgageBalance"
           inputMode="numeric"
+          inputRef={mortgageInputRef}
           value={formatInputNumber(formData.mortgageBalance)}
           onChange={handleChange}
-          placeholder="סכום בש״ח"
+          placeholder="סכום מוערך בש״ח"
           error={errors.mortgageBalance}
           icon={<i className={`fa-solid fa-home ${accentStyling.split(' ')[0]}`}></i>}
-          helperText="סכום המשכנתא שנשאר לשלם לבנק"
+          helperText="בערך. זה עוזר לנו להבין את התמונה המלאה"
           autoAdvance={true}
         />
 
-        {/* Other Loans Section - Compact */}
-        <div className={`${primaryStyling} rounded-lg p-2.5`}>
+        {/* Other Loans Section - Simplified */}
+        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <div>
@@ -233,23 +249,24 @@ export const SingleTrackStep2Debts: React.FC = () => {
           )}
         </div>
 
-        {/* Recommendations - Stacked Vertically */}
-        <div className="flex flex-col gap-3 mt-1 pb-32">
+        {/* Recommendations - Less Prominent */}
+        <div className="flex flex-col gap-2 mt-4 pb-32 opacity-80 scale-95 origin-top">
+          <p className="text-xs text-center text-gray-400 font-medium mb-1">- לקוחות מספרים -</p>
           {RECOMMENDATIONS.map((rec) => (
             <div
               key={rec.id}
-              className="bg-white rounded-lg p-2.5 shadow-sm border border-gray-100"
+              className="bg-gray-50 rounded-md p-2 border border-gray-100 text-xs"
             >
-              <div className="flex text-yellow-400 text-xs mb-1">
+              <div className="flex text-yellow-400 text-[10px] mb-1">
                 {[...Array(rec.stars)].map((_, i) => (
                   <i key={i} className="fa-solid fa-star"></i>
                 ))}
               </div>
-              <p className="text-sm text-gray-600 italic leading-snug mb-1.5">
+              <p className="text-gray-600 italic leading-snug mb-1">
                 "{rec.text}"
               </p>
-              <div className="font-semibold text-xs text-gray-800">
-                {rec.name} ({rec.details})
+              <div className="font-semibold text-gray-700">
+                {rec.name}
               </div>
             </div>
           ))}

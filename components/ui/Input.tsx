@@ -8,6 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   helperText?: string;
   hideSpinner?: boolean;
   autoAdvance?: boolean; // Enable automatic field navigation on mobile
+  inputRef?: React.RefObject<HTMLInputElement>;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -22,9 +23,11 @@ export const Input: React.FC<InputProps> = ({
   onChange,
   maxLength,
   id,
+  inputRef,
   ...props
 }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const internalRef = useRef<HTMLInputElement>(null);
+  const ref = inputRef || internalRef;
 
   // Generate a unique ID if not provided
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
@@ -99,7 +102,7 @@ export const Input: React.FC<InputProps> = ({
 
 
         <input
-          ref={inputRef}
+          ref={ref}
           id={inputId}
           className={`w-full border-2 rounded-xl py-3 md:py-5 ${paddingClass} text-2xl font-medium outline-none focus:ring-4 transition-all ${error
             ? 'border-red-300 focus:border-red-500 focus:ring-red-200'

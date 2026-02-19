@@ -13,6 +13,7 @@ import {
   getDefaultSingleTrackExperience,
   type CampaignData
 } from '../utils/campaignUrlParser';
+import { getMainHeaderTitle } from '../utils/stepHeaderConfig';
 
 import { useScrollLock } from '../utils/useScrollLock';
 
@@ -222,33 +223,6 @@ const SingleTrackAppContent: React.FC<{
     }
   };
 
-  // Get step-specific header title with fallback
-  const getHeaderTitle = (currentStep: number): string => {
-    try {
-      const baseTitle = (() => {
-        switch (currentStep) {
-          case 1: return "הקטן תשלום חודשי";
-          case 2: return "מצב חובות נוכחי";
-          case 3: return "החזרים חודשיים נוכחיים";
-          case 4: return "פרטים למיחזור";
-          case 5: return "פרטי קשר";
-          case 6: return "סימולטור משכנתא";
-          default: return "הקטן תשלום חודשי";
-        }
-      })();
-
-      const currentFlowIndex = getFlowStepIndex(currentStep);
-      if (currentFlowIndex) {
-        return `${baseTitle} (שלב ${currentFlowIndex} מתוך ${FLOW_TOTAL_STEPS})`;
-      }
-
-      return baseTitle;
-    } catch (error) {
-      console.error('Error getting header title:', error);
-      return "הקטן תשלום חודשי";
-    }
-  };
-
   // Calculate progress percentage for the 4-step flow.
   // Landing (step 1) shows 0%, results (step 6) shows 100%.
   const progressPercentage = (() => {
@@ -321,7 +295,10 @@ const SingleTrackAppContent: React.FC<{
                 alt="סיירת המשכנתא"
                 className="w-6 h-6 flex-shrink-0"
               />
-              <h1 className="text-lg font-bold">{getHeaderTitle(step)}</h1>
+              <h1 className="text-lg font-bold">
+                {getMainHeaderTitle(step)}
+                {step >= 3 && step <= 5 && ` (שלב ${getFlowStepIndex(step)} מתוך 4)`}
+              </h1>
             </div>
 
             {/* Restart button */}

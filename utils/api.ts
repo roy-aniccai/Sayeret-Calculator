@@ -12,6 +12,9 @@ const isProduction = process.env.NODE_ENV === 'production';
 const API_BASE_URL = isProduction ? '/api' : 'https://us-central1-mortgage-85413.cloudfunctions.net/api';
 const ADMIN_API_BASE_URL = isProduction ? '/admin-api' : 'https://us-central1-mortgage-85413.cloudfunctions.net/adminApi';
 
+// Helper to detect localhost
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 // ============================================================================
 // SUBMISSION PAYLOAD
 // ============================================================================
@@ -61,6 +64,11 @@ export const submitData = async (data: Partial<SubmissionPayload>) => {
                 device: data.device || device,
                 createdAt: data.createdAt || new Date().toISOString(),
             };
+
+            if (isLocalhost) {
+                console.log('%c[MOCK] Submitting data (Localhost blocked):', 'color: #f59e0b; font-weight: bold;', payload);
+                return { id: 'mock-submission-id-' + Date.now(), ...payload };
+            }
 
             console.log(`Submitting data to ${API_BASE_URL}/submit`, payload);
 
@@ -133,6 +141,11 @@ export const updateSubmission = async (
 ) => {
     return withRobustExecution(
         async () => {
+            if (isLocalhost) {
+                console.log('%c[MOCK] Updating submission (Localhost blocked):', 'color: #f59e0b; font-weight: bold;', { submissionId, ...update });
+                return { success: true, mock: true };
+            }
+
             const response = await fetch(`${API_BASE_URL}/update-submission`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -163,6 +176,11 @@ export const trackEvent = async (
     eventType: string,
     eventData?: any
 ) => {
+    if (isLocalhost) {
+        console.log(`%c[MOCK] Track Event: ${eventType}`, 'color: #3b82f6', eventData);
+        return { success: true, mock: true };
+    }
+
     const response = await fetch(`${API_BASE_URL}/event`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
