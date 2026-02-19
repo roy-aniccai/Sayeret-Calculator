@@ -266,14 +266,44 @@ export interface ExportHistoryItem {
     csvStoragePath: string;
 }
 
-export const exportSubmissionsCsv = async (mode: 'full' | 'delta'): Promise<CsvExportResult> => {
+export interface EventsExportResult {
+    success: boolean;
+    csvDownloadUrl: string;
+    count: number;
+    csvStoragePath: string;
+}
+
+export const exportEventsCsv = async (): Promise<EventsExportResult> => {
+    // Intentionally not robust execution if it might time out, but here we use it with longer timeout
+    return withRobustExecution(
+        async () => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${ADMIN_API_BASE_URL}/export-events-csv`, {
+                method: 'POST',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Events export failed: ${response.status} - ${errorText}`);
+            }
+            return await response.json();
+        },
+        {
+            circuitBreaker: apiCircuitBreaker,
+            timeoutMs: 60000,
+            operationName: 'export_events_csv'
+        }
+    );
+};
+
+export const exportSubmissionsCsv = async (mode: 'full' | 'delta', format: 'standard' | 'hebrew' = 'standard'): Promise<CsvExportResult> => {
     return withRobustExecution(
         async () => {
             const headers = await getAuthHeaders();
             const response = await fetch(`${ADMIN_API_BASE_URL}/export-csv`, {
                 method: 'POST',
                 headers: { ...headers, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode })
+                body: JSON.stringify({ mode, format })
             });
             if (!response.ok) {
                 const errorText = await response.text();

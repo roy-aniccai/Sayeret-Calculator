@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { exportSubmissionsCsv, getExportHistory, deleteExport, ExportHistoryItem, CsvExportResult } from '../utils/api';
+import { exportSubmissionsCsv, exportEventsCsv, getExportHistory, deleteExport, ExportHistoryItem, CsvExportResult } from '../utils/api';
 import { storage } from '../src/firebase';
 import { ref, getDownloadURL } from 'firebase/storage';
 
@@ -26,18 +26,42 @@ export const ExportTab: React.FC = () => {
         loadHistory();
     }, []);
 
-    const handleExport = async (mode: 'full' | 'delta') => {
+    const handleExport = async (mode: 'full' | 'delta', formatArg: 'standard' | 'hebrew' = 'standard') => {
         setLoading(true);
         setResult(null);
         setError('');
         try {
-            const res = await exportSubmissionsCsv(mode);
+            const res = await exportSubmissionsCsv(mode, formatArg);
             setResult(res);
             // Refresh history after successful export
             await loadHistory();
         } catch (e: any) {
             console.error('Export failed', e);
             setError(e.message || 'Export failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEventsExport = async () => {
+        setLoading(true);
+        setResult(null);
+        setError('');
+        try {
+            const res = await exportEventsCsv();
+            // Map event result to CsvExportResult structure for display compatibility
+            // Event result has 'count', 'csvStoragePath', 'csvDownloadUrl', 'success'
+            // We mimic CsvExportResult which needs 'exportId' (doesn't exist for events in same way?), 'submissionCount'
+            setResult({
+                success: res.success,
+                exportId: 'events-export', // Placeholder
+                csvDownloadUrl: res.csvDownloadUrl,
+                submissionCount: res.count,
+                csvStoragePath: res.csvStoragePath
+            });
+        } catch (e: any) {
+            console.error('Event export failed', e);
+            setError(e.message || 'Event export failed');
         } finally {
             setLoading(false);
         }
@@ -124,8 +148,71 @@ export const ExportTab: React.FC = () => {
                     </button>
                 </div>
 
+                <div className="text-xs text-gray-400 mb-8 pb-4 border-b">
+                    <strong>Standard Export:</strong> Full dump of all raw data fields.
+                </div>
+
+                <div className="flex items-center gap-3 mb-4">
+                    <i className="fa-solid fa-file-excel text-3xl text-purple-600"></i>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-800">CRM Export (Hebrew)</h3>
+                        <p className="text-gray-500 text-sm">Formatted for CRM import with Hebrew headers and row duplication logic</p>
+                    </div>
+                </div>
+
+                <div className="flex gap-4 mb-4">
+                    <button
+                        onClick={() => handleExport('full', 'hebrew')}
+                        disabled={loading}
+                        className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-colors flex items-center gap-2"
+                    >
+                        {loading ? (
+                            <i className="fa-solid fa-spinner fa-spin"></i>
+                        ) : (
+                            <i className="fa-solid fa-database"></i>
+                        )}
+                        Full CRM Export
+                    </button>
+
+                    <button
+                        onClick={() => handleExport('delta', 'hebrew')}
+                        disabled={loading}
+                        className="px-6 py-3 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-colors flex items-center gap-2"
+                    >
+                        {loading ? (
+                            <i className="fa-solid fa-spinner fa-spin"></i>
+                        ) : (
+                            <i className="fa-solid fa-clock-rotate-left"></i>
+                        )}
+                        Delta CRM Export
+                    </button>
+                </div>
+
                 <div className="text-xs text-gray-400 mb-4">
-                    <strong>Full:</strong> Exports all submissions &nbsp;|&nbsp; <strong>Delta:</strong> Only new records since the last export run
+                    <strong>CRM Mode:</strong> Includes duplicate rows for follow-ups and Hebrew column headers.
+                </div>
+
+                <div className="flex items-center gap-3 mb-4 mt-8 pt-4 border-t">
+                    <i className="fa-solid fa-list-check text-3xl text-orange-600"></i>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-800">Export Events Log</h3>
+                        <p className="text-gray-500 text-sm">Dump of all system events (analytics, errors, steps)</p>
+                    </div>
+                </div>
+
+                <div className="flex gap-4 mb-8">
+                    <button
+                        onClick={handleEventsExport}
+                        disabled={loading}
+                        className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-colors flex items-center gap-2"
+                    >
+                        {loading ? (
+                            <i className="fa-solid fa-spinner fa-spin"></i>
+                        ) : (
+                            <i className="fa-solid fa-file-export"></i>
+                        )}
+                        Export Events CSV
+                    </button>
                 </div>
 
                 {/* Result Feedback */}

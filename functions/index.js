@@ -641,6 +641,192 @@ adminRouter.delete('/export-history/:id', async (req, res) => {
     }
 });
 
+// HEBREW CSV LOGIC
+const HEBREW_CSV_COLUMNS = [
+    'שם פרטי',
+    'טלפון',
+    'הערות',
+    'גיל',
+    'יתרת משכנתא נוכחית',
+    'סך הלוואות אחרות',
+    'החזר משכנתא חודשי נוכחי',
+    'החזר הלוואות אחרות חודשי',
+    'שווי נכס מוערך כיום',
+    'מספר מזהה מחשבון',
+    'מוקצה אל',
+    'מקור',
+    'סטטוס'
+];
+
+function extractHebrewRows(doc) {
+    const d = doc.data();
+    const json = d.fullDataJson || {};
+    const sim = d.simulationResult || {};
+
+    const baseRow = {
+        'שם פרטי': d.leadName || json.leadName || json.lead_name || '',
+        'טלפון': d.leadPhone || json.leadPhone || json.lead_phone || '',
+        'הערות': sim.monthlySavings != null ? sim.monthlySavings : '',
+        'גיל': json.age != null ? json.age : '',
+        'יתרת משכנתא נוכחית': json.mortgageBalance != null ? json.mortgageBalance : '',
+        'סך הלוואות אחרות': json.otherLoansBalance != null ? json.otherLoansBalance : '',
+        'החזר משכנתא חודשי נוכחי': json.mortgagePayment != null ? json.mortgagePayment : '',
+        'החזר הלוואות אחרות חודשי': json.otherLoansPayment != null ? json.otherLoansPayment : '',
+        'שווי נכס מוערך כיום': json.propertyValue != null ? json.propertyValue : '',
+        'מספר מזהה מחשבון': d.sessionId || json.sessionId || '',
+        'מוקצה אל': 'יואב שטיל',
+        'מקור': 'ייעוץ משכנתא לביטוח',
+        'סטטוס': 'ליד חדש'
+    };
+
+    const rows = [baseRow];
+    const canSave = sim.canSave === true;
+
+    // Duplication Logic 1: Callback
+    if (canSave && d.didRequestCallback === true) {
+        const callbackRow = { ...baseRow };
+        callbackRow['מוקצה אל'] = 'תומר';
+        callbackRow['מקור'] = 'ייעוץ משכנתא';
+        callbackRow['סטטוס'] = 'מחכה לשיחה מיועץ משכנתא';
+        rows.push(callbackRow);
+    }
+
+    // Duplication Logic 2: Calendly
+    if (canSave && d.didClickCalendly === true) {
+        const calendlyRow = { ...baseRow };
+        calendlyRow['מוקצה אל'] = 'תומר';
+        calendlyRow['מקור'] = 'ייעוץ משכנתא';
+        calendlyRow['סטטוס'] = 'תואמה פגישה';
+        rows.push(calendlyRow);
+    }
+
+    return rows;
+}
+
+function buildHebrewCsv(allRows) {
+    // Flatten the array of arrays if necessary, but here `extractHebrewRows` returns an array of rows
+    // so we will flatMap them in the main handler.
+    const header = HEBREW_CSV_COLUMNS.map(escapeCsvValue).join(',');
+    const lines = allRows.map(row =>
+        HEBREW_CSV_COLUMNS.map(col => escapeCsvValue(row[col])).join(',')
+    );
+    // Add BOM for Excel Hebrew support
+    return '\uFEFF' + header + '\n' + lines.join('\n');
+}
+
+adminRouter.post('/export-csv', async (req, res) => {
+    try {
+        const { mode, format } = req.body; // format: 'standard' (default) | 'hebrew'
+        if (!mode || !['full', 'delta'].includes(mode)) {
+            return res.status(400).json({ error: 'mode must be "full" or "delta"' });
+        }
+
+        const isHebrew = format === 'hebrew';
+
+        // For delta mode, find the last export timestamp
+        let sinceDate = null;
+        if (mode === 'delta') {
+            const lastExport = await db.collection('csv_exports')
+                .where('format', '==', isHebrew ? 'hebrew' : 'standard') // Check last export of SAME format
+                .orderBy('runTimestamp', 'desc')
+                .limit(1)
+                .get();
+
+            if (!lastExport.empty) {
+                const lastRun = lastExport.docs[0].data().runTimestamp;
+                if (lastRun && typeof lastRun.toDate === 'function') {
+                    sinceDate = lastRun.toDate();
+                } else if (lastRun) {
+                    sinceDate = new Date(lastRun);
+                }
+            }
+        }
+
+        // Query submissions
+        let query = db.collection('submissions').orderBy('createdAt', 'desc');
+        if (mode === 'delta' && sinceDate) {
+            query = query.where('createdAt', '>', sinceDate);
+        }
+
+        const snapshot = await query.get();
+
+        let csvContent = '';
+        let rowCount = 0;
+
+        if (isHebrew) {
+            const allRows = snapshot.docs.flatMap(extractHebrewRows);
+            csvContent = buildHebrewCsv(allRows);
+            rowCount = allRows.length;
+        } else {
+            const rows = snapshot.docs.map(extractRow);
+            csvContent = buildCsv(rows);
+            rowCount = rows.length;
+        }
+
+        // Upload to Firebase Storage
+        const now = new Date();
+        const ts = now.toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+        const formatSuffix = isHebrew ? '_hebrew' : '';
+        const fileName = `csv_exports/submissions_${mode}${formatSuffix}_${ts}.csv`;
+
+        // Use the explicit bucket name confirmed by the user
+        const bucket = admin.storage().bucket('mortgage-85413.firebasestorage.app');
+        const file = bucket.file(fileName);
+
+        await file.save(csvContent, {
+            contentType: 'text/csv; charset=utf-8',
+            metadata: { cacheControl: 'public, max-age=31536000' }
+        });
+
+        // Generate signed URL (valid 7 days)
+        let signedUrl = '';
+        try {
+            const [url] = await file.getSignedUrl({
+                action: 'read',
+                expires: Date.now() + 7 * 24 * 60 * 60 * 1000
+            });
+            signedUrl = url;
+        } catch (signError) {
+            console.error('Error generating signed URL:', signError);
+            try {
+                await file.makePublic();
+                signedUrl = file.publicUrl();
+            } catch (publicError) {
+                console.error('Error making file public:', publicError);
+            }
+        }
+
+        const consoleUrl = `https://console.firebase.google.com/project/mortgage-85413/storage/${bucket.name}/files`;
+
+        // Save export metadata to Firestore
+        const exportDoc = {
+            runTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+            runTimestampISO: now.toISOString(),
+            mode,
+            format: isHebrew ? 'hebrew' : 'standard',
+            submissionCount: rowCount,
+            csvStoragePath: fileName,
+            csvDownloadUrl: signedUrl,
+            consoleUrl,
+            rows: []
+        };
+        const docRef = await db.collection('csv_exports').add(exportDoc);
+
+        console.log(`CSV export (${mode}, ${isHebrew ? 'Hebrew' : 'Standard'}): ${rowCount} rows → ${fileName}`);
+        res.json({
+            success: true,
+            exportId: docRef.id,
+            csvDownloadUrl: signedUrl,
+            consoleUrl,
+            submissionCount: rowCount,
+            csvStoragePath: fileName
+        });
+    } catch (error) {
+        console.error('CSV export error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 adminApp.use('/', adminRouter);
 adminApp.use('/admin-api', adminRouter); // Support direct path if needed
 

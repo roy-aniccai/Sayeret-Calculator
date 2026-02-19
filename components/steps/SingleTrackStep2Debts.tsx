@@ -85,15 +85,8 @@ export const SingleTrackStep2Debts: React.FC = () => {
   const [hasOtherLoans, setHasOtherLoans] = useState(formData.hasOtherLoans ?? formData.otherLoansBalance > 0);
   const mortgageInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Auto-focus on desktop only to avoid mobile keyboard pop-up
-  React.useEffect(() => {
-    if (window.innerWidth > 768 && mortgageInputRef.current) {
-      // Small delay to ensure render
-      setTimeout(() => {
-        mortgageInputRef.current?.focus();
-      }, 100);
-    }
-  }, []);
+  // Auto-focus removed per user feedback (scrolling issue)
+  // React.useEffect(() => { ... }, []);
 
   // Fixed styling for single-track (monthly reduction focused)
   const primaryStyling = 'bg-blue-50 border border-blue-200';
