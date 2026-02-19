@@ -18,12 +18,22 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
     const [extras, setExtras] = useState<FunnelExtras | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
     const loadFunnelData = async () => {
         setLoading(true);
         setError(null);
         try {
-            const data = await getFunnelData();
+            const start = startDate ? new Date(startDate) : null;
+            let end = endDate ? new Date(endDate) : null;
+
+            // If end date is selected, set it to end of day to include the full day
+            if (end) {
+                end.setHours(23, 59, 59, 999);
+            }
+
+            const data = await getFunnelData(start, end);
             setStages(data.funnel);
             setExtras(data.extras);
         } catch (err) {
@@ -125,12 +135,53 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
 
     return (
         <div className="space-y-8 flex flex-col items-center pb-12 w-full max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="w-full flex justify-between items-center mb-4">
+            <div className="w-full flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Marketing Funnel</h2>
-                <button onClick={loadFunnelData} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">
-                    <i className="fa-solid fa-refresh mr-1"></i> Refresh
-                </button>
+
+                <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500 font-medium">From:</span>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500 font-medium">To:</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div className="h-6 w-px bg-gray-300 mx-1"></div>
+                    <button
+                        onClick={loadFunnelData}
+                        className="px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium transition-colors"
+                    >
+                        <i className="fa-solid fa-filter mr-1"></i> Filter
+                    </button>
+                    {(startDate || endDate) && (
+                        <button
+                            onClick={() => {
+                                setStartDate('');
+                                setEndDate('');
+                                // We need to trigger a reload after state update, but state update is async.
+                                // Simplest way is let the user click filter again or use useEffect, 
+                                // but for now let's just reset and user can click filter/refresh.
+                                // Actually, better UX:
+                                setTimeout(() => loadFunnelData(), 0);
+                            }}
+                            className="text-gray-400 hover:text-gray-600 px-2"
+                            title="Clear Dates"
+                        >
+                            <i className="fa-solid fa-times"></i>
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Main Funnel Stack */}

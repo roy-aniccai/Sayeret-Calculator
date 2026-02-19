@@ -232,10 +232,28 @@ adminRouter.get('/events', async (req, res) => {
 // ============================================================================
 adminRouter.get('/funnel-data', async (req, res) => {
     try {
+        const { startDate, endDate } = req.query;
+
+        let start = null;
+        let end = null;
+
+        if (startDate) start = new Date(startDate);
+        if (endDate) end = new Date(endDate);
+
+        // adjust end date to end of day if it's the same as start or just a date string
+        if (end) {
+            end.setHours(23, 59, 59, 999);
+        }
+
+        console.log(`Funnel Data Request: ${start ? start.toISOString() : 'All Time'} - ${end ? end.toISOString() : 'Now'}`);
+
         // 1. Fetch all step_view events
-        const eventsSnapshot = await db.collection('events')
-            .where('eventType', '==', 'single_track_step_view')
-            .get();
+        let eventsQuery = db.collection('events').where('eventType', '==', 'single_track_step_view');
+
+        if (start) eventsQuery = eventsQuery.where('createdAt', '>=', admin.firestore.Timestamp.fromDate(start));
+        if (end) eventsQuery = eventsQuery.where('createdAt', '<=', admin.firestore.Timestamp.fromDate(end));
+
+        const eventsSnapshot = await eventsQuery.get();
 
         // Build cumulative sets based on max step reached per session
         // Logic: If a session reached Step 3, it implicitly reached Step 1 and 2.
@@ -269,7 +287,13 @@ adminRouter.get('/funnel-data', async (req, res) => {
         });
 
         // 2. Fetch all submissions for bottom-of-funnel metrics
-        const subsSnapshot = await db.collection('submissions').get();
+        let subsQuery = db.collection('submissions');
+
+        if (start) subsQuery = subsQuery.where('createdAt', '>=', admin.firestore.Timestamp.fromDate(start));
+        if (end) subsQuery = subsQuery.where('createdAt', '<=', admin.firestore.Timestamp.fromDate(end));
+
+        const subsSnapshot = await subsQuery.get();
+
         const requestSavingSessions = new Set();
         const calendlySessions = new Set();
         const callbackSessions = new Set();

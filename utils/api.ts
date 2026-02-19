@@ -386,17 +386,25 @@ export interface FunnelDataResponse {
     sessionSubmissionMap: Record<string, SessionSubmission>;
 }
 
-export const getFunnelData = async (): Promise<FunnelDataResponse> => {
+export const getFunnelData = async (startDate?: Date | null, endDate?: Date | null): Promise<FunnelDataResponse> => {
     return withRobustExecution(
         async () => {
             try {
                 const headers = await getAuthHeaders();
-                const response = await fetch(`${ADMIN_API_BASE_URL}/funnel-data`, { headers });
+                let url = `${ADMIN_API_BASE_URL}/funnel-data`;
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate.toISOString());
+                if (endDate) params.append('endDate', endDate.toISOString());
+                if (params.toString()) url += `?${params.toString()}`;
+
+                console.log('%c[API] Fetching Funnel Data:', 'color: #8b5cf6; font-weight: bold;', url);
+
+                const response = await fetch(url, { headers });
                 if (!response.ok) {
                     // Automatically fallback to mock data on localhost if endpoint is missing (404) or fails
                     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                         console.warn('Funnel API failed, falling back to mock data for local development.');
-                        return getMockFunnelData();
+                        return getMockFunnelData(startDate, endDate);
                     }
                     throw new Error(`Failed to fetch funnel data: ${response.status}`);
                 }
@@ -405,7 +413,7 @@ export const getFunnelData = async (): Promise<FunnelDataResponse> => {
                 // Also catch network errors and fallback
                 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                     console.warn('Funnel API network error, falling back to mock data.', err);
-                    return getMockFunnelData();
+                    return getMockFunnelData(startDate, endDate);
                 }
                 throw err;
             }
@@ -418,32 +426,50 @@ export const getFunnelData = async (): Promise<FunnelDataResponse> => {
 };
 
 // Mock Data Generator for local development
-const getMockFunnelData = (): FunnelDataResponse => {
+const getMockFunnelData = (startDate?: Date | null, endDate?: Date | null): FunnelDataResponse => {
     // Generate 50 mock sessions
     const sessions: SessionSubmission[] = [];
     const now = new Date();
+
+    // Create a spread of dates over the last few days to simulate realistic data
     for (let i = 0; i < 50; i++) {
+        // Spread over 3 days (72 hours) to allow testing date filtering
+        const timeOffset = Math.floor(i * (72 * 3600000) / 50);
+        const createdAt = new Date(now.getTime() - timeOffset);
+
         sessions.push({
             id: `mock-sess-${i}`,
             leadName: `Lead ${i + 1}`,
             leadPhone: `050-00000${i.toString().padStart(2, '0')}`,
-            createdAt: new Date(now.getTime() - i * 3600000).toISOString() // 1 hour intervals
+            createdAt: createdAt.toISOString()
         });
     }
 
+    // Filter sessions by date if provided
+    let filteredSessions = sessions;
+    if (startDate) {
+        filteredSessions = filteredSessions.filter(s => new Date(s.createdAt) >= startDate);
+    }
+    if (endDate) {
+        // Ensure end date includes the full day
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        filteredSessions = filteredSessions.filter(s => new Date(s.createdAt) <= endOfDay);
+    }
+
     const map: Record<string, SessionSubmission> = {};
-    sessions.forEach(s => map[s.id] = s);
+    filteredSessions.forEach(s => map[s.id] = s);
 
     // Create subsets for funnel stages to simulate drop-off
-    const step1 = sessions; // 50
-    const step2 = step1.slice(0, 45);
-    const step3 = step2.slice(0, 40);
-    const step4 = step3.slice(0, 35);
-    const step5 = step4.slice(0, 30);
-    const step6 = step5.slice(0, 25);
-    const step61 = step6.slice(0, 20); // Request Saving
-    const step7 = step6.slice(0, 10); // Meeting
-    const step8 = step6.slice(10, 25); // Callback
+    const step1 = filteredSessions;
+    const step2 = step1.slice(0, Math.floor(step1.length * 0.9));
+    const step3 = step2.slice(0, Math.floor(step2.length * 0.9));
+    const step4 = step3.slice(0, Math.floor(step3.length * 0.9));
+    const step5 = step4.slice(0, Math.floor(step4.length * 0.9));
+    const step6 = step5.slice(0, Math.floor(step5.length * 0.9));
+    const step61 = step6.slice(0, Math.floor(step6.length * 0.8)); // Request Saving
+    const step7 = step6.slice(0, Math.floor(step6.length * 0.4)); // Meeting
+    const step8 = step6.slice(Math.floor(step6.length * 0.4), Math.floor(step6.length * 0.9)); // Callback
 
     // Randomly assign insurance interest to some sessions in the "extras" metric calculation
     // Note: The mock data for submissions list is separate (controlled by getSubmissions mock if it existed, but here we only control funnel stats)
@@ -452,19 +478,19 @@ const getMockFunnelData = (): FunnelDataResponse => {
         message: 'success (mock)',
         funnel: [
             { key: 'landing', label: 'כניסה לדף', step: 1, count: step1.length, percentage: 100, sessionIds: step1.map(s => s.id), insuranceCount: 0 },
-            { key: 'debts', label: 'חובות', step: 2, count: step2.length, percentage: 90, sessionIds: step2.map(s => s.id), insuranceCount: 2 },
-            { key: 'payments', label: 'החזרים חודשיים', step: 3, count: step3.length, percentage: 80, sessionIds: step3.map(s => s.id), insuranceCount: 3 },
-            { key: 'assets', label: 'נכסים', step: 4, count: step4.length, percentage: 70, sessionIds: step4.map(s => s.id), insuranceCount: 4 },
-            { key: 'contact', label: 'פרטי קשר', step: 5, count: step5.length, percentage: 60, sessionIds: step5.map(s => s.id), insuranceCount: 5 },
-            { key: 'simulator', label: 'סימולטור', step: 6, count: step6.length, percentage: 50, sessionIds: step6.map(s => s.id), insuranceCount: 6 },
-            { key: 'request_saving', label: 'בקשת חיסכון', step: 6.1, count: step61.length, percentage: 40, sessionIds: step61.map(s => s.id), insuranceCount: 5 },
-            { key: 'schedule_meeting', label: 'תיאום פגישה', step: 7, count: step7.length, percentage: 20, sessionIds: step7.map(s => s.id), insuranceCount: 2 },
-            { key: 'request_callback', label: 'בקשת שיחה חוזרת', step: 8, count: step8.length, percentage: 30, sessionIds: step8.map(s => s.id), insuranceCount: 12 }, // Used in visual
+            { key: 'debts', label: 'חובות', step: 2, count: step2.length, percentage: step1.length > 0 ? Math.round((step2.length / step1.length) * 100) : 0, sessionIds: step2.map(s => s.id), insuranceCount: Math.floor(step2.length * 0.1) },
+            { key: 'payments', label: 'החזרים חודשיים', step: 3, count: step3.length, percentage: step1.length > 0 ? Math.round((step3.length / step1.length) * 100) : 0, sessionIds: step3.map(s => s.id), insuranceCount: Math.floor(step3.length * 0.1) },
+            { key: 'assets', label: 'נכסים', step: 4, count: step4.length, percentage: step1.length > 0 ? Math.round((step4.length / step1.length) * 100) : 0, sessionIds: step4.map(s => s.id), insuranceCount: Math.floor(step4.length * 0.1) },
+            { key: 'contact', label: 'פרטי קשר', step: 5, count: step5.length, percentage: step1.length > 0 ? Math.round((step5.length / step1.length) * 100) : 0, sessionIds: step5.map(s => s.id), insuranceCount: Math.floor(step5.length * 0.1) },
+            { key: 'simulator', label: 'סימולטור', step: 6, count: step6.length, percentage: step1.length > 0 ? Math.round((step6.length / step1.length) * 100) : 0, sessionIds: step6.map(s => s.id), insuranceCount: Math.floor(step6.length * 0.1) },
+            { key: 'request_saving', label: 'בקשת חיסכון', step: 6.1, count: step61.length, percentage: step1.length > 0 ? Math.round((step61.length / step1.length) * 100) : 0, sessionIds: step61.map(s => s.id), insuranceCount: Math.floor(step61.length * 0.1) },
+            { key: 'schedule_meeting', label: 'תיאום פגישה', step: 7, count: step7.length, percentage: step1.length > 0 ? Math.round((step7.length / step1.length) * 100) : 0, sessionIds: step7.map(s => s.id), insuranceCount: Math.floor(step7.length * 0.1) },
+            { key: 'request_callback', label: 'בקשת שיחה חוזרת', step: 8, count: step8.length, percentage: step1.length > 0 ? Math.round((step8.length / step1.length) * 100) : 0, sessionIds: step8.map(s => s.id), insuranceCount: Math.floor(step8.length * 0.1) }, // Used in visual
         ],
         extras: {
-            interestedInInsurance: 12,
+            interestedInInsurance: Math.floor(filteredSessions.length * 0.24),
             interestedInInsurancePercentage: 24,
-            totalSubmissions: 50
+            totalSubmissions: filteredSessions.length
         },
         sessionSubmissionMap: map
     };
