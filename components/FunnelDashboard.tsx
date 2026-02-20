@@ -73,6 +73,20 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
         );
     }
 
+    // Green gradient palette: light green (top) → dark green (bottom)
+    const greenGradient = [
+        '#e8f5e9', // lightest green – step 0 (Landing)
+        '#c8e6c9', // step 1
+        '#a5d6a7', // step 2
+        '#81c784', // step 3
+        '#66bb6a', // step 4
+        '#4caf50', // step 5
+        '#43a047', // step 6
+        '#388e3c', // step 7
+        '#2e7d32', // step 8
+        '#1b5e20', // darkest green – bottom
+    ];
+
     // Helper to render a standard funnel step
     // Width starts at 100% and decreases by 5% each step to create the inverted pyramid look
     const renderStep = (stage: FunnelStage, index: number, isLastRow = false) => {
@@ -81,26 +95,43 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
         // We'll use inline styles for width relative to max-w-4xl container.
         const widthPercent = Math.max(100 - (index * 6), 50); // Decrease by 6% each step
 
+        // Pick colour from gradient; for bottom-row items use the darkest shades
+        const bgColor = isLastRow
+            ? greenGradient[greenGradient.length - 1]
+            : (greenGradient[index] ?? greenGradient[greenGradient.length - 1]);
+
+        // Use white text on darker backgrounds (index >= 4 or bottom row)
+        const isDark = isLastRow || index >= 4;
+        const textColor = isDark ? '#ffffff' : '#1b5e20';
+        const subTextColor = isDark ? 'rgba(255,255,255,0.85)' : '#2e7d32';
+        const badgeBg = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(27,94,32,0.1)';
+        const borderColor = isDark ? 'rgba(255,255,255,0.3)' : '#43a047';
+
         return (
             <button
                 key={stage.key}
                 onClick={() => onFilter && onFilter(stage)}
-                className="relative bg-white border-2 border-gray-800 rounded-2xl p-4 text-center hover:bg-blue-50 hover:border-blue-600 hover:shadow-lg transition-all flex flex-col items-center justify-center group my-1"
-                style={{ width: isLastRow ? '100%' : `${widthPercent}%`, minHeight: '64px' }}
+                className="relative rounded-2xl p-4 text-center hover:shadow-lg hover:scale-[1.02] transition-all flex flex-col items-center justify-center group my-1 border-2"
+                style={{
+                    width: isLastRow ? '100%' : `${widthPercent}%`,
+                    minHeight: '64px',
+                    backgroundColor: bgColor,
+                    borderColor: borderColor,
+                }}
             >
                 <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg font-bold text-gray-800 group-hover:text-blue-700">{stage.label}</span>
+                    <span className="text-lg font-bold" style={{ color: textColor }}>{stage.label}</span>
                 </div>
-                <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center justify-center gap-4 text-sm" style={{ color: subTextColor }}>
                     <span className="font-bold flex items-center gap-1">
                         <i className="fa-solid fa-users"></i> {stage.count}
                     </span>
-                    <span className="bg-gray-100 px-2 py-0.5 rounded-full text-xs font-semibold">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: badgeBg, color: textColor }}>
                         {stage.percentage}%
                     </span>
                     {/* Insurance Stat for Callback Step */}
                     {stage.key === 'request_callback' && stage.insuranceCount !== undefined && (
-                        <div className="mt-2 text-xs text-green-700 font-bold bg-green-50 px-2 py-1 rounded border border-green-200 w-full">
+                        <div className="mt-2 text-xs font-bold px-2 py-1 rounded w-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}>
                             <i className="fa-solid fa-shield-halved mr-1"></i>
                             {stage.insuranceCount} interested in insurance
                         </div>
