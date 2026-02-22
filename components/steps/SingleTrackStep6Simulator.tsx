@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { pushGtmEvent } from '../../utils/gtm';
 import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
@@ -118,6 +119,9 @@ export const SingleTrackStep6Simulator: React.FC = () => {
       if (window.dataLayer) {
         window.dataLayer.push({ event: 'lead_form_submit' });
       }
+
+      // Push funnel event to GTM
+      pushGtmEvent('funnel_insurance_lead_submitted', { funnel_stage: 'insurance_lead' });
 
       // Track conversion
       trackConversion('insurance_lead_submitted', {
@@ -334,6 +338,9 @@ export const SingleTrackStep6Simulator: React.FC = () => {
       step: 6,
       currentPayment
     });
+
+    // Push funnel event to GTM — user completed full form and sees the simulator
+    pushGtmEvent('funnel_simulator_reached', { funnel_stage: 'simulator' });
 
     // Track conversion - user has completed the entire single-track flow
     trackConversion('flow_completion', {

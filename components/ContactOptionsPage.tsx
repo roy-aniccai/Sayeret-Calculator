@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { pushGtmEvent } from '../utils/gtm';
 import { Input } from './ui/Input';
 import { Checkbox } from './ui/Checkbox';
 import { useSingleTrackForm } from '../context/SingleTrackFormContext';
@@ -38,6 +39,11 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Push GTM event when contact options screen is shown
+  useEffect(() => {
+    pushGtmEvent('funnel_contact_options_opened', { funnel_stage: 'contact_options' });
+  }, []);
+
   // Initialize Calendly widget
   const openCalendly = () => {
     setIsCalendlyLoading(true);
@@ -60,6 +66,8 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
     // Simple approach - just open in new tab for reliability
     setTimeout(() => {
       setIsCalendlyLoading(false);
+      // Push funnel event to GTM before opening Calendly
+      pushGtmEvent('funnel_calendly_clicked', { funnel_stage: 'calendly' });
       window.open('https://calendly.com/tomers-finance-info/meet-with-me-1', '_blank');
     }, 500);
   };
@@ -102,6 +110,9 @@ export const ContactOptionsPage: React.FC<ContactOptionsPageProps> = ({
       }
 
       setIsSubmitted(true);
+
+      // Push funnel event to GTM
+      pushGtmEvent('funnel_callback_requested', { funnel_stage: 'callback' });
     } catch (error) {
       console.error('Error submitting callback request:', error);
     } finally {

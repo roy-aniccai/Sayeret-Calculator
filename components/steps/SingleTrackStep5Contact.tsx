@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { pushGtmEvent } from '../../utils/gtm';
 import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
@@ -228,6 +229,9 @@ export const SingleTrackStep5Contact: React.FC = () => {
         step: 5,
         value: simulationResult.monthlySavings
       });
+
+      // Push funnel event to GTM (visible to Facebook Pixel, Google Ads, etc.)
+      pushGtmEvent('funnel_phone_submitted', { funnel_stage: 'phone_submitted' });
 
       // Proceed to next step
       nextStep();
