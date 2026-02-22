@@ -429,15 +429,19 @@ function buildCsv(rows) {
 
 adminRouter.post('/export-csv', async (req, res) => {
     try {
-        const { mode } = req.body;
+        const { mode, format } = req.body; // format: 'standard' (default) | 'hebrew'
         if (!mode || !['full', 'delta'].includes(mode)) {
             return res.status(400).json({ error: 'mode must be "full" or "delta"' });
         }
 
-        // For delta mode, find the last export timestamp
+        const isHebrew = format === 'hebrew';
+        console.log(`CSV export started: mode=${mode}, format=${format}, isHebrew=${isHebrew}`);
+
+        // For delta mode, find the last export timestamp for this specific format
         let sinceDate = null;
         if (mode === 'delta') {
             const lastExport = await db.collection('csv_exports')
+                .where('format', '==', isHebrew ? 'hebrew' : 'standard')
                 .orderBy('runTimestamp', 'desc')
                 .limit(1)
                 .get();
@@ -456,26 +460,35 @@ adminRouter.post('/export-csv', async (req, res) => {
         if (mode === 'delta' && sinceDate) {
             query = query.where('createdAt', '>', sinceDate);
         }
-        // Remove limit for production
-        // query = query.limit(2);
 
         const snapshot = await query.get();
-        const rows = snapshot.docs.map(extractRow);
 
-        // Build CSV string
-        const csvContent = buildCsv(rows);
+        let csvContent = '';
+        let rowCount = 0;
+
+        if (isHebrew) {
+            const allRows = snapshot.docs.flatMap(extractHebrewRows);
+            csvContent = buildHebrewCsv(allRows);
+            rowCount = allRows.length;
+        } else {
+            const rows = snapshot.docs.map(extractRow);
+            csvContent = buildCsv(rows);
+            rowCount = rows.length;
+        }
 
         // Upload to Firebase Storage
         const now = new Date();
         const ts = now.toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
-        const fileName = `csv_exports/submissions_${mode}_${ts}.csv`;
+        // Hebrew exports use 'scala_' prefix, standard use 'submissions_'
+        const fileName = isHebrew
+            ? `csv_exports/scala_${mode}_hebrew_${ts}.csv`
+            : `csv_exports/submissions_${mode}_${ts}.csv`;
 
-        // Use the explicit bucket name confirmed by the user
         const bucket = admin.storage().bucket('mortgage-85413.firebasestorage.app');
         const file = bucket.file(fileName);
 
         await file.save(csvContent, {
-            contentType: 'text/csv',
+            contentType: 'text/csv; charset=utf-8',
             metadata: { cacheControl: 'public, max-age=31536000' }
         });
 
@@ -489,7 +502,6 @@ adminRouter.post('/export-csv', async (req, res) => {
             signedUrl = url;
         } catch (signError) {
             console.error('Error generating signed URL:', signError);
-            // Fallback: try to make public if signing fails (or return empty string and let user download from console)
             try {
                 await file.makePublic();
                 signedUrl = file.publicUrl();
@@ -505,22 +517,22 @@ adminRouter.post('/export-csv', async (req, res) => {
             runTimestamp: admin.firestore.FieldValue.serverTimestamp(),
             runTimestampISO: now.toISOString(),
             mode,
-            submissionCount: rows.length,
+            format: isHebrew ? 'hebrew' : 'standard',
+            submissionCount: rowCount,
             csvStoragePath: fileName,
             csvDownloadUrl: signedUrl,
             consoleUrl,
-            rows: [] // Don't save rows to Firestore anymore to save space/cost, just metadata
+            rows: []
         };
         const docRef = await db.collection('csv_exports').add(exportDoc);
 
-        // ... inside the existing adminRouter ...
-        console.log(`CSV export (${mode}): ${rows.length} rows → ${fileName}`);
+        console.log(`CSV export (${mode}, ${isHebrew ? 'Hebrew' : 'Standard'}): ${rowCount} rows → ${fileName}`);
         res.json({
             success: true,
             exportId: docRef.id,
             csvDownloadUrl: signedUrl,
             consoleUrl,
-            submissionCount: rows.length,
+            submissionCount: rowCount,
             csvStoragePath: fileName
         });
     } catch (error) {
@@ -738,118 +750,7 @@ function buildHebrewCsv(allRows) {
     return '\uFEFF' + header + '\n' + lines.join('\n');
 }
 
-adminRouter.post('/export-csv', async (req, res) => {
-    try {
-        const { mode, format } = req.body; // format: 'standard' (default) | 'hebrew'
-        if (!mode || !['full', 'delta'].includes(mode)) {
-            return res.status(400).json({ error: 'mode must be "full" or "delta"' });
-        }
-
-        const isHebrew = format === 'hebrew';
-
-        // For delta mode, find the last export timestamp
-        let sinceDate = null;
-        if (mode === 'delta') {
-            const lastExport = await db.collection('csv_exports')
-                .where('format', '==', isHebrew ? 'hebrew' : 'standard') // Check last export of SAME format
-                .orderBy('runTimestamp', 'desc')
-                .limit(1)
-                .get();
-
-            if (!lastExport.empty) {
-                const lastRun = lastExport.docs[0].data().runTimestamp;
-                if (lastRun && typeof lastRun.toDate === 'function') {
-                    sinceDate = lastRun.toDate();
-                } else if (lastRun) {
-                    sinceDate = new Date(lastRun);
-                }
-            }
-        }
-
-        // Query submissions
-        let query = db.collection('submissions').orderBy('createdAt', 'desc');
-        if (mode === 'delta' && sinceDate) {
-            query = query.where('createdAt', '>', sinceDate);
-        }
-
-        const snapshot = await query.get();
-
-        let csvContent = '';
-        let rowCount = 0;
-
-        if (isHebrew) {
-            const allRows = snapshot.docs.flatMap(extractHebrewRows);
-            csvContent = buildHebrewCsv(allRows);
-            rowCount = allRows.length;
-        } else {
-            const rows = snapshot.docs.map(extractRow);
-            csvContent = buildCsv(rows);
-            rowCount = rows.length;
-        }
-
-        // Upload to Firebase Storage
-        const now = new Date();
-        const ts = now.toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
-        const formatSuffix = isHebrew ? '_hebrew' : '';
-        const fileName = `csv_exports/submissions_${mode}${formatSuffix}_${ts}.csv`;
-
-        // Use the explicit bucket name confirmed by the user
-        const bucket = admin.storage().bucket('mortgage-85413.firebasestorage.app');
-        const file = bucket.file(fileName);
-
-        await file.save(csvContent, {
-            contentType: 'text/csv; charset=utf-8',
-            metadata: { cacheControl: 'public, max-age=31536000' }
-        });
-
-        // Generate signed URL (valid 7 days)
-        let signedUrl = '';
-        try {
-            const [url] = await file.getSignedUrl({
-                action: 'read',
-                expires: Date.now() + 7 * 24 * 60 * 60 * 1000
-            });
-            signedUrl = url;
-        } catch (signError) {
-            console.error('Error generating signed URL:', signError);
-            try {
-                await file.makePublic();
-                signedUrl = file.publicUrl();
-            } catch (publicError) {
-                console.error('Error making file public:', publicError);
-            }
-        }
-
-        const consoleUrl = `https://console.firebase.google.com/project/mortgage-85413/storage/${bucket.name}/files`;
-
-        // Save export metadata to Firestore
-        const exportDoc = {
-            runTimestamp: admin.firestore.FieldValue.serverTimestamp(),
-            runTimestampISO: now.toISOString(),
-            mode,
-            format: isHebrew ? 'hebrew' : 'standard',
-            submissionCount: rowCount,
-            csvStoragePath: fileName,
-            csvDownloadUrl: signedUrl,
-            consoleUrl,
-            rows: []
-        };
-        const docRef = await db.collection('csv_exports').add(exportDoc);
-
-        console.log(`CSV export (${mode}, ${isHebrew ? 'Hebrew' : 'Standard'}): ${rowCount} rows → ${fileName}`);
-        res.json({
-            success: true,
-            exportId: docRef.id,
-            csvDownloadUrl: signedUrl,
-            consoleUrl,
-            submissionCount: rowCount,
-            csvStoragePath: fileName
-        });
-    } catch (error) {
-        console.error('CSV export error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
+// NOTE: /export-csv is defined above (line ~430) — duplicate removed.
 
 adminApp.use('/', adminRouter);
 adminApp.use('/admin-api', adminRouter); // Support direct path if needed
