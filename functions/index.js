@@ -375,7 +375,8 @@ const CSV_COLUMNS = [
     'leadName', 'leadPhone', 'createdAt', 'didRequestCallback', 'didClickCalendly',
     'canSave', 'didRequestSavings', 'monthlySavings', 'newMortgageDurationYears',
     'age', 'mortgageBalance', 'otherLoansBalance', 'mortgagePayment',
-    'otherLoansPayment', 'propertyValue', 'sessionId', 'utm_campaign'
+    'otherLoansPayment', 'propertyValue', 'sessionId',
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'
 ];
 
 function extractRow(doc) {
@@ -408,7 +409,11 @@ function extractRow(doc) {
         otherLoansPayment: json.otherLoansPayment != null ? json.otherLoansPayment : '',
         propertyValue: json.propertyValue != null ? json.propertyValue : '',
         sessionId: d.sessionId || json.sessionId || '',
-        utm_campaign: (json.utmParams && json.utmParams.utm_campaign) || (json.campaignData && json.campaignData.utmParams && json.campaignData.utmParams.utm_campaign) || ''
+        utm_source: (json.utmParams && json.utmParams.utm_source) || (json.campaignData && json.campaignData.utmParams && json.campaignData.utmParams.utm_source) || '',
+        utm_medium: (json.utmParams && json.utmParams.utm_medium) || (json.campaignData && json.campaignData.utmParams && json.campaignData.utmParams.utm_medium) || '',
+        utm_campaign: (json.utmParams && json.utmParams.utm_campaign) || (json.campaignData && json.campaignData.utmParams && json.campaignData.utmParams.utm_campaign) || '',
+        utm_content: (json.utmParams && json.utmParams.utm_content) || (json.campaignData && json.campaignData.utmParams && json.campaignData.utmParams.utm_content) || '',
+        utm_term: (json.utmParams && json.utmParams.utm_term) || (json.campaignData && json.campaignData.utmParams && json.campaignData.utmParams.utm_term) || ''
     };
 }
 
