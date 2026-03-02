@@ -375,7 +375,7 @@ const CSV_COLUMNS = [
     'leadName', 'leadPhone', 'createdAt', 'didRequestCallback', 'didClickCalendly',
     'canSave', 'didRequestSavings', 'monthlySavings', 'newMortgageDurationYears',
     'age', 'mortgageBalance', 'otherLoansBalance', 'mortgagePayment',
-    'otherLoansPayment', 'propertyValue', 'sessionId'
+    'otherLoansPayment', 'propertyValue', 'sessionId', 'utm_campaign'
 ];
 
 function extractRow(doc) {
@@ -407,7 +407,8 @@ function extractRow(doc) {
         mortgagePayment: json.mortgagePayment != null ? json.mortgagePayment : '',
         otherLoansPayment: json.otherLoansPayment != null ? json.otherLoansPayment : '',
         propertyValue: json.propertyValue != null ? json.propertyValue : '',
-        sessionId: d.sessionId || json.sessionId || ''
+        sessionId: d.sessionId || json.sessionId || '',
+        utm_campaign: (json.utmParams && json.utmParams.utm_campaign) || (json.campaignData && json.campaignData.utmParams && json.campaignData.utmParams.utm_campaign) || ''
     };
 }
 
