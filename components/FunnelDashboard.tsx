@@ -144,10 +144,7 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
         );
     };
 
-    // Split stages: regular steps vs bottom row (Callback/Meeting)
-    // The main flow stops at Simulator (Step 6) or Request Saving (Step 6.1)
-    // The bottom row contains Steps 7 & 8 side-by-side.
-
+    // Main flow stops at Simulator (Step 6) or Request Saving (Step 6.1)
     // Ordered Steps:
     // 1. Landing
     // 2. Debts
@@ -157,15 +154,9 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
     // 6. Simulator
     // 6.1 Request Saving
 
-    // Bottom Split:
-    // [Request Callback (8)] [Schedule Meeting (7)]
-
-    const mainSteps = stages.filter(s => s.step <= 6.1).sort((a, b) => a.step - b.step);
-    const bottomSteps = stages.filter(s => s.step > 6.1).sort((a, b) => b.step - a.step); // 8 before 7 usually? No, side-by-side order.
-
-    // Specific steps for bottom row
-    const callbackStage = stages.find(s => s.key === 'request_callback');
-    const meetingStage = stages.find(s => s.key === 'schedule_meeting');
+    const mainSteps = stages
+        .filter(s => s.key !== 'schedule_meeting' && s.key !== 'request_callback')
+        .sort((a, b) => a.step - b.step);
 
     return (
         <div className="space-y-8 flex flex-col items-center pb-12 w-full max-w-4xl mx-auto">
@@ -250,20 +241,6 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
             {/* Main Funnel Stack */}
             <div className="w-full flex flex-col items-center gap-3">
                 {mainSteps.map((stage, index) => renderStep(stage, index))}
-            </div>
-
-            {/* Bottom Split Row */}
-            <div className="w-full flex justify-center gap-4 mt-2" style={{ width: '60%' }}>
-                {callbackStage && (
-                    <div className="flex-1">
-                        {renderStep(callbackStage, 0, true)}
-                    </div>
-                )}
-                {meetingStage && (
-                    <div className="flex-1">
-                        {renderStep(meetingStage, 0, true)}
-                    </div>
-                )}
             </div>
 
             {/* Summary Metrics (Insurance) */}

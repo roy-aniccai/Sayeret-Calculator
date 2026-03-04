@@ -484,8 +484,6 @@ const getMockFunnelData = (startDate?: Date | null, endDate?: Date | null): Funn
             { key: 'contact', label: 'פרטי קשר', step: 5, count: step5.length, percentage: step1.length > 0 ? Math.round((step5.length / step1.length) * 100) : 0, sessionIds: step5.map(s => s.id), insuranceCount: Math.floor(step5.length * 0.1) },
             { key: 'simulator', label: 'סימולטור', step: 6, count: step6.length, percentage: step1.length > 0 ? Math.round((step6.length / step1.length) * 100) : 0, sessionIds: step6.map(s => s.id), insuranceCount: Math.floor(step6.length * 0.1) },
             { key: 'request_saving', label: 'בקשת חיסכון', step: 6.1, count: step61.length, percentage: step1.length > 0 ? Math.round((step61.length / step1.length) * 100) : 0, sessionIds: step61.map(s => s.id), insuranceCount: Math.floor(step61.length * 0.1) },
-            { key: 'schedule_meeting', label: 'תיאום פגישה', step: 7, count: step7.length, percentage: step1.length > 0 ? Math.round((step7.length / step1.length) * 100) : 0, sessionIds: step7.map(s => s.id), insuranceCount: Math.floor(step7.length * 0.1) },
-            { key: 'request_callback', label: 'בקשת שיחה חוזרת', step: 8, count: step8.length, percentage: step1.length > 0 ? Math.round((step8.length / step1.length) * 100) : 0, sessionIds: step8.map(s => s.id), insuranceCount: Math.floor(step8.length * 0.1) }, // Used in visual
         ],
         extras: {
             interestedInInsurance: Math.floor(filteredSessions.length * 0.24),

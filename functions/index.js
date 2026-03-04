@@ -331,8 +331,6 @@ adminRouter.get('/funnel-data', async (req, res) => {
             { key: 'contact', label: 'פרטי קשר', step: 5, sessions: [...stepSessions[5]] },
             { key: 'simulator', label: 'סימולטור', step: 6, sessions: [...stepSessions[6]] },
             { key: 'request_saving', label: 'בקשת חיסכון', step: 6.1, sessions: [...requestSavingSessions] },
-            { key: 'schedule_meeting', label: 'תיאום פגישה', step: 7, sessions: [...calendlySessions] },
-            { key: 'request_callback', label: 'בקשת שיחה חוזרת', step: 8, sessions: [...callbackSessions] },
         ];
 
         const totalSessions = stepSessions[1].size;
@@ -705,7 +703,10 @@ function extractHebrewRows(doc) {
     const json = d.fullDataJson || {};
     const sim = d.simulationResult || {};
 
-    const baseRow = {
+    const canSave = sim.canSave === true;
+    const isSavingsLead = canSave && d.didRequestSavings === true;
+
+    const row = {
         'שם פרטי': d.leadName || json.leadName || json.lead_name || '',
         'טלפון': d.leadPhone || json.leadPhone || json.lead_phone || '',
         'הערות': sim.monthlySavings != null ? sim.monthlySavings : '',
@@ -716,33 +717,12 @@ function extractHebrewRows(doc) {
         'החזר הלוואות אחרות חודשי': json.otherLoansPayment != null ? json.otherLoansPayment : '',
         'שווי נכס מוערך כיום': json.propertyValue != null ? json.propertyValue : '',
         'מספר מזהה מחשבון': d.sessionId || json.sessionId || '',
-        'מוקצה אל': 'יואב שטיל',
-        'מקור': 'ייעוץ משכנתא לביטוח',
-        'סטטוס': 'ליד חדש'
+        'מוקצה אל': isSavingsLead ? 'תומר שקד' : 'יואב שטיל',
+        'מקור': isSavingsLead ? 'ייעוץ משכנתא' : 'ייעוץ משכנתא לביטוח',
+        'סטטוס': isSavingsLead ? 'מחכה לשיחה מיועץ משכנתא' : 'ליד חדש'
     };
 
-    const rows = [baseRow];
-    const canSave = sim.canSave === true;
-
-    // Duplication Logic 1: Callback
-    if (canSave && d.didRequestCallback === true) {
-        const callbackRow = { ...baseRow };
-        callbackRow['מוקצה אל'] = 'תומר';
-        callbackRow['מקור'] = 'ייעוץ משכנתא';
-        callbackRow['סטטוס'] = 'מחכה לשיחה מיועץ משכנתא';
-        rows.push(callbackRow);
-    }
-
-    // Duplication Logic 2: Calendly
-    if (canSave && d.didClickCalendly === true) {
-        const calendlyRow = { ...baseRow };
-        calendlyRow['מוקצה אל'] = 'תומר';
-        calendlyRow['מקור'] = 'ייעוץ משכנתא';
-        calendlyRow['סטטוס'] = 'תואמה פגישה';
-        rows.push(calendlyRow);
-    }
-
-    return rows;
+    return [row];
 }
 
 function buildHebrewCsv(allRows) {
