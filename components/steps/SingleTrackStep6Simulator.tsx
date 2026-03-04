@@ -1,13 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { pushGtmEvent } from '../../utils/gtm';
 import { useSingleTrackForm } from '../../context/SingleTrackFormContext';
-import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
-import { Input } from '../ui/Input';
-import { Checkbox } from '../ui/Checkbox';
-import { useNotification } from '../../context/NotificationContext';
-import { submitData } from '../../utils/api';
-import { ContactOptionsPage } from '../ContactOptionsPage';
 import { formatNumberWithCommas } from '../../utils/helpers';
 import {
   validateLoanParams,
@@ -33,7 +27,6 @@ export const SingleTrackStep6Simulator: React.FC = () => {
   console.log('Single Track Simulator RTL Fix Applied: v1.1 (Consistent Scale)');
   const {
     formData,
-    updateFormData,
     resetForm,
     trackCampaignEvent,
     trackConversion,
@@ -46,95 +39,10 @@ export const SingleTrackStep6Simulator: React.FC = () => {
   const config = getTrackConfigSafe(TrackType.MONTHLY_REDUCTION);
   const primaryColor = config.ui.primaryColor;
 
-  const [showContactOptions, setShowContactOptions] = useState(false);
-  const [showLeadDialog, setShowLeadDialog] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // Lead Form State
-  const [leadName, setLeadName] = useState(formData.leadName || '');
-  const [leadPhone, setLeadPhone] = useState(formData.leadPhone || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ name?: string, phone?: string }>({});
-  const { showSuccessAlert, showErrorAlert } = useNotification();
 
-  const validatePhone = (phone: string) => {
-    const phoneRegex = /^0[5-9]\d{8}$/;
-    return phoneRegex.test(phone.replace(/[-\s]/g, ''));
-  };
-
-  const handleLeadSubmit = async () => {
-    // Validation
-    const errors: { name?: string, phone?: string } = {};
-    if (!leadName.trim()) errors.name = 'נא להזין שם מלא';
-    if (!leadPhone.trim()) errors.phone = 'נא להזין מספר טלפון';
-    else if (!validatePhone(leadPhone)) errors.phone = 'מספר טלפון לא תקין';
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // If we have a submission ID, update it
-      if (submissionDocId) {
-        await sendSubmissionUpdate({
-          contactUpdate: {
-            leadName,
-            leadPhone,
-          },
-          action: {
-            type: 'UPDATE_CONTACT_DETAILS',
-            timestamp: new Date().toISOString()
-          }
-        });
-
-        // Update local form data as well
-        updateFormData({ leadName, leadPhone });
-      } else {
-        // Fallback to new submission if no ID (should generally not happen here)
-        await submitData({
-          sessionId,
-          leadName,
-          leadPhone,
-          mortgageBalance: formData.mortgageBalance,
-          otherLoansBalance: formData.otherLoansBalance,
-          mortgagePayment: formData.mortgagePayment,
-          otherLoansPayment: formData.otherLoansPayment,
-          propertyValue: formData.propertyValue,
-          age: formData.age || null,
-          interestedInInsurance: true,
-          simulationResult: null,
-        });
-      }
-
-      setShowLeadDialog(false);
-      showSuccessAlert('הפרטים נשלחו בהצלחה!', 'מומחה יחזור אליך בהקדם לבחינת חיסכון בביטוח.');
-
-      // Keep the form values for UX, don't clear them immediately in case they re-open
-      // setLeadName(''); 
-      // setLeadPhone('');
-
-      // Track lead form submission
-      if (window.dataLayer) {
-        window.dataLayer.push({ event: 'lead_form_submit' });
-      }
-
-      // Push funnel event to GTM
-      pushGtmEvent('funnel_insurance_lead_submitted', { funnel_stage: 'insurance_lead' });
-
-      // Track conversion
-      trackConversion('insurance_lead_submitted', {
-        step: 6
-      });
-
-    } catch (error) {
-      console.error('Submission error:', error);
-      showErrorAlert('שגיאה', 'אירעה שגיאה בשליחת הפרטים, אנא נסה שנית.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleShare = async () => {
     const shareData = {
@@ -391,16 +299,8 @@ export const SingleTrackStep6Simulator: React.FC = () => {
       paymentReduction: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0
     });
 
-    // Determine correct dialog to open based on state
-    // 'no-mortgage-savings' -> Lead Dialog (Insurance only)
-    // 'insufficient-savings' -> Contact Options (Calendly/Details) like normal success
-    const isNoSolution = noSolution || scenarios.specialCase === 'no-mortgage-savings';
-
-    if (isNoSolution) {
-      setShowLeadDialog(true);
-    } else {
-      setShowContactOptions(true);
-    }
+    // Show thank-you dialog directly (skip contact options / lead form)
+    setShowThankYou(true);
   };
 
   const handleTryAnother = () => {
@@ -441,87 +341,29 @@ export const SingleTrackStep6Simulator: React.FC = () => {
   // State for selected scenario
   const [selectedScenario, setSelectedScenario] = useState<'minimum' | 'maximum' | 'middle' | null>(null);
 
-  const renderLeadDialog = () => (
+  const renderThankYouDialog = () => (
     <Dialog
-      isOpen={showLeadDialog}
-      onClose={() => setShowLeadDialog(false)}
+      isOpen={showThankYou}
+      onClose={() => setShowThankYou(false)}
       title={null}
-      showCloseButton={true}
+      showCloseButton={false}
       showIcon={false}
       showFooterButton={false}
     >
       <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">אשמח שיחזרו אלי</h3>
-        <p className="text-gray-600 mb-6">
-          השאר פרטים ויועץ מומחה יחזור אליך בהקדם עם ניתוח מלא והצעה מותאמת אישית.
-        </p>
-
-        <div className="space-y-4 text-right">
-          <Input
-            label="שם מלא"
-            value={leadName}
-            onChange={(e) => {
-              setLeadName(e.target.value);
-              if (formErrors.name) setFormErrors({ ...formErrors, name: '' });
-            }}
-            error={formErrors.name}
-            placeholder="ישראל ישראלי"
-          />
-
-          <Input
-            label="טלפון"
-            value={leadPhone}
-            onChange={(e) => {
-              setLeadPhone(e.target.value);
-              if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' });
-            }}
-            error={formErrors.phone}
-            placeholder="050-0000000"
-            inputMode="tel"
-          />
-
-          <div className="bg-green-50 rounded-xl p-4 border border-green-200 mb-4 text-right">
-            <Checkbox
-              checked={formData.interestedInInsurance ?? true}
-              onChange={(checked) => {
-                updateFormData({ interestedInInsurance: checked });
-
-                if (submissionDocId) {
-                  sendSubmissionUpdate({
-                    contactUpdate: {
-                      interestedInInsurance: checked
-                    },
-                    action: {
-                      type: 'TOGGLE_INSURANCE',
-                      timestamp: new Date().toISOString(),
-                      details: { checked }
-                    }
-                  }).catch(err => console.error('Failed to log insurance toggle:', err));
-                }
-              }}
-              label="מעוניין גם בחיסכון בביטוח משכנתא"
-              description="עד 50,000 ש״ח חיסכון נוסף - בדיקה חינמית"
-            />
-          </div>
-
-          <Button
-            onClick={handleLeadSubmit}
-            disabled={isSubmitting}
-            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl mt-4 shadow-lg"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <i className="fa-solid fa-circle-notch fa-spin"></i>
-                שולח...
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <i className="fa-solid fa-paper-plane"></i>
-                אישור ושליחה למומחה
-              </span>
-            )}
-          </Button>
+        <div className="mb-6">
+          <i className="fa-solid fa-check-circle text-6xl text-green-500 mb-4"></i>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">תודה!</h2>
+          <p className="text-gray-600 leading-relaxed">
+            קיבלנו את הפנייה שלך. יועץ מומחה יחזור אליך בהקדם עם ניתוח מלא והצעה מותאמת.
+          </p>
         </div>
+        <button
+          onClick={() => setShowThankYou(false)}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all"
+        >
+          סגור
+        </button>
       </div>
     </Dialog>
   );
@@ -616,45 +458,7 @@ export const SingleTrackStep6Simulator: React.FC = () => {
         primaryColor={primaryColor}
       />
 
-      {/* Contact Options Page - Uses selected or default scenario */}
-      {showContactOptions && (
-        <ContactOptionsPage
-          onClose={() => setShowContactOptions(false)}
-          calculationSummary={(() => {
-            // Determine which scenario usage data to show
-            const activeScenario =
-              // 1. User selected specific
-              (selectedScenario && scenarios[`${selectedScenario}Scenario`]) ||
-              // 2. Insufficient savings (force max)
-              (scenarios.specialCase === 'insufficient-savings' ? scenarios.maximumScenario : null) ||
-              // 3. Default to middle (or minimum/maximum if middle missing)
-              scenarios.middleScenario ||
-              scenarios.maximumScenario ||
-              scenarios.minimumScenario;
-
-            if (activeScenario) {
-              return {
-                currentPayment,
-                newPayment: Math.round(activeScenario.monthlyPayment),
-                monthlySavings: Math.round(activeScenario.monthlyReduction),
-                totalSavings: Math.round(activeScenario.totalSavings),
-                years: activeScenario.years
-              };
-            }
-
-            // Fallback if something is weird
-            return {
-              currentPayment,
-              newPayment: Math.round(newPayment),
-              monthlySavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0,
-              totalSavings: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) * simulatorYears * 12 : 0,
-              years: simulatorYears
-            };
-          })()}
-        />
-      )}
-
-      {renderLeadDialog()}
+      {renderThankYouDialog()}
     </div>
   );
 };
