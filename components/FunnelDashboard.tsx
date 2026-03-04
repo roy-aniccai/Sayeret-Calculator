@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getFunnelData, FunnelStage, FunnelExtras, SessionSubmission } from '../utils/api';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // FunnelDashboard.tsx
 
@@ -18,8 +20,8 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
     const [extras, setExtras] = useState<FunnelExtras | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [startDate, setStartDate] = useState<string>('');
-    const [endDate, setEndDate] = useState<string>('');
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
 
     const loadFunnelData = async () => {
         setLoading(true);
@@ -30,6 +32,7 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
 
             // If end date is selected, set it to end of day to include the full day
             if (end) {
+                end = new Date(end);
                 end.setHours(23, 59, 59, 999);
             }
 
@@ -166,47 +169,76 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
 
     return (
         <div className="space-y-8 flex flex-col items-center pb-12 w-full max-w-4xl mx-auto">
-            <div className="w-full flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div className="w-full flex flex-col items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Marketing Funnel</h2>
 
-                <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+                {/* Custom CSS to scale the date picker calendar popup */}
+                <style>{`
+                    .funnel-datepicker .react-datepicker {
+                        font-size: 1.1rem;
+                        transform: scale(1.3);
+                        transform-origin: top center;
+                    }
+                    .funnel-datepicker .react-datepicker__header {
+                        padding-top: 10px;
+                    }
+                    .funnel-datepicker .react-datepicker__day,
+                    .funnel-datepicker .react-datepicker__day-name {
+                        width: 2.2rem;
+                        line-height: 2.2rem;
+                        margin: 0.2rem;
+                    }
+                    .funnel-datepicker .react-datepicker__current-month {
+                        font-size: 1.2rem;
+                    }
+                    .funnel-datepicker .react-datepicker-popper {
+                        z-index: 50;
+                    }
+                `}</style>
+                <div className="flex flex-wrap items-center justify-center gap-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 w-full funnel-datepicker">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 font-medium">From:</span>
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        <span className="text-base text-gray-600 font-semibold">From:</span>
+                        <DatePicker
+                            selected={startDate}
+                            onChange={(date: Date | null) => setStartDate(date)}
+                            selectsStart
+                            startDate={startDate}
+                            endDate={endDate}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Select date"
+                            isClearable
+                            className="border border-gray-300 rounded-lg px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 w-[170px]"
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 font-medium">To:</span>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        <span className="text-base text-gray-600 font-semibold">To:</span>
+                        <DatePicker
+                            selected={endDate}
+                            onChange={(date: Date | null) => setEndDate(date)}
+                            selectsEnd
+                            startDate={startDate}
+                            endDate={endDate}
+                            minDate={startDate}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Select date"
+                            isClearable
+                            className="border border-gray-300 rounded-lg px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 w-[170px]"
                         />
                     </div>
-                    <div className="h-6 w-px bg-gray-300 mx-1"></div>
                     <button
                         onClick={loadFunnelData}
-                        className="px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium transition-colors"
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-base font-medium transition-colors"
                     >
                         <i className="fa-solid fa-filter mr-1"></i> Filter
                     </button>
                     {(startDate || endDate) && (
                         <button
                             onClick={() => {
-                                setStartDate('');
-                                setEndDate('');
-                                // We need to trigger a reload after state update, but state update is async.
-                                // Simplest way is let the user click filter again or use useEffect, 
-                                // but for now let's just reset and user can click filter/refresh.
-                                // Actually, better UX:
+                                setStartDate(null);
+                                setEndDate(null);
                                 setTimeout(() => loadFunnelData(), 0);
                             }}
-                            className="text-gray-400 hover:text-gray-600 px-2"
+                            className="text-gray-400 hover:text-gray-600 px-2 text-lg"
                             title="Clear Dates"
                         >
                             <i className="fa-solid fa-times"></i>
@@ -241,9 +273,9 @@ export const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ onFilter }) =>
                         <div className="text-2xl font-bold text-gray-700">{extras.totalSubmissions}</div>
                         <div className="text-xs text-gray-500 uppercase">Total Leads</div>
                     </div>
-                    <div className="bg-green-50 rounded p-3 text-center border border-green-100">
-                        <div className="text-2xl font-bold text-green-700">{extras.interestedInInsurance}</div>
-                        <div className="text-xs text-green-600 uppercase">Insurance Interest</div>
+                    <div className="bg-green-900 rounded p-3 text-center border border-green-800">
+                        <div className="text-2xl font-bold text-white">{extras.interestedInInsurance}</div>
+                        <div className="text-xs text-green-200 uppercase">Insurance Interest</div>
                     </div>
                     <div className="bg-blue-50 rounded p-3 text-center border border-blue-100">
                         <div className="text-2xl font-bold text-blue-700">{extras.interestedInInsurancePercentage}%</div>
