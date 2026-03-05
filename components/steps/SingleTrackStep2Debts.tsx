@@ -43,30 +43,6 @@ const InputWithTooltip: React.FC<{
   );
 };
 
-interface Recommendation {
-  id: number;
-  name: string;
-  details: string;
-  text: string;
-  stars: number;
-}
-
-const RECOMMENDATIONS: Recommendation[] = [
-  {
-    id: 1,
-    name: "יפה",
-    details: "53, קרית עקרון",
-    text: "נתקלתי במקרה במחשבון באינטרנט, הקלדתי את נתוני המשכנתא שלי והוצג לי שאני יכולה לצמצם את הוצאת המשכנתא ב 1500 ₪ לחודש. הייתי מעט סקפטית אך החלטתי לנסות, חזר אלי תומר המדהים, תוך כחודש מחזר לי את המשכנתא וחתך לי את ההחזר החודשי, מקצוען אמיתי!!",
-    stars: 5
-  },
-  {
-    id: 2,
-    name: "חיים",
-    details: "48, פתח תקווה",
-    text: "תוך כמה קליקים הבנתי שאפשר להקל עלי בעלויות משכנתא החודשיות שתפחו מאוד בשנים האחרונות, אייל יצר איתי קשר, נפגשנו, התרשמתי מאוד לטובה, היום אני חודשיים אחרי ההוזלה של כמעט 2000 ₪ לחודש, ממש חזרתי לנשום מודה לכם מאוד!!!",
-    stars: 5
-  }
-];
 
 /**
  * SingleTrackStep2Debts - Debt collection step for single-track calculator
@@ -242,28 +218,6 @@ export const SingleTrackStep2Debts: React.FC = () => {
           )}
         </div>
 
-        {/* Recommendations - Less Prominent */}
-        <div className="flex flex-col gap-2 mt-4 pb-32 opacity-80 scale-95 origin-top">
-          <p className="text-xs text-center text-gray-400 font-medium mb-1">- לקוחות מספרים -</p>
-          {RECOMMENDATIONS.map((rec) => (
-            <div
-              key={rec.id}
-              className="bg-gray-50 rounded-md p-2 border border-gray-100 text-xs"
-            >
-              <div className="flex text-yellow-400 text-[10px] mb-1">
-                {[...Array(rec.stars)].map((_, i) => (
-                  <i key={i} className="fa-solid fa-star"></i>
-                ))}
-              </div>
-              <p className="text-gray-600 italic leading-snug mb-1">
-                "{rec.text}"
-              </p>
-              <div className="font-semibold text-gray-700">
-                {rec.name}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Sticky Button Section */}

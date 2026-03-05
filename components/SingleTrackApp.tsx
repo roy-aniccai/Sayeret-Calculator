@@ -265,7 +265,7 @@ const SingleTrackAppContent: React.FC<{
       <div className="w-full sm:max-w-lg bg-white sm:rounded-2xl shadow-xl overflow-hidden relative h-[100dvh] sm:h-auto sm:min-h-[600px] flex flex-col">
 
         {/* Campaign warning notification (non-blocking) */}
-        {showCampaignWarning && (
+        {showCampaignWarning && step > 1 && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-sm">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -281,57 +281,58 @@ const SingleTrackAppContent: React.FC<{
         )}
 
         {/* Header with progress bar */}
-        <div className="bg-blue-600 px-4 py-3 text-white relative">
-          <div className="flex items-center justify-between">
-            {/* Back button - only show if not on first step */}
-            {step > 1 ? (
-              <button
-                onClick={handlePrevStep}
-                className="text-blue-200 hover:text-white transition-colors"
-                title="חזור"
-              >
-                <i className="fa-solid fa-arrow-right text-lg"></i>
-              </button>
-            ) : (
-              <div className="w-4"></div>
-            )}
+        {step > 1 && (
+          <div className="bg-blue-600 px-4 py-3 text-white relative">
+            <div className="flex items-center justify-between">
+              {/* Back button - only show if not on first step */}
+              {step > 1 ? (
+                <button
+                  onClick={handlePrevStep}
+                  className="text-blue-200 hover:text-white transition-colors"
+                  title="חזור"
+                >
+                  <i className="fa-solid fa-arrow-right text-lg"></i>
+                </button>
+              ) : (
+                <div className="w-4"></div>
+              )}
 
-            {/* Header title with logo */}
-            <div className="text-center flex-1 flex items-center justify-center gap-2">
-              <img
-                src="/logo.svg"
-                alt="סיירת המשכנתא"
-                className="w-6 h-6 flex-shrink-0"
-              />
-              <h1 className="text-lg font-bold">
-                {getMainHeaderTitle(step)}
-                {step >= 3 && step <= 5 && ` (שלב ${getFlowStepIndex(step)} מתוך 4)`}
-              </h1>
+              {/* Header title with logo */}
+              <div className="text-center flex-1 flex items-center justify-center gap-2">
+                <img
+                  src="/logo.svg"
+                  alt="סיירת המשכנתא"
+                  className="w-6 h-6 flex-shrink-0"
+                />
+                <h1 className="text-lg font-bold">
+                  {getMainHeaderTitle(step)}
+                  {step >= 3 && step <= 5 && ` (שלב ${getFlowStepIndex(step)} מתוך 4)`}
+                </h1>
+              </div>
+
+              {/* Restart button */}
+              <button
+                onClick={handleResetForm}
+                className="text-blue-200 hover:text-white transition-colors"
+                title="התחל מחדש"
+              >
+                <i className="fa-solid fa-rotate-right text-lg"></i>
+              </button>
             </div>
 
-            {/* Restart button */}
-            <button
-              onClick={handleResetForm}
-              className="text-blue-200 hover:text-white transition-colors"
-              title="התחל מחדש"
-            >
-              <i className="fa-solid fa-rotate-right text-lg"></i>
-            </button>
+            {/* Progress bar */}
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-800">
+              <div
+                className="h-full bg-yellow-400 transition-all duration-500"
+                style={{ width: `${progressPercentage}%` }}
+              ></div>
+            </div>
           </div>
+        )}
 
-          {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-800">
-            <div
-              className="h-full bg-yellow-400 transition-all duration-500"
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Content area */}
         <div
           ref={containerRef}
-          className={`p-6 flex-grow relative ${scrollClassName}`}
+          className={`flex-grow relative ${scrollClassName} ${step === 1 ? 'p-0 sm:pb-6 sm:px-0' : 'p-6'}`}
         >
           {renderStep()}
         </div>
