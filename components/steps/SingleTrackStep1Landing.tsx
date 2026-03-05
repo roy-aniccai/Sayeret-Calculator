@@ -58,7 +58,7 @@ const SingleTrackStep1Landing: React.FC = () => {
         {/* Sub-paragraph */}
         <p className="text-sm text-gray-500 leading-relaxed mt-4 max-w-sm mx-auto">
           ריביות משתנות, מסלולים שהתיישנו, ותנאים שניתן לשפר -
-          אבל רק אם יודעים לאן להסתכל. המחשבון שלנו עושה בדיוק את זה, בחינם, תוך 3 דקות.
+          אבל רק אם יודעים על מה להסתכל. המחשבון שלנו עושה בדיוק את זה, בחינם, תוך 3 דקות.
         </p>
       </div>
 
