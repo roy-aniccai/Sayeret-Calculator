@@ -72,7 +72,7 @@ const SingleTrackStep1Landing: React.FC = () => {
         ].map((text) => (
           <span
             key={text}
-            className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full px-3 py-1.5"
+            className="flex items-center gap-1.5 bg-purple-50 text-purple-700 text-xs font-medium rounded-full px-3 py-1.5"
           >
             <i className="fa-solid fa-check text-[10px]"></i>
             {text}
@@ -108,23 +108,26 @@ const SingleTrackStep1Landing: React.FC = () => {
             num: 1,
             title: 'עונים על 4 שאלות קצרות',
             desc: 'יתרת משכנתא, ריבית, תקופה, גיל. אין צורך בנתונים מדויקים, בתי. אומדן מספיק.',
+            bg: 'bg-green-50', border: 'border-green-200', circle: 'bg-green-600',
           },
           {
             num: 2,
             title: 'המחשבון מנתח את המסלול שלך',
             desc: 'אנחנו משווים את התנאים שלך מול השיעורים הנמוכים ביותר בשוק ומחשבים את פוטנציאל החיסכון שלך.',
+            bg: 'bg-green-50', border: 'border-green-200', circle: 'bg-green-600',
           },
           {
             num: 3,
             title: 'רואים תוצאה מיידית על החסכון',
             desc: 'כמה תשלמו פחות? מה העלות הכי נמוכה לרפיננס ומה עוד?',
+            bg: 'bg-green-50', border: 'border-green-200', circle: 'bg-green-600',
           },
         ].map((item) => (
           <div
             key={item.num}
-            className="flex gap-4 items-start bg-blue-50 rounded-xl border border-blue-100 p-4"
+            className={`flex gap-4 items-start ${item.bg} rounded-xl border ${item.border} p-4`}
           >
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
+            <div className={`flex-shrink-0 w-10 h-10 rounded-full ${item.circle} text-white flex items-center justify-center font-bold text-lg`}>
               {item.num}
             </div>
             <div>
@@ -160,11 +163,11 @@ const SingleTrackStep1Landing: React.FC = () => {
       </div>
 
       {/* Testimonial Quote */}
-      <div className="mx-6 mb-8 rounded-xl border border-blue-200 bg-blue-50 p-4 text-center">
+      <div className="mx-6 mb-8 rounded-xl border border-purple-200 bg-purple-50 p-4 text-center">
         <p className="text-sm text-gray-600 italic leading-relaxed">
-          "לא האמנתי שיש עד מה לשפר – החברים שלכם בסלולר 042 שילמנו יותר מ-1400 ₪ – תודה‎"
+          "לא האמנתי שיש עוד מה לשפר – התברר שאנחנו משלמים 740 ₪ יותר כל חודש מ-2021."
         </p>
-        <p className="text-xs text-gray-400 mt-2">— אמיר, לקוח מחודשים בן 2016+</p>
+        <p className="text-xs text-gray-400 mt-2">— יואב ורחל, בעלי משכנתא מ-2019</p>
       </div>
 
       {/* Bottom CTA Block */}
