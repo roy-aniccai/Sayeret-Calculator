@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import { AdminDashboard } from './components/AdminDashboard';
+import './src/index.css';
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 import SingleTrackApp from './components/SingleTrackApp';
 
 const rootElement = document.getElementById('root');
@@ -13,10 +14,12 @@ const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'tr
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    {isAdmin ? (
-      <AdminDashboard onClose={() => window.location.href = '/'} />
-    ) : (
-      <SingleTrackApp />
-    )}
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">טוען...</div>}>
+      {isAdmin ? (
+        <AdminDashboard onClose={() => window.location.href = '/'} />
+      ) : (
+        <SingleTrackApp />
+      )}
+    </Suspense>
   </React.StrictMode>
 );

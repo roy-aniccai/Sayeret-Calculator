@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { auth } from '../src/firebase';
+import { getAuthInstance } from '../src/firebase';
 import { PostSubmissionAction, SimulationResult } from '../types/analytics';
 import {
     withRobustExecution,
@@ -207,6 +207,7 @@ export const trackEvent = async (
 // ============================================================================
 
 const getAuthHeaders = async () => {
+    const auth = await getAuthInstance();
     const user = auth.currentUser;
     if (!user) throw new Error("Not authenticated");
     const token = await user.getIdToken();

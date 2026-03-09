@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getSubmissions, getEvents } from '../utils/api';
 import { ParametersEditor } from './ParametersEditor';
 import { ParametersDisplay } from './ParametersDisplay';
-import { auth } from '../src/firebase';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuthInstance } from '../src/firebase';
+import { signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { Submission, EventLog } from '../types';
 import { AdminLogin } from './AdminLogin';
 import { SubmissionsTable } from './SubmissionsTable';
@@ -22,23 +22,47 @@ export const AdminDashboard: React.FC<{ onClose: () => void }> = ({ onClose }) =
     const [filteredSessionIds, setFilteredSessionIds] = useState<string[] | null>(null); // New filter state
     const [showParametersEditor, setShowParametersEditor] = useState(false);
 
-    const [user, setUser] = useState(auth.currentUser);
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        console.log("Admin Dashboard v2.0 (Firebase Auth) Loaded 🚀");
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            setLoading(false);
-            if (currentUser) {
-                loadData();
+        let unsubscribe: (() => void) | undefined;
+        let isMounted = true;
+
+        const initAuth = async () => {
+            try {
+                const auth = await getAuthInstance();
+                if (!isMounted) return;
+
+                // Initialize user synchronously if possible
+                setUser(auth.currentUser);
+
+                unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+                    if (!isMounted) return;
+                    setUser(currentUser);
+                    setLoading(false);
+                    if (currentUser) {
+                        loadData();
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to initialize auth", error);
+                if (isMounted) setLoading(false);
             }
-        });
-        return () => unsubscribe();
+        };
+
+        console.log("Admin Dashboard v2.0 (Firebase Auth) Loaded 🚀");
+        initAuth();
+
+        return () => {
+            isMounted = false;
+            if (unsubscribe) unsubscribe();
+        };
     }, []);
 
     const handleLogout = async () => {
         try {
+            const auth = await getAuthInstance();
             await signOut(auth);
             setSubmissions([]);
             setEvents([]);

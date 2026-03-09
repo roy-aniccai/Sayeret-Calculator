@@ -299,6 +299,9 @@ export const SingleTrackStep6Simulator: React.FC = () => {
       paymentReduction: paymentDiff < 0 ? Math.abs(Math.round(paymentDiff)) : 0
     });
 
+    // Push funnel event to GTM when user wants to contact expert (Green CTA)
+    pushGtmEvent('funnel_contact_options_opened', { funnel_stage: 'contact_options' });
+
     // Show thank-you dialog directly (skip contact options / lead form)
     setShowThankYou(true);
   };

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { TrackType } from '../types';
 import {
   validateAndFallbackCampaignData,
@@ -261,7 +261,7 @@ export const SingleTrackFormProvider: React.FC<{
   }, [step]);
 
   // Update form data function with validation and legacy data handling
-  const updateFormData = (data: Partial<SingleTrackFormData>) => {
+  const updateFormData = useCallback((data: Partial<SingleTrackFormData>) => {
     try {
       // Filter out any legacy bankAccountBalance field that might be passed
       const { bankAccountBalance, ...cleanData } = data as any;
@@ -275,10 +275,39 @@ export const SingleTrackFormProvider: React.FC<{
     } catch (error) {
       console.error('Error updating form data:', error);
     }
-  };
+  }, []);
+
+  // Campaign event tracking function with error handling
+  const trackCampaignEvent = useCallback((eventType: string, eventData?: any) => {
+    try {
+      const eventPayload = {
+        sessionId,
+        eventType,
+        timestamp: new Date().toISOString(),
+        track: TrackType.MONTHLY_REDUCTION,
+        campaignData,
+        step,
+        ...eventData,
+      };
+
+      // Log to console for development (replace with actual analytics in production)
+      console.log('Single Track Campaign Event:', eventPayload);
+
+      // Import and call actual tracking function dynamically with error handling
+      import('../utils/api').then(({ trackEvent }) => {
+        trackEvent(sessionId, eventType, eventPayload);
+      }).catch(error => {
+        console.warn('Failed to track campaign event:', error);
+        // Continue operation even if tracking fails
+      });
+    } catch (error) {
+      console.error('Error in trackCampaignEvent:', error);
+      // Don't throw - tracking failures shouldn't break the app
+    }
+  }, [sessionId, campaignData, step]);
 
   // Reset form function - returns to landing page while preserving campaign data
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     try {
       const preservedCampaignData = {
         campaignId: formData.campaignId,
@@ -304,10 +333,10 @@ export const SingleTrackFormProvider: React.FC<{
       setStep(1);
       setStartTime(Date.now());
     }
-  };
+  }, [formData.campaignId, formData.utmParams, trackCampaignEvent, campaignData]);
 
   // Navigation functions with bounds checking and error handling
-  const nextStep = () => {
+  const nextStep = useCallback(() => {
     try {
       const newStep = Math.min(Math.max(step + 1, 1), 6);
       setStep(newStep);
@@ -321,9 +350,9 @@ export const SingleTrackFormProvider: React.FC<{
     } catch (error) {
       console.error('Error navigating to next step:', error);
     }
-  };
+  }, [step, trackCampaignEvent]);
 
-  const prevStep = () => {
+  const prevStep = useCallback(() => {
     try {
       const newStep = Math.min(Math.max(step - 1, 1), 6);
       setStep(newStep);
@@ -337,10 +366,10 @@ export const SingleTrackFormProvider: React.FC<{
     } catch (error) {
       console.error('Error navigating to previous step:', error);
     }
-  };
+  }, [step, trackCampaignEvent]);
 
   // Campaign data setter with validation and event tracking
-  const setCampaignData = (data: CampaignData) => {
+  const setCampaignData = useCallback((data: CampaignData) => {
     try {
       const validatedData = validateAndFallbackCampaignData(data);
       setCampaignDataState(validatedData);
@@ -370,39 +399,10 @@ export const SingleTrackFormProvider: React.FC<{
     } catch (error) {
       console.error('Error setting campaign data:', error);
     }
-  };
-
-  // Campaign event tracking function with error handling
-  const trackCampaignEvent = (eventType: string, eventData?: any) => {
-    try {
-      const eventPayload = {
-        sessionId,
-        eventType,
-        timestamp: new Date().toISOString(),
-        track: TrackType.MONTHLY_REDUCTION,
-        campaignData,
-        step,
-        ...eventData,
-      };
-
-      // Log to console for development (replace with actual analytics in production)
-      console.log('Single Track Campaign Event:', eventPayload);
-
-      // Import and call actual tracking function dynamically with error handling
-      import('../utils/api').then(({ trackEvent }) => {
-        trackEvent(sessionId, eventType, eventPayload);
-      }).catch(error => {
-        console.warn('Failed to track campaign event:', error);
-        // Continue operation even if tracking fails
-      });
-    } catch (error) {
-      console.error('Error in trackCampaignEvent:', error);
-      // Don't throw - tracking failures shouldn't break the app
-    }
-  };
+  }, [trackCampaignEvent]);
 
   // Dedicated conversion tracking method with error handling
-  const trackConversion = (conversionType: string, conversionData?: any) => {
+  const trackConversion = useCallback((conversionType: string, conversionData?: any) => {
     try {
       const conversionPayload = {
         sessionId,
@@ -433,20 +433,20 @@ export const SingleTrackFormProvider: React.FC<{
       console.error('Error in trackConversion:', error);
       // Don't throw - tracking failures shouldn't break the app
     }
-  };
+  }, [sessionId, campaignData, step, formData, trackCampaignEvent]);
 
   // Single-track specific methods
-  const getTrack = (): TrackType => {
+  const getTrack = useCallback((): TrackType => {
     return TrackType.MONTHLY_REDUCTION;
-  };
+  }, []);
 
-  const isMonthlyReductionTrack = (): boolean => {
+  const isMonthlyReductionTrack = useCallback((): boolean => {
     return true; // Always true for single-track calculator
-  };
+  }, []);
 
   const [submissionDocId, setSubmissionDocId] = useState<string | null>(null);
 
-  const sendSubmissionUpdate = async (update: { action?: PostSubmissionAction; contactUpdate?: any }) => {
+  const sendSubmissionUpdate = useCallback(async (update: { action?: PostSubmissionAction; contactUpdate?: any }) => {
     if (!submissionDocId) {
       console.warn('Cannot send submission update: No submission ID available');
       return;
@@ -456,9 +456,9 @@ export const SingleTrackFormProvider: React.FC<{
     } catch (error) {
       console.error('Failed to send submission update:', error);
     }
-  };
+  }, [submissionDocId]);
 
-  const contextValue: SingleTrackFormContextType = {
+  const contextValue: SingleTrackFormContextType = useMemo(() => ({
     step,
     setStep,
     formData,
@@ -476,7 +476,23 @@ export const SingleTrackFormProvider: React.FC<{
     submissionDocId,
     setSubmissionDocId,
     sendSubmissionUpdate,
-  };
+  }), [
+    step,
+    formData,
+    updateFormData,
+    resetForm,
+    nextStep,
+    prevStep,
+    campaignData,
+    setCampaignData,
+    trackCampaignEvent,
+    trackConversion,
+    getTrack,
+    isMonthlyReductionTrack,
+    sessionId,
+    submissionDocId,
+    sendSubmissionUpdate
+  ]);
 
   return (
     <SingleTrackFormContext.Provider value={contextValue}>

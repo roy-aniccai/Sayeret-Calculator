@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { SingleTrackFormProvider, useSingleTrackForm } from '../context/SingleTrackFormContext';
 import { NotificationProvider } from '../context/NotificationContext';
-import SingleTrackStep1Landing from './steps/SingleTrackStep1Landing';
-import { SingleTrackStep2Debts } from './steps/SingleTrackStep2Debts';
-import { SingleTrackStep3Payments } from './steps/SingleTrackStep3Payments';
-import { SingleTrackStep4Assets } from './steps/SingleTrackStep4Assets';
-import { SingleTrackStep5Contact } from './steps/SingleTrackStep5Contact';
-import { SingleTrackStep6Simulator } from './steps/SingleTrackStep6Simulator';
+
+const SingleTrackStep1Landing = React.lazy(() => import('./steps/SingleTrackStep1Landing'));
+const SingleTrackStep2Debts = React.lazy(() => import('./steps/SingleTrackStep2Debts').then(mod => ({ default: mod.SingleTrackStep2Debts })));
+const SingleTrackStep3Payments = React.lazy(() => import('./steps/SingleTrackStep3Payments').then(mod => ({ default: mod.SingleTrackStep3Payments })));
+const SingleTrackStep4Assets = React.lazy(() => import('./steps/SingleTrackStep4Assets').then(mod => ({ default: mod.SingleTrackStep4Assets })));
+const SingleTrackStep5Contact = React.lazy(() => import('./steps/SingleTrackStep5Contact').then(mod => ({ default: mod.SingleTrackStep5Contact })));
+const SingleTrackStep6Simulator = React.lazy(() => import('./steps/SingleTrackStep6Simulator').then(mod => ({ default: mod.SingleTrackStep6Simulator })));
 import {
   parseCampaignDataFromLocation,
   createCampaignData,
@@ -185,24 +186,34 @@ const SingleTrackAppContent: React.FC<{
   // Render step content with error handling
   const renderStep = () => {
     try {
+      const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          </div>
+        }>
+          {children}
+        </Suspense>
+      );
+
       switch (step) {
         case 1:
-          return <SingleTrackStep1Landing />;
+          return <SuspenseWrapper><SingleTrackStep1Landing /></SuspenseWrapper>;
         case 2:
-          return <SingleTrackStep2Debts />;
+          return <SuspenseWrapper><SingleTrackStep2Debts /></SuspenseWrapper>;
         case 3:
-          return <SingleTrackStep3Payments />;
+          return <SuspenseWrapper><SingleTrackStep3Payments /></SuspenseWrapper>;
         case 4:
-          return <SingleTrackStep4Assets />;
+          return <SuspenseWrapper><SingleTrackStep4Assets /></SuspenseWrapper>;
         case 5:
-          return <SingleTrackStep5Contact />;
+          return <SuspenseWrapper><SingleTrackStep5Contact /></SuspenseWrapper>;
         case 6:
-          return <SingleTrackStep6Simulator />;
+          return <SuspenseWrapper><SingleTrackStep6Simulator /></SuspenseWrapper>;
         default:
           // Fallback for invalid step numbers
           console.error(`Invalid step number: ${step}, resetting to step 1`);
           resetForm();
-          return <SingleTrackStep1Landing />;
+          return <SuspenseWrapper><SingleTrackStep1Landing /></SuspenseWrapper>;
       }
     } catch (error) {
       console.error('Error rendering step:', error);

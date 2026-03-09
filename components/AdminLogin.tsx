@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../src/firebase';
+import { getAuthInstance } from '../src/firebase';
 
 interface AdminLoginProps {
     onClose: () => void;
@@ -14,6 +14,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onClose }) => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const auth = await getAuthInstance();
             await signInWithEmailAndPassword(auth, email, password);
             setError('');
         } catch (err) {

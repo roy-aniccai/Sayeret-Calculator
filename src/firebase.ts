@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+
+let analyticsInstance: any = null;
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -13,11 +14,25 @@ const firebaseConfig = {
     measurementId: "G-T0YVZQ97G1"
 };
 
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
-
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
-export const analytics = getAnalytics(app);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
+
+// Lazy-loaded services
+export const getAnalyticsInstance = async () => {
+    if (analyticsInstance) return analyticsInstance;
+    if (typeof window !== 'undefined') {
+        const { getAnalytics } = await import('firebase/analytics');
+        analyticsInstance = getAnalytics(app);
+    }
+    return analyticsInstance;
+};
+
+export const getAuthInstance = async () => {
+    const { getAuth } = await import('firebase/auth');
+    return getAuth(app);
+};
+
+export const getStorageInstance = async () => {
+    const { getStorage } = await import('firebase/storage');
+    return getStorage(app);
+};

@@ -162,6 +162,14 @@ export const SingleTrackStep3Payments: React.FC = () => {
 
   const handleNext = () => {
     if (!validate()) return;
+
+    // Push funnel event to GTM if this is a "green" button (savings possible)
+    if (savingsEstimate.canSave) {
+      import('../../utils/gtm').then(({ pushGtmEvent }) => {
+        pushGtmEvent('funnel_savings_potential_clicked', { funnel_stage: 'savings_potential' });
+      }).catch(err => console.warn('Failed to push GTM event:', err));
+    }
+
     nextStep();
   };
 

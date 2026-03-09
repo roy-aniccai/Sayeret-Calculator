@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { exportSubmissionsCsv, exportEventsCsv, getExportHistory, deleteExport, ExportHistoryItem, CsvExportResult } from '../utils/api';
-import { storage } from '../src/firebase';
+import { getStorageInstance } from '../src/firebase';
 import { ref, getDownloadURL } from 'firebase/storage';
 
 export const ExportTab: React.FC = () => {
@@ -87,6 +87,7 @@ export const ExportTab: React.FC = () => {
 
         try {
             // Use client-side SDK to get download URL, leveraging current user auth
+            const storage = await getStorageInstance();
             const storageRef = ref(storage, filePath);
             const url = await getDownloadURL(storageRef);
             window.open(url, '_blank');
