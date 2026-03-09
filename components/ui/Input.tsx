@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useMemo } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -29,8 +29,9 @@ export const Input: React.FC<InputProps> = ({
   const internalRef = useRef<HTMLInputElement>(null);
   const ref = inputRef || internalRef;
 
-  // Generate a unique ID if not provided
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  // Generate a unique ID if not provided, stable across renders
+  const fallbackId = useMemo(() => `input-${Math.random().toString(36).substr(2, 9)}`, []);
+  const inputId = id || fallbackId;
 
   // Determine padding: If icon/suffix exists on the left, add extra padding-left (pl-16)
   // Otherwise keep balanced padding (px-6)

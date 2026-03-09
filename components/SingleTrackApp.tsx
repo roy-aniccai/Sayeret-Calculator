@@ -160,6 +160,16 @@ const SingleTrackApp: React.FC<SingleTrackAppProps> = ({ campaignId, utmParams }
   );
 };
 
+const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+    </div>
+  }>
+    {children}
+  </Suspense>
+);
+
 /**
  * SingleTrackAppContent - The main content component that uses the form context
  */
@@ -186,16 +196,6 @@ const SingleTrackAppContent: React.FC<{
   // Render step content with error handling
   const renderStep = () => {
     try {
-      const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
-        <Suspense fallback={
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-          </div>
-        }>
-          {children}
-        </Suspense>
-      );
-
       switch (step) {
         case 1:
           return <SuspenseWrapper><SingleTrackStep1Landing /></SuspenseWrapper>;
